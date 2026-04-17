@@ -1,0 +1,24 @@
+# gateway.yaml（100%符合go-zero解析规则，缩进用2个空格）
+Name: storage-gateway       # 0空格（顶行）
+Host: 0.0.0.0               # 0空格
+Port: 8888                  # 0空格
+Timeout: 3000               # 0空格
+
+Header: Authorization
+
+upstreams:                  # 0空格
+  - Name: storage.rpc       # 2空格（upstreams下的数组项）
+    Grpc:                   # 2空格（与name同级）
+      target: 127.0.0.1:8081 # 4空格（grpc下的字段）
+      schema: ""            # 4空格（1.4+版本必填）
+    ProtoSet: protoset.pb
+#    ProtoDir: D:/ONE_CLOUD/cloud/proto
+    ProtoSets:
+      - protoset.pb  # 新增：依赖的validate.proto
+    Mappings:                # 2空格（与grpc同级！！！核心中的核心）
+      - Method: POST        # 4空格（mapping下的数组项）
+        Path: /file/get     # 6空格（与method同级）
+        RpcPath: storage.File/GetFileInfo # 6空格
+      - Method: POST        # 4空格
+        Path: /user/register # 6空格
+        RpcPath: storage.User/Register # 6空格

@@ -1,0 +1,97 @@
+syntax = "proto3";
+
+package storage;
+option go_package = ".proto/service";
+import "google/protobuf/any.proto";
+
+import "google/protobuf/timestamp.proto";
+import "validate.proto";
+
+message Response {
+  int32 code = 1;
+  string message = 2;
+  google.protobuf.Any data = 3;
+}
+
+// ==========================================
+// 通用枚举
+// ==========================================
+
+// 文件类型
+enum FileType {
+  FILE_TYPE_UNKNOWN = 0;
+  FILE_TYPE_FILE = 1;    // 普通文件
+  FILE_TYPE_DIR = 2;     // 目录
+  FILE_TYPE_IMAGE = 3;   // 图片
+  FILE_TYPE_VIDEO = 4;   // 视频
+  FILE_TYPE_AUDIO = 5;   // 音频
+  FILE_TYPE_DOC = 6;     // 文档
+}
+
+// 分享权限
+enum SharePermission {
+  SHARE_PERMISSION_UNKNOWN = 0;
+  SHARE_PERMISSION_READ = 1;     // 仅查看
+  SHARE_PERMISSION_DOWNLOAD = 2; // 可下载
+}
+
+// ==========================================
+// 通用消息
+// ==========================================
+
+// 文件信息（复用）
+message FileInfo {
+  int64 file_id = 1;                          // 文件/目录唯一ID
+  string name = 2;                             // 文件名
+  FileType type = 3;                           // 文件类型
+  int64 size = 4;                              // 文件大小（字节）
+  string md5 = 5;                              // 文件MD5（用于秒传）
+  int64 parent_dir_id = 6;                     // 父目录ID（0为根目录）
+  google.protobuf.Timestamp created_at = 7;    // 创建时间
+  google.protobuf.Timestamp updated_at = 8;    // 修改时间
+  optional string path = 9;                    // 完整路径（可选，如 /docs/2025/）
+}
+
+// 目录信息（复用）
+message DirectoryInfo {
+  int64 dir_id = 1;                            // 目录ID
+  string name = 2;                             // 目录名
+  int64 parent_dir_id = 3;                     // 父目录ID（0为根目录）
+  int32 file_count = 4;                        // 子文件数量
+  int32 dir_count = 5;                         // 子目录数量
+  google.protobuf.Timestamp created_at = 6;    // 创建时间
+  google.protobuf.Timestamp updated_at = 7;    // 修改时间
+}
+
+// 分页请求
+message PaginationReq {
+  int32 page = 1 [(validate.rules).int32 = {gte: 1}];     // 页码（从1开始）
+  int32 page_size = 2 [(validate.rules).int32 = {gte: 1, lte: 100}]; // 每页数量（1-100）
+}
+
+// 分页响应
+message PaginationRes {
+  int32 total = 1;       // 总数量
+  int32 page = 2;        // 当前页码
+  int32 page_size = 3;   // 每页数量
+}
+
+// ====================== 文件列表分页响应 ======================
+message FileListPaginationRes {
+  // 1. 分页元数据
+  int32 total = 1;       // 总文件数
+  int32 page = 2;        // 当前页码
+  int32 page_size = 3;   // 每页数量
+  // 2. 核心：文件列表数据（repeated = 数组）
+  repeated FileInfo files = 4;
+}
+
+// ====================== 目录列表分页响应 ======================
+message DirectoryListPaginationRes {
+  // 1. 分页元数据
+  int32 total = 1;       // 总目录数
+  int32 page = 2;        // 当前页码
+  int32 page_size = 3;   // 每页数量
+  // 2. 核心：目录列表数据（repeated = 数组）
+  repeated DirectoryInfo directories = 4;
+}

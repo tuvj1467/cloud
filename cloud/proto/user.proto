@@ -1,0 +1,145 @@
+syntax = "proto3";
+
+package storage;
+option go_package = ".proto/service";
+
+import "validate.proto";
+
+
+// ==========================================
+// 基础定义
+// ==========================================
+
+// 用户基础信息（脱敏版，绝不返回密码）
+message UserInfo {
+  string id = 1;           // 用户唯一ID（雪花ID）
+  string name = 2;              // 用户名
+  optional string avatar = 3;   // 头像URL
+  optional string email = 4;    // 邮箱（已脱敏）
+  optional string phone = 5;    // 手机号（已脱敏，如 138****1234）
+}
+
+// 短信验证码类型枚举
+enum SmsType {
+  SMS_TYPE_UNKNOWN = 0;         // 未知
+  SMS_TYPE_LOGIN = 1;           // 登录
+  SMS_TYPE_REGISTER = 2;        // 注册
+  SMS_TYPE_RESET_PASSWORD = 3;  // 重置密码
+}
+
+// ==========================================
+// 1. 注册
+// ==========================================
+
+// 注册请求（支持用户名/手机号/邮箱注册）
+message RegisterReq {
+  oneof account {
+    option (validate.required) = true;
+    string name = 1 [(validate.rules).string = {min_len: 1, max_len: 20}];      // 用户名注册
+    string phone = 2 [(validate.rules).string = {pattern: "^1[3-9]\\d{9}$"}];   // 手机号注册（中国大陆格式）
+    string email = 3 [(validate.rules).string = {email: true}];                  // 邮箱注册
+  }
+
+  string password = 4 [(validate.rules).string = {min_len: 6, max_len: 20}];    // 密码
+  optional string sms_code = 5 [(validate.rules).string = {len: 6,ignore_empty: true}];   // 短信/邮箱验证码（手机号/邮箱注册时必填）== 手动校验
+}
+
+// 注册响应
+message RegisterRes {
+  UserInfo user = 1;  // 注册成功的用户信息（脱敏）
+  string token = 2;   // 登录Token（注册即登录）
+}
+
+// ==========================================
+// 2. 登录（三种方式）
+// ==========================================
+
+// 登录通用响应
+message LoginRes {
+  UserInfo user = 1;  // 登录用户信息（脱敏）
+  string token = 2;   // 登录Token（JWT）
+}
+
+// 2.1 账号密码登录（支持用户名/手机号/邮箱）
+message LoginByAccountReq {
+  string account = 1 [(validate.rules).string = {min_len: 1}];  //
+  string password = 2 [(validate.rules).string = {min_len: 6, max_len: 20}]; // 密码
+}
+
+//// 2.2 手机号密码登录
+//message LoginByPhoneReq {
+//  string phone = 1 [(validate.rules).string = {pattern: "^1[3-9]\\d{9}$"}]; // 手机号
+//  string password = 2 [(validate.rules).string = {min_len: 6, max_len: 20}]; // 密码
+//}
+//
+//// 2.3 邮箱密码登录
+//message LoginByEmailReq {
+//  string email = 1 [(validate.rules).string = {pattern: "^1[3-9]\\d{9}$"}]; // 手机号
+//  string password = 2 [(validate.rules).string = {min_len: 6, max_len: 20}]; // 密码
+//}
+
+// 2.4 手机号验证码登录
+message LoginByPhoneSmsReq {
+  string phone = 1 [(validate.rules).string = {pattern: "^1[3-9]\\d{9}$"}]; // 手机号
+  string sms_code = 2 [(validate.rules).string = {len: 6}];                   // 6位验证码
+}
+
+// 2.5 邮箱验证码登录
+message LoginByEmailSmsReq {
+  string email = 1 [(validate.rules).string = {email: true}]; // 邮箱
+  string sms_code = 2 [(validate.rules).string = {len: 6}];                   // 6位验证码
+}
+
+// ==========================================
+// 3. 发送验证码
+// ==========================================
+
+message SendVerificationCodeReq {
+  oneof contact {
+    string phone = 1 [(validate.rules).string = {pattern: "^1[3-9]\\d{9}$"}]; // 手机号
+    string email = 2 [(validate.rules).string = {email: true}];                  // 邮箱
+  }
+  SmsType type = 3 [(validate.rules).enum = {defined_only: true}];           // 验证码类型（登录/注册/重置密码）
+}
+
+message SendVerificationCodeRes {
+  bool success = 1;  // 是否发送成功
+}
+
+// ==========================================
+// 4. 忘记密码（重置密码）
+// ==========================================
+
+// 重置密码请求（支持手机号/邮箱二选一）
+message ResetPasswordReq {
+  oneof contact {
+    string phone = 1 [(validate.rules).string = {pattern: "^1[3-9]\\d{9}$"}]; // 手机号
+    string email = 2 [(validate.rules).string = {email: true}];                  // 邮箱
+  }
+  string verification_code = 3 [(validate.rules).string = {len: 6}];            // 验证码（短信/邮箱通用）
+  string new_password = 4 [(validate.rules).string = {min_len: 6, max_len: 20}]; // 新密码
+}
+
+message ResetPasswordRes {
+  bool success = 1;  // 是否重置成功
+}
+
+
+
+// ==========================================
+// 5. 账号找回
+//  同步修改：账号找回接口（也支持邮箱）
+// ==========================================
+
+message FindAccountReq {
+  oneof contact {
+    string phone = 1 [(validate.rules).string = {pattern: "^1[3-9]\\d{9}$"}]; // 绑定的手机号
+    string email = 2 [(validate.rules).string = {email: true}];                  // 绑定的邮箱
+  }
+  string verification_code = 3 [(validate.rules).string = {len: 6}];
+}
+
+message FindAccountRes {
+   UserInfo user = 1;  // 找回的用户 一机一号
+}
+

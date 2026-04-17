@@ -1,0 +1,45 @@
+syntax = "proto3";
+
+package storage;
+option go_package = ".proto/service";
+
+import "file.proto" ;
+import "user.proto" ;
+import "base.proto" ;
+
+service User {
+  //注册
+  rpc Register(RegisterReq) returns (Response) ;
+
+  // 三种登录方式
+  rpc LoginByAccount(LoginByAccountReq) returns (Response);  // 账号 手机 邮箱 的密码登录
+
+  rpc LoginByPhoneSms(LoginByPhoneSmsReq) returns (Response);      // 手机号验证码登录
+
+  rpc LoginByEmailSms(LoginByEmailSmsReq) returns (Response);          // 邮箱验证码登录
+
+  // 发送验证码
+  rpc SendVerificationCode(SendVerificationCodeReq) returns (Response);
+
+  // 重置密码
+  rpc ResetPassword(ResetPasswordReq) returns (Response);
+
+  // 账号找回
+  rpc FindAccount(FindAccountReq) returns (Response);
+}
+
+// 存储服务定义
+service File {
+  // 获取文件信息
+  rpc GetFileInfo(FileInfoRequest) returns (Response);
+  // 上传文件
+  rpc UploadFile(UploadFileRequest) returns (Response);
+  // 获取文件列表
+  rpc GetFileList(FileListRequest) returns (Response);
+  // 重命名文件
+  rpc RenameFile(RenameFileRequest) returns (Response);
+  // 删除文件
+  rpc DeleteFile(DeleteFileRequest) returns (Response);
+  // 下载文件
+  rpc DownloadFile(DownloadFileRequest) returns (Response);
+}

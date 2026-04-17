@@ -1,0 +1,32 @@
+Name: storage.rpc
+ListenOn: 0.0.0.0:8081
+Mode: dev
+#Etcd:   先不开启etcd
+#  Hosts:
+#  - 127.0.0.1:2379
+#  Key: storageclient.rpc
+
+# MySQL 数据库配置
+MySQL:
+  # 数据库连接地址（IP:端口）
+  Host: 127.0.0.1:3306
+  # 数据库用户名
+  User: "root"
+  # 数据库密码
+  Password: "12345"
+  # 数据库名称
+  Database: "cloud"
+  # 字符集（推荐 utf8mb4 支持emoji）
+  Charset: utf8mb4
+  # 最大打开连接数
+  MaxOpenConns: 100
+  # 最大空闲连接数
+  MaxIdleConns: 20
+  # 连接最大存活时间
+  ConnMaxLifetime: 3600
+  # 连接最大空闲时间
+  ConnMaxIdleTime: 600
+  # 是否开启调试模式（打印SQL）
+  Debug: true
+  # 时区设置
+  Loc: Local

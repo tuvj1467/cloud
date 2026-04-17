@@ -1,0 +1,95 @@
+syntax = "proto3";
+
+package storage;
+option go_package = ".proto/service";
+import "validate.proto";
+
+
+// ==========================================
+// 文件核心定义
+// ==========================================
+
+// 文件元信息（通用结构，无密码、全脱敏，业务安全）
+message FileMeta {
+  string file_id = 1;          // 文件唯一ID（雪花ID）
+  string name = 2;             // 文件名
+  string path = 3;             // 文件存储路径
+  int64 size = 4;              // 文件大小（字节）
+  string suffix = 5;           // 文件后缀（如：png/pdf/txt）
+  string user_id = 6;          // 所属用户ID
+  string created_at = 7;       // 创建时间
+  string updated_at = 8;       // 更新时间
+}
+
+// ==========================================
+// 1. 获取单个文件信息（你原有接口，修正优化）
+// ==========================================
+message FileInfoRequest {
+  string file_id = 1 [(validate.rules).string = {min_len: 1}]; // 文件ID必填
+}
+
+message FileInfoResponse {
+  FileMeta file = 1; // 直接复用文件元信息
+}
+
+// ==========================================
+// 2. 上传文件
+// ==========================================
+message UploadFileRequest {
+  string name = 1 [(validate.rules).string = {min_len:1, max_len:100}]; // 文件名（限制长度）
+  string suffix = 2 [(validate.rules).string = {min_len:1}];        // 文件后缀
+  int64 size = 3 [(validate.rules).int64 = {gt: 0}];                // 文件大小必须大于0
+  bytes content = 4; // 文件二进制内容（小文件适用）
+}
+
+message UploadFileResponse {
+  FileMeta file = 1; // 上传成功返回文件信息
+}
+
+// ==========================================
+// 3. 获取用户文件列表
+// ==========================================
+message FileListRequest {
+  int32 page = 1 [(validate.rules).int32 = {gte: 1}];          // 页码，最小1
+  int32 page_size = 2 [(validate.rules).int32 = {gte:1, lte:50}]; // 每页数量 1-50
+}
+
+message FileListResponse {
+  repeated FileMeta files = 1; // 文件列表
+  int32 total = 2;             // 总数量
+}
+
+// ==========================================
+// 4. 重命名文件
+// ==========================================
+message RenameFileRequest {
+  string file_id = 1 [(validate.rules).string = {min_len: 1}];
+  string new_name = 2 [(validate.rules).string = {min_len:1, max_len:100}]; // 新文件名
+}
+
+message RenameFileResponse {
+  bool success = 1;
+}
+
+// ==========================================
+// 5. 删除文件
+// ==========================================
+message DeleteFileRequest {
+  string file_id = 1 [(validate.rules).string = {min_len: 1}];
+}
+
+message DeleteFileResponse {
+  bool success = 1;
+}
+
+// ==========================================
+// 6. 下载文件
+// ==========================================
+message DownloadFileRequest {
+  string file_id = 1 [(validate.rules).string = {min_len: 1}];
+}
+
+message DownloadFileResponse {
+  bytes content = 1; // 文件二进制
+  FileMeta file = 2; // 文件信息
+}
