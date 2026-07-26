@@ -34,8 +34,10 @@ service File {
   rpc GetFileInfo(FileInfoRequest) returns (Response);
   // 上传文件
   rpc UploadFile(UploadFileRequest) returns (Response);
-  // 获取文件列表
+  // 获取所有桶文件列表
   rpc GetFileList(FileListRequest) returns (Response);
+  //获取用户对应桶文件列表
+  rpc GetBucketFileList(FileListRequest) returns (Response);
   // 重命名文件
   rpc RenameFile(RenameFileRequest) returns (Response);
   // 删除文件

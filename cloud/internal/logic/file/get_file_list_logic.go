@@ -33,7 +33,27 @@ func (l *GetFileListLogic) GetFileList(in *service.FileListRequest) (*service.Re
 	}
 
 	fileRepo := repository.NewFileRepository(l.svcCtx.EntClient)
-	res, err := fileRepo.GetFileList(l.ctx, userId)
+	res, count, err := fileRepo.GetPageFileList(l.ctx, userId, in)
+	if err != nil {
+		return response.Err(err)
+	}
 
-	return &service.Response{}, nil
+	files := make([]*service.FileMeta, 0, len(res))
+	for _, item := range res {
+		files = append(files, &service.FileMeta{
+			FileId:    item.ID,
+			Name:      item.Name,
+			Path:      item.Path,
+			Size:      item.Size,
+			Suffix:    item.Ext,
+			UserId:    item.UserID,
+			CreatedAt: item.CreatedAt.Format("2006-01-02 15:04:05"),
+			UpdatedAt: item.UpdatedAt.Format("2006-01-02 15:04:05"),
+		})
+	}
+
+	return response.Success(&service.FileListResponse{
+		Files: files,
+		Total: int32(count),
+	})
 }

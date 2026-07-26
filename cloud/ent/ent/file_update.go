@@ -166,6 +166,34 @@ func (_u *FileUpdate) SetNillableContentType(v *string) *FileUpdate {
 	return _u
 }
 
+// SetBucketID sets the "bucket_id" field.
+func (_u *FileUpdate) SetBucketID(v string) *FileUpdate {
+	_u.mutation.SetBucketID(v)
+	return _u
+}
+
+// SetNillableBucketID sets the "bucket_id" field if the given value is not nil.
+func (_u *FileUpdate) SetNillableBucketID(v *string) *FileUpdate {
+	if v != nil {
+		_u.SetBucketID(*v)
+	}
+	return _u
+}
+
+// SetUserID sets the "user_id" field.
+func (_u *FileUpdate) SetUserID(v string) *FileUpdate {
+	_u.mutation.SetUserID(v)
+	return _u
+}
+
+// SetNillableUserID sets the "user_id" field if the given value is not nil.
+func (_u *FileUpdate) SetNillableUserID(v *string) *FileUpdate {
+	if v != nil {
+		_u.SetUserID(*v)
+	}
+	return _u
+}
+
 // Mutation returns the FileMutation object of the builder.
 func (_u *FileUpdate) Mutation() *FileMutation {
 	return _u.mutation
@@ -207,7 +235,20 @@ func (_u *FileUpdate) defaults() {
 	}
 }
 
+// check runs all checks and user-defined validators on the builder.
+func (_u *FileUpdate) check() error {
+	if v, ok := _u.mutation.UserID(); ok {
+		if err := file.UserIDValidator(v); err != nil {
+			return &ValidationError{Name: "user_id", err: fmt.Errorf(`ent: validator failed for field "File.user_id": %w`, err)}
+		}
+	}
+	return nil
+}
+
 func (_u *FileUpdate) sqlSave(ctx context.Context) (_node int, err error) {
+	if err := _u.check(); err != nil {
+		return _node, err
+	}
 	_spec := sqlgraph.NewUpdateSpec(file.Table, file.Columns, sqlgraph.NewFieldSpec(file.FieldID, field.TypeString))
 	if ps := _u.mutation.predicates; len(ps) > 0 {
 		_spec.Predicate = func(selector *sql.Selector) {
@@ -251,6 +292,12 @@ func (_u *FileUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	}
 	if value, ok := _u.mutation.ContentType(); ok {
 		_spec.SetField(file.FieldContentType, field.TypeString, value)
+	}
+	if value, ok := _u.mutation.BucketID(); ok {
+		_spec.SetField(file.FieldBucketID, field.TypeString, value)
+	}
+	if value, ok := _u.mutation.UserID(); ok {
+		_spec.SetField(file.FieldUserID, field.TypeString, value)
 	}
 	if _node, err = sqlgraph.UpdateNodes(ctx, _u.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
@@ -410,6 +457,34 @@ func (_u *FileUpdateOne) SetNillableContentType(v *string) *FileUpdateOne {
 	return _u
 }
 
+// SetBucketID sets the "bucket_id" field.
+func (_u *FileUpdateOne) SetBucketID(v string) *FileUpdateOne {
+	_u.mutation.SetBucketID(v)
+	return _u
+}
+
+// SetNillableBucketID sets the "bucket_id" field if the given value is not nil.
+func (_u *FileUpdateOne) SetNillableBucketID(v *string) *FileUpdateOne {
+	if v != nil {
+		_u.SetBucketID(*v)
+	}
+	return _u
+}
+
+// SetUserID sets the "user_id" field.
+func (_u *FileUpdateOne) SetUserID(v string) *FileUpdateOne {
+	_u.mutation.SetUserID(v)
+	return _u
+}
+
+// SetNillableUserID sets the "user_id" field if the given value is not nil.
+func (_u *FileUpdateOne) SetNillableUserID(v *string) *FileUpdateOne {
+	if v != nil {
+		_u.SetUserID(*v)
+	}
+	return _u
+}
+
 // Mutation returns the FileMutation object of the builder.
 func (_u *FileUpdateOne) Mutation() *FileMutation {
 	return _u.mutation
@@ -464,7 +539,20 @@ func (_u *FileUpdateOne) defaults() {
 	}
 }
 
+// check runs all checks and user-defined validators on the builder.
+func (_u *FileUpdateOne) check() error {
+	if v, ok := _u.mutation.UserID(); ok {
+		if err := file.UserIDValidator(v); err != nil {
+			return &ValidationError{Name: "user_id", err: fmt.Errorf(`ent: validator failed for field "File.user_id": %w`, err)}
+		}
+	}
+	return nil
+}
+
 func (_u *FileUpdateOne) sqlSave(ctx context.Context) (_node *File, err error) {
+	if err := _u.check(); err != nil {
+		return _node, err
+	}
 	_spec := sqlgraph.NewUpdateSpec(file.Table, file.Columns, sqlgraph.NewFieldSpec(file.FieldID, field.TypeString))
 	id, ok := _u.mutation.ID()
 	if !ok {
@@ -525,6 +613,12 @@ func (_u *FileUpdateOne) sqlSave(ctx context.Context) (_node *File, err error) {
 	}
 	if value, ok := _u.mutation.ContentType(); ok {
 		_spec.SetField(file.FieldContentType, field.TypeString, value)
+	}
+	if value, ok := _u.mutation.BucketID(); ok {
+		_spec.SetField(file.FieldBucketID, field.TypeString, value)
+	}
+	if value, ok := _u.mutation.UserID(); ok {
+		_spec.SetField(file.FieldUserID, field.TypeString, value)
 	}
 	_node = &File{config: _u.config}
 	_spec.Assign = _node.assignValues

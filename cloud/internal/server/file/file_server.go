@@ -35,10 +35,16 @@ func (s *FileServer) UploadFile(ctx context.Context, in *service.UploadFileReque
 	return l.UploadFile(in)
 }
 
-// 获取文件列表
+// 获取所有桶文件列表
 func (s *FileServer) GetFileList(ctx context.Context, in *service.FileListRequest) (*service.Response, error) {
 	l := filelogic.NewGetFileListLogic(ctx, s.svcCtx)
 	return l.GetFileList(in)
+}
+
+// 获取用户对应桶文件列表
+func (s *FileServer) GetBucketFileList(ctx context.Context, in *service.FileListRequest) (*service.Response, error) {
+	l := filelogic.NewGetBucketFileListLogic(ctx, s.svcCtx)
+	return l.GetBucketFileList(in)
 }
 
 // 重命名文件

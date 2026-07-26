@@ -106,6 +106,18 @@ func (_c *FileCreate) SetContentType(v string) *FileCreate {
 	return _c
 }
 
+// SetBucketID sets the "bucket_id" field.
+func (_c *FileCreate) SetBucketID(v string) *FileCreate {
+	_c.mutation.SetBucketID(v)
+	return _c
+}
+
+// SetUserID sets the "user_id" field.
+func (_c *FileCreate) SetUserID(v string) *FileCreate {
+	_c.mutation.SetUserID(v)
+	return _c
+}
+
 // SetID sets the "id" field.
 func (_c *FileCreate) SetID(v string) *FileCreate {
 	_c.mutation.SetID(v)
@@ -187,6 +199,17 @@ func (_c *FileCreate) check() error {
 	if _, ok := _c.mutation.ContentType(); !ok {
 		return &ValidationError{Name: "content_type", err: errors.New(`ent: missing required field "File.content_type"`)}
 	}
+	if _, ok := _c.mutation.BucketID(); !ok {
+		return &ValidationError{Name: "bucket_id", err: errors.New(`ent: missing required field "File.bucket_id"`)}
+	}
+	if _, ok := _c.mutation.UserID(); !ok {
+		return &ValidationError{Name: "user_id", err: errors.New(`ent: missing required field "File.user_id"`)}
+	}
+	if v, ok := _c.mutation.UserID(); ok {
+		if err := file.UserIDValidator(v); err != nil {
+			return &ValidationError{Name: "user_id", err: fmt.Errorf(`ent: validator failed for field "File.user_id": %w`, err)}
+		}
+	}
 	return nil
 }
 
@@ -257,6 +280,14 @@ func (_c *FileCreate) createSpec() (*File, *sqlgraph.CreateSpec) {
 	if value, ok := _c.mutation.ContentType(); ok {
 		_spec.SetField(file.FieldContentType, field.TypeString, value)
 		_node.ContentType = value
+	}
+	if value, ok := _c.mutation.BucketID(); ok {
+		_spec.SetField(file.FieldBucketID, field.TypeString, value)
+		_node.BucketID = value
+	}
+	if value, ok := _c.mutation.UserID(); ok {
+		_spec.SetField(file.FieldUserID, field.TypeString, value)
+		_node.UserID = value
 	}
 	return _node, _spec
 }

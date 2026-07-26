@@ -33,12 +33,16 @@ func init() {
 	bucketDescVersion := bucketMixinFields0[2].Descriptor()
 	// bucket.DefaultVersion holds the default value on creation for the version field.
 	bucket.DefaultVersion = bucketDescVersion.Default.(int)
+	// bucketDescUserID is the schema descriptor for user_id field.
+	bucketDescUserID := bucketFields[2].Descriptor()
+	// bucket.UserIDValidator is a validator for the "user_id" field. It is called by the builders before save.
+	bucket.UserIDValidator = bucketDescUserID.Validators[0].(func(string) error)
 	// bucketDescSizeLimit is the schema descriptor for size_limit field.
-	bucketDescSizeLimit := bucketFields[3].Descriptor()
+	bucketDescSizeLimit := bucketFields[4].Descriptor()
 	// bucket.DefaultSizeLimit holds the default value on creation for the size_limit field.
 	bucket.DefaultSizeLimit = bucketDescSizeLimit.Default.(int64)
 	// bucketDescUsedSize is the schema descriptor for used_size field.
-	bucketDescUsedSize := bucketFields[4].Descriptor()
+	bucketDescUsedSize := bucketFields[5].Descriptor()
 	// bucket.DefaultUsedSize holds the default value on creation for the used_size field.
 	bucket.DefaultUsedSize = bucketDescUsedSize.Default.(int64)
 	fileMixin := schema.File{}.Mixin()
@@ -60,6 +64,10 @@ func init() {
 	fileDescVersion := fileMixinFields0[2].Descriptor()
 	// file.DefaultVersion holds the default value on creation for the version field.
 	file.DefaultVersion = fileDescVersion.Default.(int)
+	// fileDescUserID is the schema descriptor for user_id field.
+	fileDescUserID := fileFields[8].Descriptor()
+	// file.UserIDValidator is a validator for the "user_id" field. It is called by the builders before save.
+	file.UserIDValidator = fileDescUserID.Validators[0].(func(string) error)
 	userMixin := schema.User{}.Mixin()
 	userMixinFields0 := userMixin[0].Fields()
 	_ = userMixinFields0

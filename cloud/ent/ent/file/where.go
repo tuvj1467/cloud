@@ -109,6 +109,16 @@ func ContentType(v string) predicate.File {
 	return predicate.File(sql.FieldEQ(FieldContentType, v))
 }
 
+// BucketID applies equality check predicate on the "bucket_id" field. It's identical to BucketIDEQ.
+func BucketID(v string) predicate.File {
+	return predicate.File(sql.FieldEQ(FieldBucketID, v))
+}
+
+// UserID applies equality check predicate on the "user_id" field. It's identical to UserIDEQ.
+func UserID(v string) predicate.File {
+	return predicate.File(sql.FieldEQ(FieldUserID, v))
+}
+
 // CreatedAtEQ applies the EQ predicate on the "created_at" field.
 func CreatedAtEQ(v time.Time) predicate.File {
 	return predicate.File(sql.FieldEQ(FieldCreatedAt, v))
@@ -602,6 +612,136 @@ func ContentTypeEqualFold(v string) predicate.File {
 // ContentTypeContainsFold applies the ContainsFold predicate on the "content_type" field.
 func ContentTypeContainsFold(v string) predicate.File {
 	return predicate.File(sql.FieldContainsFold(FieldContentType, v))
+}
+
+// BucketIDEQ applies the EQ predicate on the "bucket_id" field.
+func BucketIDEQ(v string) predicate.File {
+	return predicate.File(sql.FieldEQ(FieldBucketID, v))
+}
+
+// BucketIDNEQ applies the NEQ predicate on the "bucket_id" field.
+func BucketIDNEQ(v string) predicate.File {
+	return predicate.File(sql.FieldNEQ(FieldBucketID, v))
+}
+
+// BucketIDIn applies the In predicate on the "bucket_id" field.
+func BucketIDIn(vs ...string) predicate.File {
+	return predicate.File(sql.FieldIn(FieldBucketID, vs...))
+}
+
+// BucketIDNotIn applies the NotIn predicate on the "bucket_id" field.
+func BucketIDNotIn(vs ...string) predicate.File {
+	return predicate.File(sql.FieldNotIn(FieldBucketID, vs...))
+}
+
+// BucketIDGT applies the GT predicate on the "bucket_id" field.
+func BucketIDGT(v string) predicate.File {
+	return predicate.File(sql.FieldGT(FieldBucketID, v))
+}
+
+// BucketIDGTE applies the GTE predicate on the "bucket_id" field.
+func BucketIDGTE(v string) predicate.File {
+	return predicate.File(sql.FieldGTE(FieldBucketID, v))
+}
+
+// BucketIDLT applies the LT predicate on the "bucket_id" field.
+func BucketIDLT(v string) predicate.File {
+	return predicate.File(sql.FieldLT(FieldBucketID, v))
+}
+
+// BucketIDLTE applies the LTE predicate on the "bucket_id" field.
+func BucketIDLTE(v string) predicate.File {
+	return predicate.File(sql.FieldLTE(FieldBucketID, v))
+}
+
+// BucketIDContains applies the Contains predicate on the "bucket_id" field.
+func BucketIDContains(v string) predicate.File {
+	return predicate.File(sql.FieldContains(FieldBucketID, v))
+}
+
+// BucketIDHasPrefix applies the HasPrefix predicate on the "bucket_id" field.
+func BucketIDHasPrefix(v string) predicate.File {
+	return predicate.File(sql.FieldHasPrefix(FieldBucketID, v))
+}
+
+// BucketIDHasSuffix applies the HasSuffix predicate on the "bucket_id" field.
+func BucketIDHasSuffix(v string) predicate.File {
+	return predicate.File(sql.FieldHasSuffix(FieldBucketID, v))
+}
+
+// BucketIDEqualFold applies the EqualFold predicate on the "bucket_id" field.
+func BucketIDEqualFold(v string) predicate.File {
+	return predicate.File(sql.FieldEqualFold(FieldBucketID, v))
+}
+
+// BucketIDContainsFold applies the ContainsFold predicate on the "bucket_id" field.
+func BucketIDContainsFold(v string) predicate.File {
+	return predicate.File(sql.FieldContainsFold(FieldBucketID, v))
+}
+
+// UserIDEQ applies the EQ predicate on the "user_id" field.
+func UserIDEQ(v string) predicate.File {
+	return predicate.File(sql.FieldEQ(FieldUserID, v))
+}
+
+// UserIDNEQ applies the NEQ predicate on the "user_id" field.
+func UserIDNEQ(v string) predicate.File {
+	return predicate.File(sql.FieldNEQ(FieldUserID, v))
+}
+
+// UserIDIn applies the In predicate on the "user_id" field.
+func UserIDIn(vs ...string) predicate.File {
+	return predicate.File(sql.FieldIn(FieldUserID, vs...))
+}
+
+// UserIDNotIn applies the NotIn predicate on the "user_id" field.
+func UserIDNotIn(vs ...string) predicate.File {
+	return predicate.File(sql.FieldNotIn(FieldUserID, vs...))
+}
+
+// UserIDGT applies the GT predicate on the "user_id" field.
+func UserIDGT(v string) predicate.File {
+	return predicate.File(sql.FieldGT(FieldUserID, v))
+}
+
+// UserIDGTE applies the GTE predicate on the "user_id" field.
+func UserIDGTE(v string) predicate.File {
+	return predicate.File(sql.FieldGTE(FieldUserID, v))
+}
+
+// UserIDLT applies the LT predicate on the "user_id" field.
+func UserIDLT(v string) predicate.File {
+	return predicate.File(sql.FieldLT(FieldUserID, v))
+}
+
+// UserIDLTE applies the LTE predicate on the "user_id" field.
+func UserIDLTE(v string) predicate.File {
+	return predicate.File(sql.FieldLTE(FieldUserID, v))
+}
+
+// UserIDContains applies the Contains predicate on the "user_id" field.
+func UserIDContains(v string) predicate.File {
+	return predicate.File(sql.FieldContains(FieldUserID, v))
+}
+
+// UserIDHasPrefix applies the HasPrefix predicate on the "user_id" field.
+func UserIDHasPrefix(v string) predicate.File {
+	return predicate.File(sql.FieldHasPrefix(FieldUserID, v))
+}
+
+// UserIDHasSuffix applies the HasSuffix predicate on the "user_id" field.
+func UserIDHasSuffix(v string) predicate.File {
+	return predicate.File(sql.FieldHasSuffix(FieldUserID, v))
+}
+
+// UserIDEqualFold applies the EqualFold predicate on the "user_id" field.
+func UserIDEqualFold(v string) predicate.File {
+	return predicate.File(sql.FieldEqualFold(FieldUserID, v))
+}
+
+// UserIDContainsFold applies the ContainsFold predicate on the "user_id" field.
+func UserIDContainsFold(v string) predicate.File {
+	return predicate.File(sql.FieldContainsFold(FieldUserID, v))
 }
 
 // And groups predicates with the AND operator between them.

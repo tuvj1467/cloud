@@ -702,6 +702,28 @@ func (m *FileListRequest) validate(all bool) error {
 		errors = append(errors, err)
 	}
 
+	if _, ok := _FileListRequest_SortBy_InLookup[m.GetSortBy()]; !ok {
+		err := FileListRequestValidationError{
+			field:  "SortBy",
+			reason: "value must be in list [name size create_time update_time]",
+		}
+		if !all {
+			return err
+		}
+		errors = append(errors, err)
+	}
+
+	if _, ok := _FileListRequest_SortOrder_InLookup[m.GetSortOrder()]; !ok {
+		err := FileListRequestValidationError{
+			field:  "SortOrder",
+			reason: "value must be in list [asc desc]",
+		}
+		if !all {
+			return err
+		}
+		errors = append(errors, err)
+	}
+
 	if len(errors) > 0 {
 		return FileListRequestMultiError(errors)
 	}
@@ -779,6 +801,187 @@ var _ interface {
 	Cause() error
 	ErrorName() string
 } = FileListRequestValidationError{}
+
+var _FileListRequest_SortBy_InLookup = map[string]struct{}{
+	"name":        {},
+	"size":        {},
+	"create_time": {},
+	"update_time": {},
+}
+
+var _FileListRequest_SortOrder_InLookup = map[string]struct{}{
+	"asc":  {},
+	"desc": {},
+}
+
+// Validate checks the field values on BucketFileListRequest with the rules
+// defined in the proto definition for this message. If any rules are
+// violated, the first error encountered is returned, or nil if there are no violations.
+func (m *BucketFileListRequest) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on BucketFileListRequest with the rules
+// defined in the proto definition for this message. If any rules are
+// violated, the result is a list of violation errors wrapped in
+// BucketFileListRequestMultiError, or nil if none found.
+func (m *BucketFileListRequest) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *BucketFileListRequest) validate(all bool) error {
+	if m == nil {
+		return nil
+	}
+
+	var errors []error
+
+	if utf8.RuneCountInString(m.GetBucketId()) < 1 {
+		err := BucketFileListRequestValidationError{
+			field:  "BucketId",
+			reason: "value length must be at least 1 runes",
+		}
+		if !all {
+			return err
+		}
+		errors = append(errors, err)
+	}
+
+	if m.GetPage() < 1 {
+		err := BucketFileListRequestValidationError{
+			field:  "Page",
+			reason: "value must be greater than or equal to 1",
+		}
+		if !all {
+			return err
+		}
+		errors = append(errors, err)
+	}
+
+	if val := m.GetPageSize(); val < 1 || val > 50 {
+		err := BucketFileListRequestValidationError{
+			field:  "PageSize",
+			reason: "value must be inside range [1, 50]",
+		}
+		if !all {
+			return err
+		}
+		errors = append(errors, err)
+	}
+
+	if _, ok := _BucketFileListRequest_SortBy_InLookup[m.GetSortBy()]; !ok {
+		err := BucketFileListRequestValidationError{
+			field:  "SortBy",
+			reason: "value must be in list [name size create_time update_time]",
+		}
+		if !all {
+			return err
+		}
+		errors = append(errors, err)
+	}
+
+	if _, ok := _BucketFileListRequest_SortOrder_InLookup[m.GetSortOrder()]; !ok {
+		err := BucketFileListRequestValidationError{
+			field:  "SortOrder",
+			reason: "value must be in list [asc desc]",
+		}
+		if !all {
+			return err
+		}
+		errors = append(errors, err)
+	}
+
+	if len(errors) > 0 {
+		return BucketFileListRequestMultiError(errors)
+	}
+
+	return nil
+}
+
+// BucketFileListRequestMultiError is an error wrapping multiple validation
+// errors returned by BucketFileListRequest.ValidateAll() if the designated
+// constraints aren't met.
+type BucketFileListRequestMultiError []error
+
+// Error returns a concatenation of all the error messages it wraps.
+func (m BucketFileListRequestMultiError) Error() string {
+	msgs := make([]string, 0, len(m))
+	for _, err := range m {
+		msgs = append(msgs, err.Error())
+	}
+	return strings.Join(msgs, "; ")
+}
+
+// AllErrors returns a list of validation violation errors.
+func (m BucketFileListRequestMultiError) AllErrors() []error { return m }
+
+// BucketFileListRequestValidationError is the validation error returned by
+// BucketFileListRequest.Validate if the designated constraints aren't met.
+type BucketFileListRequestValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e BucketFileListRequestValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e BucketFileListRequestValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e BucketFileListRequestValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e BucketFileListRequestValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e BucketFileListRequestValidationError) ErrorName() string {
+	return "BucketFileListRequestValidationError"
+}
+
+// Error satisfies the builtin error interface
+func (e BucketFileListRequestValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sBucketFileListRequest.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = BucketFileListRequestValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = BucketFileListRequestValidationError{}
+
+var _BucketFileListRequest_SortBy_InLookup = map[string]struct{}{
+	"name":        {},
+	"size":        {},
+	"create_time": {},
+	"update_time": {},
+}
+
+var _BucketFileListRequest_SortOrder_InLookup = map[string]struct{}{
+	"asc":  {},
+	"desc": {},
+}
 
 // Validate checks the field values on FileListResponse with the rules defined
 // in the proto definition for this message. If any rules are violated, the

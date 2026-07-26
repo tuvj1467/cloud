@@ -35,12 +35,13 @@ const file_service_proto_rawDesc = "" +
 	"\x0fLoginByEmailSms\x12\x1b.storage.LoginByEmailSmsReq\x1a\x11.storage.Response\x12K\n" +
 	"\x14SendVerificationCode\x12 .storage.SendVerificationCodeReq\x1a\x11.storage.Response\x12=\n" +
 	"\rResetPassword\x12\x19.storage.ResetPasswordReq\x1a\x11.storage.Response\x129\n" +
-	"\vFindAccount\x12\x17.storage.FindAccountReq\x1a\x11.storage.Response2\xf6\x02\n" +
+	"\vFindAccount\x12\x17.storage.FindAccountReq\x1a\x11.storage.Response2\xb8\x03\n" +
 	"\x04File\x12:\n" +
 	"\vGetFileInfo\x12\x18.storage.FileInfoRequest\x1a\x11.storage.Response\x12;\n" +
 	"\n" +
 	"UploadFile\x12\x1a.storage.UploadFileRequest\x1a\x11.storage.Response\x12:\n" +
-	"\vGetFileList\x12\x18.storage.FileListRequest\x1a\x11.storage.Response\x12;\n" +
+	"\vGetFileList\x12\x18.storage.FileListRequest\x1a\x11.storage.Response\x12@\n" +
+	"\x11GetBucketFileList\x12\x18.storage.FileListRequest\x1a\x11.storage.Response\x12;\n" +
 	"\n" +
 	"RenameFile\x12\x1a.storage.RenameFileRequest\x1a\x11.storage.Response\x12;\n" +
 	"\n" +
@@ -74,24 +75,26 @@ var file_service_proto_depIdxs = []int32{
 	7,  // 7: storage.File.GetFileInfo:input_type -> storage.FileInfoRequest
 	8,  // 8: storage.File.UploadFile:input_type -> storage.UploadFileRequest
 	9,  // 9: storage.File.GetFileList:input_type -> storage.FileListRequest
-	10, // 10: storage.File.RenameFile:input_type -> storage.RenameFileRequest
-	11, // 11: storage.File.DeleteFile:input_type -> storage.DeleteFileRequest
-	12, // 12: storage.File.DownloadFile:input_type -> storage.DownloadFileRequest
-	13, // 13: storage.User.Register:output_type -> storage.Response
-	13, // 14: storage.User.LoginByAccount:output_type -> storage.Response
-	13, // 15: storage.User.LoginByPhoneSms:output_type -> storage.Response
-	13, // 16: storage.User.LoginByEmailSms:output_type -> storage.Response
-	13, // 17: storage.User.SendVerificationCode:output_type -> storage.Response
-	13, // 18: storage.User.ResetPassword:output_type -> storage.Response
-	13, // 19: storage.User.FindAccount:output_type -> storage.Response
-	13, // 20: storage.File.GetFileInfo:output_type -> storage.Response
-	13, // 21: storage.File.UploadFile:output_type -> storage.Response
-	13, // 22: storage.File.GetFileList:output_type -> storage.Response
-	13, // 23: storage.File.RenameFile:output_type -> storage.Response
-	13, // 24: storage.File.DeleteFile:output_type -> storage.Response
-	13, // 25: storage.File.DownloadFile:output_type -> storage.Response
-	13, // [13:26] is the sub-list for method output_type
-	0,  // [0:13] is the sub-list for method input_type
+	9,  // 10: storage.File.GetBucketFileList:input_type -> storage.FileListRequest
+	10, // 11: storage.File.RenameFile:input_type -> storage.RenameFileRequest
+	11, // 12: storage.File.DeleteFile:input_type -> storage.DeleteFileRequest
+	12, // 13: storage.File.DownloadFile:input_type -> storage.DownloadFileRequest
+	13, // 14: storage.User.Register:output_type -> storage.Response
+	13, // 15: storage.User.LoginByAccount:output_type -> storage.Response
+	13, // 16: storage.User.LoginByPhoneSms:output_type -> storage.Response
+	13, // 17: storage.User.LoginByEmailSms:output_type -> storage.Response
+	13, // 18: storage.User.SendVerificationCode:output_type -> storage.Response
+	13, // 19: storage.User.ResetPassword:output_type -> storage.Response
+	13, // 20: storage.User.FindAccount:output_type -> storage.Response
+	13, // 21: storage.File.GetFileInfo:output_type -> storage.Response
+	13, // 22: storage.File.UploadFile:output_type -> storage.Response
+	13, // 23: storage.File.GetFileList:output_type -> storage.Response
+	13, // 24: storage.File.GetBucketFileList:output_type -> storage.Response
+	13, // 25: storage.File.RenameFile:output_type -> storage.Response
+	13, // 26: storage.File.DeleteFile:output_type -> storage.Response
+	13, // 27: storage.File.DownloadFile:output_type -> storage.Response
+	14, // [14:28] is the sub-list for method output_type
+	0,  // [0:14] is the sub-list for method input_type
 	0,  // [0:0] is the sub-list for extension type_name
 	0,  // [0:0] is the sub-list for extension extendee
 	0,  // [0:0] is the sub-list for field type_name

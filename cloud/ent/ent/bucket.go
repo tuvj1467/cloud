@@ -26,12 +26,16 @@ type Bucket struct {
 	Version int `json:"version,omitempty"`
 	// 桶名称（用户内唯一）
 	Name string `json:"name,omitempty"`
+	// 所属用户
+	UserID string `json:"user_id,omitempty"`
 	// 桶描述
 	Description string `json:"description,omitempty"`
 	// 桶容量限制（字节）
 	SizeLimit int64 `json:"size_limit,omitempty"`
 	// 已使用容量（字节）
-	UsedSize     int64 `json:"used_size,omitempty"`
+	UsedSize int64 `json:"used_size,omitempty"`
+	// 桶访问权限
+	Visibility   bucket.Visibility `json:"visibility,omitempty"`
 	selectValues sql.SelectValues
 }
 
@@ -42,7 +46,7 @@ func (*Bucket) scanValues(columns []string) ([]any, error) {
 		switch columns[i] {
 		case bucket.FieldVersion, bucket.FieldSizeLimit, bucket.FieldUsedSize:
 			values[i] = new(sql.NullInt64)
-		case bucket.FieldID, bucket.FieldName, bucket.FieldDescription:
+		case bucket.FieldID, bucket.FieldName, bucket.FieldUserID, bucket.FieldDescription, bucket.FieldVisibility:
 			values[i] = new(sql.NullString)
 		case bucket.FieldCreatedAt, bucket.FieldUpdatedAt:
 			values[i] = new(sql.NullTime)
@@ -91,6 +95,12 @@ func (_m *Bucket) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				_m.Name = value.String
 			}
+		case bucket.FieldUserID:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field user_id", values[i])
+			} else if value.Valid {
+				_m.UserID = value.String
+			}
 		case bucket.FieldDescription:
 			if value, ok := values[i].(*sql.NullString); !ok {
 				return fmt.Errorf("unexpected type %T for field description", values[i])
@@ -108,6 +118,12 @@ func (_m *Bucket) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field used_size", values[i])
 			} else if value.Valid {
 				_m.UsedSize = value.Int64
+			}
+		case bucket.FieldVisibility:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field visibility", values[i])
+			} else if value.Valid {
+				_m.Visibility = bucket.Visibility(value.String)
 			}
 		default:
 			_m.selectValues.Set(columns[i], values[i])
@@ -157,6 +173,9 @@ func (_m *Bucket) String() string {
 	builder.WriteString("name=")
 	builder.WriteString(_m.Name)
 	builder.WriteString(", ")
+	builder.WriteString("user_id=")
+	builder.WriteString(_m.UserID)
+	builder.WriteString(", ")
 	builder.WriteString("description=")
 	builder.WriteString(_m.Description)
 	builder.WriteString(", ")
@@ -165,6 +184,9 @@ func (_m *Bucket) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("used_size=")
 	builder.WriteString(fmt.Sprintf("%v", _m.UsedSize))
+	builder.WriteString(", ")
+	builder.WriteString("visibility=")
+	builder.WriteString(fmt.Sprintf("%v", _m.Visibility))
 	builder.WriteByte(')')
 	return builder.String()
 }

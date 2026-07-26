@@ -42,11 +42,13 @@ type BucketMutation struct {
 	version       *int
 	addversion    *int
 	name          *string
+	user_id       *string
 	description   *string
 	size_limit    *int64
 	addsize_limit *int64
 	used_size     *int64
 	addused_size  *int64
+	visibility    *bucket.Visibility
 	clearedFields map[string]struct{}
 	done          bool
 	oldValue      func(context.Context) (*Bucket, error)
@@ -321,6 +323,42 @@ func (m *BucketMutation) ResetName() {
 	m.name = nil
 }
 
+// SetUserID sets the "user_id" field.
+func (m *BucketMutation) SetUserID(s string) {
+	m.user_id = &s
+}
+
+// UserID returns the value of the "user_id" field in the mutation.
+func (m *BucketMutation) UserID() (r string, exists bool) {
+	v := m.user_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldUserID returns the old "user_id" field's value of the Bucket entity.
+// If the Bucket object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *BucketMutation) OldUserID(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldUserID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldUserID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldUserID: %w", err)
+	}
+	return oldValue.UserID, nil
+}
+
+// ResetUserID resets all changes to the "user_id" field.
+func (m *BucketMutation) ResetUserID() {
+	m.user_id = nil
+}
+
 // SetDescription sets the "description" field.
 func (m *BucketMutation) SetDescription(s string) {
 	m.description = &s
@@ -482,6 +520,42 @@ func (m *BucketMutation) ResetUsedSize() {
 	m.addused_size = nil
 }
 
+// SetVisibility sets the "visibility" field.
+func (m *BucketMutation) SetVisibility(b bucket.Visibility) {
+	m.visibility = &b
+}
+
+// Visibility returns the value of the "visibility" field in the mutation.
+func (m *BucketMutation) Visibility() (r bucket.Visibility, exists bool) {
+	v := m.visibility
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldVisibility returns the old "visibility" field's value of the Bucket entity.
+// If the Bucket object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *BucketMutation) OldVisibility(ctx context.Context) (v bucket.Visibility, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldVisibility is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldVisibility requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldVisibility: %w", err)
+	}
+	return oldValue.Visibility, nil
+}
+
+// ResetVisibility resets all changes to the "visibility" field.
+func (m *BucketMutation) ResetVisibility() {
+	m.visibility = nil
+}
+
 // Where appends a list predicates to the BucketMutation builder.
 func (m *BucketMutation) Where(ps ...predicate.Bucket) {
 	m.predicates = append(m.predicates, ps...)
@@ -516,7 +590,7 @@ func (m *BucketMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *BucketMutation) Fields() []string {
-	fields := make([]string, 0, 7)
+	fields := make([]string, 0, 9)
 	if m.created_at != nil {
 		fields = append(fields, bucket.FieldCreatedAt)
 	}
@@ -529,6 +603,9 @@ func (m *BucketMutation) Fields() []string {
 	if m.name != nil {
 		fields = append(fields, bucket.FieldName)
 	}
+	if m.user_id != nil {
+		fields = append(fields, bucket.FieldUserID)
+	}
 	if m.description != nil {
 		fields = append(fields, bucket.FieldDescription)
 	}
@@ -537,6 +614,9 @@ func (m *BucketMutation) Fields() []string {
 	}
 	if m.used_size != nil {
 		fields = append(fields, bucket.FieldUsedSize)
+	}
+	if m.visibility != nil {
+		fields = append(fields, bucket.FieldVisibility)
 	}
 	return fields
 }
@@ -554,12 +634,16 @@ func (m *BucketMutation) Field(name string) (ent.Value, bool) {
 		return m.Version()
 	case bucket.FieldName:
 		return m.Name()
+	case bucket.FieldUserID:
+		return m.UserID()
 	case bucket.FieldDescription:
 		return m.Description()
 	case bucket.FieldSizeLimit:
 		return m.SizeLimit()
 	case bucket.FieldUsedSize:
 		return m.UsedSize()
+	case bucket.FieldVisibility:
+		return m.Visibility()
 	}
 	return nil, false
 }
@@ -577,12 +661,16 @@ func (m *BucketMutation) OldField(ctx context.Context, name string) (ent.Value, 
 		return m.OldVersion(ctx)
 	case bucket.FieldName:
 		return m.OldName(ctx)
+	case bucket.FieldUserID:
+		return m.OldUserID(ctx)
 	case bucket.FieldDescription:
 		return m.OldDescription(ctx)
 	case bucket.FieldSizeLimit:
 		return m.OldSizeLimit(ctx)
 	case bucket.FieldUsedSize:
 		return m.OldUsedSize(ctx)
+	case bucket.FieldVisibility:
+		return m.OldVisibility(ctx)
 	}
 	return nil, fmt.Errorf("unknown Bucket field %s", name)
 }
@@ -620,6 +708,13 @@ func (m *BucketMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetName(v)
 		return nil
+	case bucket.FieldUserID:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetUserID(v)
+		return nil
 	case bucket.FieldDescription:
 		v, ok := value.(string)
 		if !ok {
@@ -640,6 +735,13 @@ func (m *BucketMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetUsedSize(v)
+		return nil
+	case bucket.FieldVisibility:
+		v, ok := value.(bucket.Visibility)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetVisibility(v)
 		return nil
 	}
 	return fmt.Errorf("unknown Bucket field %s", name)
@@ -750,6 +852,9 @@ func (m *BucketMutation) ResetField(name string) error {
 	case bucket.FieldName:
 		m.ResetName()
 		return nil
+	case bucket.FieldUserID:
+		m.ResetUserID()
+		return nil
 	case bucket.FieldDescription:
 		m.ResetDescription()
 		return nil
@@ -758,6 +863,9 @@ func (m *BucketMutation) ResetField(name string) error {
 		return nil
 	case bucket.FieldUsedSize:
 		m.ResetUsedSize()
+		return nil
+	case bucket.FieldVisibility:
+		m.ResetVisibility()
 		return nil
 	}
 	return fmt.Errorf("unknown Bucket field %s", name)
@@ -828,6 +936,8 @@ type FileMutation struct {
 	addsize       *int64
 	md5           *string
 	content_type  *string
+	bucket_id     *string
+	user_id       *string
 	clearedFields map[string]struct{}
 	done          bool
 	oldValue      func(context.Context) (*File, error)
@@ -1315,6 +1425,78 @@ func (m *FileMutation) ResetContentType() {
 	m.content_type = nil
 }
 
+// SetBucketID sets the "bucket_id" field.
+func (m *FileMutation) SetBucketID(s string) {
+	m.bucket_id = &s
+}
+
+// BucketID returns the value of the "bucket_id" field in the mutation.
+func (m *FileMutation) BucketID() (r string, exists bool) {
+	v := m.bucket_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldBucketID returns the old "bucket_id" field's value of the File entity.
+// If the File object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *FileMutation) OldBucketID(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldBucketID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldBucketID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldBucketID: %w", err)
+	}
+	return oldValue.BucketID, nil
+}
+
+// ResetBucketID resets all changes to the "bucket_id" field.
+func (m *FileMutation) ResetBucketID() {
+	m.bucket_id = nil
+}
+
+// SetUserID sets the "user_id" field.
+func (m *FileMutation) SetUserID(s string) {
+	m.user_id = &s
+}
+
+// UserID returns the value of the "user_id" field in the mutation.
+func (m *FileMutation) UserID() (r string, exists bool) {
+	v := m.user_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldUserID returns the old "user_id" field's value of the File entity.
+// If the File object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *FileMutation) OldUserID(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldUserID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldUserID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldUserID: %w", err)
+	}
+	return oldValue.UserID, nil
+}
+
+// ResetUserID resets all changes to the "user_id" field.
+func (m *FileMutation) ResetUserID() {
+	m.user_id = nil
+}
+
 // Where appends a list predicates to the FileMutation builder.
 func (m *FileMutation) Where(ps ...predicate.File) {
 	m.predicates = append(m.predicates, ps...)
@@ -1349,7 +1531,7 @@ func (m *FileMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *FileMutation) Fields() []string {
-	fields := make([]string, 0, 9)
+	fields := make([]string, 0, 11)
 	if m.created_at != nil {
 		fields = append(fields, file.FieldCreatedAt)
 	}
@@ -1377,6 +1559,12 @@ func (m *FileMutation) Fields() []string {
 	if m.content_type != nil {
 		fields = append(fields, file.FieldContentType)
 	}
+	if m.bucket_id != nil {
+		fields = append(fields, file.FieldBucketID)
+	}
+	if m.user_id != nil {
+		fields = append(fields, file.FieldUserID)
+	}
 	return fields
 }
 
@@ -1403,6 +1591,10 @@ func (m *FileMutation) Field(name string) (ent.Value, bool) {
 		return m.Md5()
 	case file.FieldContentType:
 		return m.ContentType()
+	case file.FieldBucketID:
+		return m.BucketID()
+	case file.FieldUserID:
+		return m.UserID()
 	}
 	return nil, false
 }
@@ -1430,6 +1622,10 @@ func (m *FileMutation) OldField(ctx context.Context, name string) (ent.Value, er
 		return m.OldMd5(ctx)
 	case file.FieldContentType:
 		return m.OldContentType(ctx)
+	case file.FieldBucketID:
+		return m.OldBucketID(ctx)
+	case file.FieldUserID:
+		return m.OldUserID(ctx)
 	}
 	return nil, fmt.Errorf("unknown File field %s", name)
 }
@@ -1501,6 +1697,20 @@ func (m *FileMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetContentType(v)
+		return nil
+	case file.FieldBucketID:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetBucketID(v)
+		return nil
+	case file.FieldUserID:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetUserID(v)
 		return nil
 	}
 	return fmt.Errorf("unknown File field %s", name)
@@ -1613,6 +1823,12 @@ func (m *FileMutation) ResetField(name string) error {
 		return nil
 	case file.FieldContentType:
 		m.ResetContentType()
+		return nil
+	case file.FieldBucketID:
+		m.ResetBucketID()
+		return nil
+	case file.FieldUserID:
+		m.ResetUserID()
 		return nil
 	}
 	return fmt.Errorf("unknown File field %s", name)

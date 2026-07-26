@@ -3,6 +3,7 @@
 package bucket
 
 import (
+	"fmt"
 	"time"
 
 	"entgo.io/ent/dialect/sql"
@@ -21,12 +22,16 @@ const (
 	FieldVersion = "version"
 	// FieldName holds the string denoting the name field in the database.
 	FieldName = "name"
+	// FieldUserID holds the string denoting the user_id field in the database.
+	FieldUserID = "user_id"
 	// FieldDescription holds the string denoting the description field in the database.
 	FieldDescription = "description"
 	// FieldSizeLimit holds the string denoting the size_limit field in the database.
 	FieldSizeLimit = "size_limit"
 	// FieldUsedSize holds the string denoting the used_size field in the database.
 	FieldUsedSize = "used_size"
+	// FieldVisibility holds the string denoting the visibility field in the database.
+	FieldVisibility = "visibility"
 	// Table holds the table name of the bucket in the database.
 	Table = "buckets"
 )
@@ -38,9 +43,11 @@ var Columns = []string{
 	FieldUpdatedAt,
 	FieldVersion,
 	FieldName,
+	FieldUserID,
 	FieldDescription,
 	FieldSizeLimit,
 	FieldUsedSize,
+	FieldVisibility,
 }
 
 // ValidColumn reports if the column name is valid (part of the table columns).
@@ -62,11 +69,40 @@ var (
 	UpdateDefaultUpdatedAt func() time.Time
 	// DefaultVersion holds the default value on creation for the "version" field.
 	DefaultVersion int
+	// UserIDValidator is a validator for the "user_id" field. It is called by the builders before save.
+	UserIDValidator func(string) error
 	// DefaultSizeLimit holds the default value on creation for the "size_limit" field.
 	DefaultSizeLimit int64
 	// DefaultUsedSize holds the default value on creation for the "used_size" field.
 	DefaultUsedSize int64
 )
+
+// Visibility defines the type for the "visibility" enum field.
+type Visibility string
+
+// VisibilityPrivate is the default value of the Visibility enum.
+const DefaultVisibility = VisibilityPrivate
+
+// Visibility values.
+const (
+	VisibilityPrivate  Visibility = "private"
+	VisibilityInternal Visibility = "internal"
+	VisibilityPublic   Visibility = "public"
+)
+
+func (v Visibility) String() string {
+	return string(v)
+}
+
+// VisibilityValidator is a validator for the "visibility" field enum values. It is called by the builders before save.
+func VisibilityValidator(v Visibility) error {
+	switch v {
+	case VisibilityPrivate, VisibilityInternal, VisibilityPublic:
+		return nil
+	default:
+		return fmt.Errorf("bucket: invalid enum value for visibility field: %q", v)
+	}
+}
 
 // OrderOption defines the ordering options for the Bucket queries.
 type OrderOption func(*sql.Selector)
@@ -96,6 +132,11 @@ func ByName(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldName, opts...).ToFunc()
 }
 
+// ByUserID orders the results by the user_id field.
+func ByUserID(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldUserID, opts...).ToFunc()
+}
+
 // ByDescription orders the results by the description field.
 func ByDescription(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldDescription, opts...).ToFunc()
@@ -109,4 +150,9 @@ func BySizeLimit(opts ...sql.OrderTermOption) OrderOption {
 // ByUsedSize orders the results by the used_size field.
 func ByUsedSize(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldUsedSize, opts...).ToFunc()
+}
+
+// ByVisibility orders the results by the visibility field.
+func ByVisibility(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldVisibility, opts...).ToFunc()
 }

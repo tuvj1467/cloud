@@ -31,6 +31,10 @@ const (
 	FieldMd5 = "md5"
 	// FieldContentType holds the string denoting the content_type field in the database.
 	FieldContentType = "content_type"
+	// FieldBucketID holds the string denoting the bucket_id field in the database.
+	FieldBucketID = "bucket_id"
+	// FieldUserID holds the string denoting the user_id field in the database.
+	FieldUserID = "user_id"
 	// Table holds the table name of the file in the database.
 	Table = "files"
 )
@@ -47,6 +51,8 @@ var Columns = []string{
 	FieldSize,
 	FieldMd5,
 	FieldContentType,
+	FieldBucketID,
+	FieldUserID,
 }
 
 // ValidColumn reports if the column name is valid (part of the table columns).
@@ -68,6 +74,8 @@ var (
 	UpdateDefaultUpdatedAt func() time.Time
 	// DefaultVersion holds the default value on creation for the "version" field.
 	DefaultVersion int
+	// UserIDValidator is a validator for the "user_id" field. It is called by the builders before save.
+	UserIDValidator func(string) error
 )
 
 // OrderOption defines the ordering options for the File queries.
@@ -121,4 +129,14 @@ func ByMd5(opts ...sql.OrderTermOption) OrderOption {
 // ByContentType orders the results by the content_type field.
 func ByContentType(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldContentType, opts...).ToFunc()
+}
+
+// ByBucketID orders the results by the bucket_id field.
+func ByBucketID(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldBucketID, opts...).ToFunc()
+}
+
+// ByUserID orders the results by the user_id field.
+func ByUserID(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldUserID, opts...).ToFunc()
 }

@@ -84,6 +84,11 @@ func Name(v string) predicate.Bucket {
 	return predicate.Bucket(sql.FieldEQ(FieldName, v))
 }
 
+// UserID applies equality check predicate on the "user_id" field. It's identical to UserIDEQ.
+func UserID(v string) predicate.Bucket {
+	return predicate.Bucket(sql.FieldEQ(FieldUserID, v))
+}
+
 // Description applies equality check predicate on the "description" field. It's identical to DescriptionEQ.
 func Description(v string) predicate.Bucket {
 	return predicate.Bucket(sql.FieldEQ(FieldDescription, v))
@@ -284,6 +289,71 @@ func NameContainsFold(v string) predicate.Bucket {
 	return predicate.Bucket(sql.FieldContainsFold(FieldName, v))
 }
 
+// UserIDEQ applies the EQ predicate on the "user_id" field.
+func UserIDEQ(v string) predicate.Bucket {
+	return predicate.Bucket(sql.FieldEQ(FieldUserID, v))
+}
+
+// UserIDNEQ applies the NEQ predicate on the "user_id" field.
+func UserIDNEQ(v string) predicate.Bucket {
+	return predicate.Bucket(sql.FieldNEQ(FieldUserID, v))
+}
+
+// UserIDIn applies the In predicate on the "user_id" field.
+func UserIDIn(vs ...string) predicate.Bucket {
+	return predicate.Bucket(sql.FieldIn(FieldUserID, vs...))
+}
+
+// UserIDNotIn applies the NotIn predicate on the "user_id" field.
+func UserIDNotIn(vs ...string) predicate.Bucket {
+	return predicate.Bucket(sql.FieldNotIn(FieldUserID, vs...))
+}
+
+// UserIDGT applies the GT predicate on the "user_id" field.
+func UserIDGT(v string) predicate.Bucket {
+	return predicate.Bucket(sql.FieldGT(FieldUserID, v))
+}
+
+// UserIDGTE applies the GTE predicate on the "user_id" field.
+func UserIDGTE(v string) predicate.Bucket {
+	return predicate.Bucket(sql.FieldGTE(FieldUserID, v))
+}
+
+// UserIDLT applies the LT predicate on the "user_id" field.
+func UserIDLT(v string) predicate.Bucket {
+	return predicate.Bucket(sql.FieldLT(FieldUserID, v))
+}
+
+// UserIDLTE applies the LTE predicate on the "user_id" field.
+func UserIDLTE(v string) predicate.Bucket {
+	return predicate.Bucket(sql.FieldLTE(FieldUserID, v))
+}
+
+// UserIDContains applies the Contains predicate on the "user_id" field.
+func UserIDContains(v string) predicate.Bucket {
+	return predicate.Bucket(sql.FieldContains(FieldUserID, v))
+}
+
+// UserIDHasPrefix applies the HasPrefix predicate on the "user_id" field.
+func UserIDHasPrefix(v string) predicate.Bucket {
+	return predicate.Bucket(sql.FieldHasPrefix(FieldUserID, v))
+}
+
+// UserIDHasSuffix applies the HasSuffix predicate on the "user_id" field.
+func UserIDHasSuffix(v string) predicate.Bucket {
+	return predicate.Bucket(sql.FieldHasSuffix(FieldUserID, v))
+}
+
+// UserIDEqualFold applies the EqualFold predicate on the "user_id" field.
+func UserIDEqualFold(v string) predicate.Bucket {
+	return predicate.Bucket(sql.FieldEqualFold(FieldUserID, v))
+}
+
+// UserIDContainsFold applies the ContainsFold predicate on the "user_id" field.
+func UserIDContainsFold(v string) predicate.Bucket {
+	return predicate.Bucket(sql.FieldContainsFold(FieldUserID, v))
+}
+
 // DescriptionEQ applies the EQ predicate on the "description" field.
 func DescriptionEQ(v string) predicate.Bucket {
 	return predicate.Bucket(sql.FieldEQ(FieldDescription, v))
@@ -437,6 +507,26 @@ func UsedSizeLT(v int64) predicate.Bucket {
 // UsedSizeLTE applies the LTE predicate on the "used_size" field.
 func UsedSizeLTE(v int64) predicate.Bucket {
 	return predicate.Bucket(sql.FieldLTE(FieldUsedSize, v))
+}
+
+// VisibilityEQ applies the EQ predicate on the "visibility" field.
+func VisibilityEQ(v Visibility) predicate.Bucket {
+	return predicate.Bucket(sql.FieldEQ(FieldVisibility, v))
+}
+
+// VisibilityNEQ applies the NEQ predicate on the "visibility" field.
+func VisibilityNEQ(v Visibility) predicate.Bucket {
+	return predicate.Bucket(sql.FieldNEQ(FieldVisibility, v))
+}
+
+// VisibilityIn applies the In predicate on the "visibility" field.
+func VisibilityIn(vs ...Visibility) predicate.Bucket {
+	return predicate.Bucket(sql.FieldIn(FieldVisibility, vs...))
+}
+
+// VisibilityNotIn applies the NotIn predicate on the "visibility" field.
+func VisibilityNotIn(vs ...Visibility) predicate.Bucket {
+	return predicate.Bucket(sql.FieldNotIn(FieldVisibility, vs...))
 }
 
 // And groups predicates with the AND operator between them.

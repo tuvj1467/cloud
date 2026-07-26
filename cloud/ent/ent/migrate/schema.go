@@ -15,9 +15,11 @@ var (
 		{Name: "updated_at", Type: field.TypeTime},
 		{Name: "version", Type: field.TypeInt, Default: 1},
 		{Name: "name", Type: field.TypeString, Comment: "桶名称（用户内唯一）"},
+		{Name: "user_id", Type: field.TypeString, Comment: "所属用户"},
 		{Name: "description", Type: field.TypeString, Nullable: true, Comment: "桶描述"},
 		{Name: "size_limit", Type: field.TypeInt64, Comment: "桶容量限制（字节）", Default: 1073741824},
 		{Name: "used_size", Type: field.TypeInt64, Comment: "已使用容量（字节）", Default: 0},
+		{Name: "visibility", Type: field.TypeEnum, Comment: "桶访问权限", Enums: []string{"private", "internal", "public"}, Default: "private"},
 	}
 	// BucketsTable holds the schema information for the "buckets" table.
 	BucketsTable = &schema.Table{
@@ -37,6 +39,8 @@ var (
 		{Name: "size", Type: field.TypeInt64, Comment: "文件大小（字节）"},
 		{Name: "md5", Type: field.TypeString, Comment: "文件 MD5（防篡改）"},
 		{Name: "content_type", Type: field.TypeString, Comment: "文件类型（如 image/jpeg）"},
+		{Name: "bucket_id", Type: field.TypeString, Comment: "文件所属桶ID"},
+		{Name: "user_id", Type: field.TypeString, Comment: "文件所属用户ID"},
 	}
 	// FilesTable holds the schema information for the "files" table.
 	FilesTable = &schema.Table{

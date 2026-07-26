@@ -83,6 +83,20 @@ func (_u *BucketUpdate) SetNillableName(v *string) *BucketUpdate {
 	return _u
 }
 
+// SetUserID sets the "user_id" field.
+func (_u *BucketUpdate) SetUserID(v string) *BucketUpdate {
+	_u.mutation.SetUserID(v)
+	return _u
+}
+
+// SetNillableUserID sets the "user_id" field if the given value is not nil.
+func (_u *BucketUpdate) SetNillableUserID(v *string) *BucketUpdate {
+	if v != nil {
+		_u.SetUserID(*v)
+	}
+	return _u
+}
+
 // SetDescription sets the "description" field.
 func (_u *BucketUpdate) SetDescription(v string) *BucketUpdate {
 	_u.mutation.SetDescription(v)
@@ -145,6 +159,20 @@ func (_u *BucketUpdate) AddUsedSize(v int64) *BucketUpdate {
 	return _u
 }
 
+// SetVisibility sets the "visibility" field.
+func (_u *BucketUpdate) SetVisibility(v bucket.Visibility) *BucketUpdate {
+	_u.mutation.SetVisibility(v)
+	return _u
+}
+
+// SetNillableVisibility sets the "visibility" field if the given value is not nil.
+func (_u *BucketUpdate) SetNillableVisibility(v *bucket.Visibility) *BucketUpdate {
+	if v != nil {
+		_u.SetVisibility(*v)
+	}
+	return _u
+}
+
 // Mutation returns the BucketMutation object of the builder.
 func (_u *BucketUpdate) Mutation() *BucketMutation {
 	return _u.mutation
@@ -186,7 +214,25 @@ func (_u *BucketUpdate) defaults() {
 	}
 }
 
+// check runs all checks and user-defined validators on the builder.
+func (_u *BucketUpdate) check() error {
+	if v, ok := _u.mutation.UserID(); ok {
+		if err := bucket.UserIDValidator(v); err != nil {
+			return &ValidationError{Name: "user_id", err: fmt.Errorf(`ent: validator failed for field "Bucket.user_id": %w`, err)}
+		}
+	}
+	if v, ok := _u.mutation.Visibility(); ok {
+		if err := bucket.VisibilityValidator(v); err != nil {
+			return &ValidationError{Name: "visibility", err: fmt.Errorf(`ent: validator failed for field "Bucket.visibility": %w`, err)}
+		}
+	}
+	return nil
+}
+
 func (_u *BucketUpdate) sqlSave(ctx context.Context) (_node int, err error) {
+	if err := _u.check(); err != nil {
+		return _node, err
+	}
 	_spec := sqlgraph.NewUpdateSpec(bucket.Table, bucket.Columns, sqlgraph.NewFieldSpec(bucket.FieldID, field.TypeString))
 	if ps := _u.mutation.predicates; len(ps) > 0 {
 		_spec.Predicate = func(selector *sql.Selector) {
@@ -210,6 +256,9 @@ func (_u *BucketUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	if value, ok := _u.mutation.Name(); ok {
 		_spec.SetField(bucket.FieldName, field.TypeString, value)
 	}
+	if value, ok := _u.mutation.UserID(); ok {
+		_spec.SetField(bucket.FieldUserID, field.TypeString, value)
+	}
 	if value, ok := _u.mutation.Description(); ok {
 		_spec.SetField(bucket.FieldDescription, field.TypeString, value)
 	}
@@ -227,6 +276,9 @@ func (_u *BucketUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	}
 	if value, ok := _u.mutation.AddedUsedSize(); ok {
 		_spec.AddField(bucket.FieldUsedSize, field.TypeInt64, value)
+	}
+	if value, ok := _u.mutation.Visibility(); ok {
+		_spec.SetField(bucket.FieldVisibility, field.TypeEnum, value)
 	}
 	if _node, err = sqlgraph.UpdateNodes(ctx, _u.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
@@ -303,6 +355,20 @@ func (_u *BucketUpdateOne) SetNillableName(v *string) *BucketUpdateOne {
 	return _u
 }
 
+// SetUserID sets the "user_id" field.
+func (_u *BucketUpdateOne) SetUserID(v string) *BucketUpdateOne {
+	_u.mutation.SetUserID(v)
+	return _u
+}
+
+// SetNillableUserID sets the "user_id" field if the given value is not nil.
+func (_u *BucketUpdateOne) SetNillableUserID(v *string) *BucketUpdateOne {
+	if v != nil {
+		_u.SetUserID(*v)
+	}
+	return _u
+}
+
 // SetDescription sets the "description" field.
 func (_u *BucketUpdateOne) SetDescription(v string) *BucketUpdateOne {
 	_u.mutation.SetDescription(v)
@@ -365,6 +431,20 @@ func (_u *BucketUpdateOne) AddUsedSize(v int64) *BucketUpdateOne {
 	return _u
 }
 
+// SetVisibility sets the "visibility" field.
+func (_u *BucketUpdateOne) SetVisibility(v bucket.Visibility) *BucketUpdateOne {
+	_u.mutation.SetVisibility(v)
+	return _u
+}
+
+// SetNillableVisibility sets the "visibility" field if the given value is not nil.
+func (_u *BucketUpdateOne) SetNillableVisibility(v *bucket.Visibility) *BucketUpdateOne {
+	if v != nil {
+		_u.SetVisibility(*v)
+	}
+	return _u
+}
+
 // Mutation returns the BucketMutation object of the builder.
 func (_u *BucketUpdateOne) Mutation() *BucketMutation {
 	return _u.mutation
@@ -419,7 +499,25 @@ func (_u *BucketUpdateOne) defaults() {
 	}
 }
 
+// check runs all checks and user-defined validators on the builder.
+func (_u *BucketUpdateOne) check() error {
+	if v, ok := _u.mutation.UserID(); ok {
+		if err := bucket.UserIDValidator(v); err != nil {
+			return &ValidationError{Name: "user_id", err: fmt.Errorf(`ent: validator failed for field "Bucket.user_id": %w`, err)}
+		}
+	}
+	if v, ok := _u.mutation.Visibility(); ok {
+		if err := bucket.VisibilityValidator(v); err != nil {
+			return &ValidationError{Name: "visibility", err: fmt.Errorf(`ent: validator failed for field "Bucket.visibility": %w`, err)}
+		}
+	}
+	return nil
+}
+
 func (_u *BucketUpdateOne) sqlSave(ctx context.Context) (_node *Bucket, err error) {
+	if err := _u.check(); err != nil {
+		return _node, err
+	}
 	_spec := sqlgraph.NewUpdateSpec(bucket.Table, bucket.Columns, sqlgraph.NewFieldSpec(bucket.FieldID, field.TypeString))
 	id, ok := _u.mutation.ID()
 	if !ok {
@@ -460,6 +558,9 @@ func (_u *BucketUpdateOne) sqlSave(ctx context.Context) (_node *Bucket, err erro
 	if value, ok := _u.mutation.Name(); ok {
 		_spec.SetField(bucket.FieldName, field.TypeString, value)
 	}
+	if value, ok := _u.mutation.UserID(); ok {
+		_spec.SetField(bucket.FieldUserID, field.TypeString, value)
+	}
 	if value, ok := _u.mutation.Description(); ok {
 		_spec.SetField(bucket.FieldDescription, field.TypeString, value)
 	}
@@ -477,6 +578,9 @@ func (_u *BucketUpdateOne) sqlSave(ctx context.Context) (_node *Bucket, err erro
 	}
 	if value, ok := _u.mutation.AddedUsedSize(); ok {
 		_spec.AddField(bucket.FieldUsedSize, field.TypeInt64, value)
+	}
+	if value, ok := _u.mutation.Visibility(); ok {
+		_spec.SetField(bucket.FieldVisibility, field.TypeEnum, value)
 	}
 	_node = &Bucket{config: _u.config}
 	_spec.Assign = _node.assignValues

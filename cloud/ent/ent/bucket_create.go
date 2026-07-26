@@ -68,6 +68,12 @@ func (_c *BucketCreate) SetName(v string) *BucketCreate {
 	return _c
 }
 
+// SetUserID sets the "user_id" field.
+func (_c *BucketCreate) SetUserID(v string) *BucketCreate {
+	_c.mutation.SetUserID(v)
+	return _c
+}
+
 // SetDescription sets the "description" field.
 func (_c *BucketCreate) SetDescription(v string) *BucketCreate {
 	_c.mutation.SetDescription(v)
@@ -106,6 +112,20 @@ func (_c *BucketCreate) SetUsedSize(v int64) *BucketCreate {
 func (_c *BucketCreate) SetNillableUsedSize(v *int64) *BucketCreate {
 	if v != nil {
 		_c.SetUsedSize(*v)
+	}
+	return _c
+}
+
+// SetVisibility sets the "visibility" field.
+func (_c *BucketCreate) SetVisibility(v bucket.Visibility) *BucketCreate {
+	_c.mutation.SetVisibility(v)
+	return _c
+}
+
+// SetNillableVisibility sets the "visibility" field if the given value is not nil.
+func (_c *BucketCreate) SetNillableVisibility(v *bucket.Visibility) *BucketCreate {
+	if v != nil {
+		_c.SetVisibility(*v)
 	}
 	return _c
 }
@@ -171,6 +191,10 @@ func (_c *BucketCreate) defaults() {
 		v := bucket.DefaultUsedSize
 		_c.mutation.SetUsedSize(v)
 	}
+	if _, ok := _c.mutation.Visibility(); !ok {
+		v := bucket.DefaultVisibility
+		_c.mutation.SetVisibility(v)
+	}
 }
 
 // check runs all checks and user-defined validators on the builder.
@@ -187,11 +211,27 @@ func (_c *BucketCreate) check() error {
 	if _, ok := _c.mutation.Name(); !ok {
 		return &ValidationError{Name: "name", err: errors.New(`ent: missing required field "Bucket.name"`)}
 	}
+	if _, ok := _c.mutation.UserID(); !ok {
+		return &ValidationError{Name: "user_id", err: errors.New(`ent: missing required field "Bucket.user_id"`)}
+	}
+	if v, ok := _c.mutation.UserID(); ok {
+		if err := bucket.UserIDValidator(v); err != nil {
+			return &ValidationError{Name: "user_id", err: fmt.Errorf(`ent: validator failed for field "Bucket.user_id": %w`, err)}
+		}
+	}
 	if _, ok := _c.mutation.SizeLimit(); !ok {
 		return &ValidationError{Name: "size_limit", err: errors.New(`ent: missing required field "Bucket.size_limit"`)}
 	}
 	if _, ok := _c.mutation.UsedSize(); !ok {
 		return &ValidationError{Name: "used_size", err: errors.New(`ent: missing required field "Bucket.used_size"`)}
+	}
+	if _, ok := _c.mutation.Visibility(); !ok {
+		return &ValidationError{Name: "visibility", err: errors.New(`ent: missing required field "Bucket.visibility"`)}
+	}
+	if v, ok := _c.mutation.Visibility(); ok {
+		if err := bucket.VisibilityValidator(v); err != nil {
+			return &ValidationError{Name: "visibility", err: fmt.Errorf(`ent: validator failed for field "Bucket.visibility": %w`, err)}
+		}
 	}
 	return nil
 }
@@ -244,6 +284,10 @@ func (_c *BucketCreate) createSpec() (*Bucket, *sqlgraph.CreateSpec) {
 		_spec.SetField(bucket.FieldName, field.TypeString, value)
 		_node.Name = value
 	}
+	if value, ok := _c.mutation.UserID(); ok {
+		_spec.SetField(bucket.FieldUserID, field.TypeString, value)
+		_node.UserID = value
+	}
 	if value, ok := _c.mutation.Description(); ok {
 		_spec.SetField(bucket.FieldDescription, field.TypeString, value)
 		_node.Description = value
@@ -255,6 +299,10 @@ func (_c *BucketCreate) createSpec() (*Bucket, *sqlgraph.CreateSpec) {
 	if value, ok := _c.mutation.UsedSize(); ok {
 		_spec.SetField(bucket.FieldUsedSize, field.TypeInt64, value)
 		_node.UsedSize = value
+	}
+	if value, ok := _c.mutation.Visibility(); ok {
+		_spec.SetField(bucket.FieldVisibility, field.TypeEnum, value)
+		_node.Visibility = value
 	}
 	return _node, _spec
 }

@@ -19,8 +19,10 @@ type (
 		GetFileInfo(ctx context.Context, in *FileInfoRequest, opts ...grpc.CallOption) (*Response, error)
 		// 上传文件
 		UploadFile(ctx context.Context, in *UploadFileRequest, opts ...grpc.CallOption) (*Response, error)
-		// 获取文件列表
+		// 获取所有桶文件列表
 		GetFileList(ctx context.Context, in *FileListRequest, opts ...grpc.CallOption) (*Response, error)
+		// 获取用户对应桶文件列表
+		GetBucketFileList(ctx context.Context, in *FileListRequest, opts ...grpc.CallOption) (*Response, error)
 		// 重命名文件
 		RenameFile(ctx context.Context, in *RenameFileRequest, opts ...grpc.CallOption) (*Response, error)
 		// 删除文件
@@ -52,10 +54,16 @@ func (m *defaultFile) UploadFile(ctx context.Context, in *UploadFileRequest, opt
 	return client.UploadFile(ctx, in, opts...)
 }
 
-// 获取文件列表
+// 获取所有桶文件列表
 func (m *defaultFile) GetFileList(ctx context.Context, in *FileListRequest, opts ...grpc.CallOption) (*Response, error) {
 	client := service.NewFileClient(m.cli.Conn())
 	return client.GetFileList(ctx, in, opts...)
+}
+
+// 获取用户对应桶文件列表
+func (m *defaultFile) GetBucketFileList(ctx context.Context, in *FileListRequest, opts ...grpc.CallOption) (*Response, error) {
+	client := service.NewFileClient(m.cli.Conn())
+	return client.GetBucketFileList(ctx, in, opts...)
 }
 
 // 重命名文件

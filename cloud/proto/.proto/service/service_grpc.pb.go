@@ -359,12 +359,13 @@ var User_ServiceDesc = grpc.ServiceDesc{
 }
 
 const (
-	File_GetFileInfo_FullMethodName  = "/storage.File/GetFileInfo"
-	File_UploadFile_FullMethodName   = "/storage.File/UploadFile"
-	File_GetFileList_FullMethodName  = "/storage.File/GetFileList"
-	File_RenameFile_FullMethodName   = "/storage.File/RenameFile"
-	File_DeleteFile_FullMethodName   = "/storage.File/DeleteFile"
-	File_DownloadFile_FullMethodName = "/storage.File/DownloadFile"
+	File_GetFileInfo_FullMethodName       = "/storage.File/GetFileInfo"
+	File_UploadFile_FullMethodName        = "/storage.File/UploadFile"
+	File_GetFileList_FullMethodName       = "/storage.File/GetFileList"
+	File_GetBucketFileList_FullMethodName = "/storage.File/GetBucketFileList"
+	File_RenameFile_FullMethodName        = "/storage.File/RenameFile"
+	File_DeleteFile_FullMethodName        = "/storage.File/DeleteFile"
+	File_DownloadFile_FullMethodName      = "/storage.File/DownloadFile"
 )
 
 // FileClient is the client API for File service.
@@ -377,8 +378,10 @@ type FileClient interface {
 	GetFileInfo(ctx context.Context, in *FileInfoRequest, opts ...grpc.CallOption) (*Response, error)
 	// 上传文件
 	UploadFile(ctx context.Context, in *UploadFileRequest, opts ...grpc.CallOption) (*Response, error)
-	// 获取文件列表
+	// 获取所有桶文件列表
 	GetFileList(ctx context.Context, in *FileListRequest, opts ...grpc.CallOption) (*Response, error)
+	// 获取用户对应桶文件列表
+	GetBucketFileList(ctx context.Context, in *FileListRequest, opts ...grpc.CallOption) (*Response, error)
 	// 重命名文件
 	RenameFile(ctx context.Context, in *RenameFileRequest, opts ...grpc.CallOption) (*Response, error)
 	// 删除文件
@@ -425,6 +428,16 @@ func (c *fileClient) GetFileList(ctx context.Context, in *FileListRequest, opts 
 	return out, nil
 }
 
+func (c *fileClient) GetBucketFileList(ctx context.Context, in *FileListRequest, opts ...grpc.CallOption) (*Response, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(Response)
+	err := c.cc.Invoke(ctx, File_GetBucketFileList_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *fileClient) RenameFile(ctx context.Context, in *RenameFileRequest, opts ...grpc.CallOption) (*Response, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(Response)
@@ -465,8 +478,10 @@ type FileServer interface {
 	GetFileInfo(context.Context, *FileInfoRequest) (*Response, error)
 	// 上传文件
 	UploadFile(context.Context, *UploadFileRequest) (*Response, error)
-	// 获取文件列表
+	// 获取所有桶文件列表
 	GetFileList(context.Context, *FileListRequest) (*Response, error)
+	// 获取用户对应桶文件列表
+	GetBucketFileList(context.Context, *FileListRequest) (*Response, error)
 	// 重命名文件
 	RenameFile(context.Context, *RenameFileRequest) (*Response, error)
 	// 删除文件
@@ -491,6 +506,9 @@ func (UnimplementedFileServer) UploadFile(context.Context, *UploadFileRequest) (
 }
 func (UnimplementedFileServer) GetFileList(context.Context, *FileListRequest) (*Response, error) {
 	return nil, status.Error(codes.Unimplemented, "method GetFileList not implemented")
+}
+func (UnimplementedFileServer) GetBucketFileList(context.Context, *FileListRequest) (*Response, error) {
+	return nil, status.Error(codes.Unimplemented, "method GetBucketFileList not implemented")
 }
 func (UnimplementedFileServer) RenameFile(context.Context, *RenameFileRequest) (*Response, error) {
 	return nil, status.Error(codes.Unimplemented, "method RenameFile not implemented")
@@ -576,6 +594,24 @@ func _File_GetFileList_Handler(srv interface{}, ctx context.Context, dec func(in
 	return interceptor(ctx, in, info, handler)
 }
 
+func _File_GetBucketFileList_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(FileListRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(FileServer).GetBucketFileList(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: File_GetBucketFileList_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(FileServer).GetBucketFileList(ctx, req.(*FileListRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _File_RenameFile_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(RenameFileRequest)
 	if err := dec(in); err != nil {
@@ -648,6 +684,10 @@ var File_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetFileList",
 			Handler:    _File_GetFileList_Handler,
+		},
+		{
+			MethodName: "GetBucketFileList",
+			Handler:    _File_GetBucketFileList_Handler,
 		},
 		{
 			MethodName: "RenameFile",

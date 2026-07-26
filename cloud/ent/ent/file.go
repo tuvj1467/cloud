@@ -35,7 +35,11 @@ type File struct {
 	// 文件 MD5（防篡改）
 	Md5 string `json:"md5,omitempty"`
 	// 文件类型（如 image/jpeg）
-	ContentType  string `json:"content_type,omitempty"`
+	ContentType string `json:"content_type,omitempty"`
+	// 文件所属桶ID
+	BucketID string `json:"bucket_id,omitempty"`
+	// 文件所属用户ID
+	UserID       string `json:"user_id,omitempty"`
 	selectValues sql.SelectValues
 }
 
@@ -46,7 +50,7 @@ func (*File) scanValues(columns []string) ([]any, error) {
 		switch columns[i] {
 		case file.FieldVersion, file.FieldSize:
 			values[i] = new(sql.NullInt64)
-		case file.FieldID, file.FieldName, file.FieldExt, file.FieldPath, file.FieldMd5, file.FieldContentType:
+		case file.FieldID, file.FieldName, file.FieldExt, file.FieldPath, file.FieldMd5, file.FieldContentType, file.FieldBucketID, file.FieldUserID:
 			values[i] = new(sql.NullString)
 		case file.FieldCreatedAt, file.FieldUpdatedAt:
 			values[i] = new(sql.NullTime)
@@ -125,6 +129,18 @@ func (_m *File) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				_m.ContentType = value.String
 			}
+		case file.FieldBucketID:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field bucket_id", values[i])
+			} else if value.Valid {
+				_m.BucketID = value.String
+			}
+		case file.FieldUserID:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field user_id", values[i])
+			} else if value.Valid {
+				_m.UserID = value.String
+			}
 		default:
 			_m.selectValues.Set(columns[i], values[i])
 		}
@@ -187,6 +203,12 @@ func (_m *File) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("content_type=")
 	builder.WriteString(_m.ContentType)
+	builder.WriteString(", ")
+	builder.WriteString("bucket_id=")
+	builder.WriteString(_m.BucketID)
+	builder.WriteString(", ")
+	builder.WriteString("user_id=")
+	builder.WriteString(_m.UserID)
 	builder.WriteByte(')')
 	return builder.String()
 }
