@@ -1,0 +1,91 @@
+# ONE_CLOUD 一键部署编排
+# 用法：docker compose up -d --build
+# 访问：Web 前端 http://localhost:8080 ，网关 REST http://localhost:8888
+#
+# ⚠ 生产部署前必改（详见 doc/09_部署指南.md 的生产检查清单）：
+#   1. deploy/cloud/storage.yaml 中的 MySQL 密码与 JWT Secret
+#   2. 本文件中 MYSQL_ROOT_PASSWORD（需与 deploy 配置保持一致）
+#   3. 按需注释/放开对外暴露的端口
+
+services:
+  # ---------- MySQL 8：元数据存储 ----------
+  mysql:
+    image: mysql:8
+    environment:
+      MYSQL_ROOT_PASSWORD: onecloud123
+      MYSQL_DATABASE: cloud
+      TZ: Asia/Shanghai
+    command:
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_unicode_ci
+    volumes:
+      - mysql-data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h127.0.0.1 -uroot -p$$MYSQL_ROOT_PASSWORD --silent"]
+      interval: 5s
+      timeout: 3s
+      retries: 30
+    restart: unless-stopped
+    # 生产环境不要把 3306 暴露到宿主机，仅本机调试时放开：
+    # ports:
+    #   - "3306:3306"
+
+  # ---------- Redis 7：秒传索引 / 分片状态 / 分享缓存 ----------
+  redis:
+    image: redis:7-alpine
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 30
+    restart: unless-stopped
+
+  # ---------- 存储 RPC 服务（:8081，仅容器网络内可见）----------
+  cloud:
+    build:
+      context: ./cloud
+    volumes:
+      # 容器版配置：MySQL/Redis 使用服务名互连
+      - ./deploy/cloud/storage.yaml:/app/etc/storage.yaml:ro
+      # 物理文件持久化卷
+      - storage-data:/data/cloud_storage
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+    # 需要用 grpcurl 直连调试时放开：
+    # ports:
+    #   - "8081:8081"
+
+  # ---------- HTTP 网关（REST :8888）----------
+  gateway:
+    build:
+      context: ./gateway
+    ports:
+      - "8888:8888"
+    volumes:
+      # 容器版配置：gRPC 目标为 cloud:8081
+      - ./deploy/gateway/gateway.yaml:/app/gateway.yaml:ro
+    depends_on:
+      - cloud
+    restart: unless-stopped
+
+  # ---------- Web 演示前端（:8080，/api 反代到网关）----------
+  web:
+    build:
+      context: .
+      dockerfile: web/Dockerfile
+    ports:
+      - "8080:8080"
+    depends_on:
+      - gateway
+    restart: unless-stopped
+
+volumes:
+  mysql-data:
+  redis-data:
+  storage-data:

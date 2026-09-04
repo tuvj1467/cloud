@@ -2,7 +2,13 @@ package filelogic
 
 import (
 	"context"
+	"errors"
+	"io"
 
+	"onecloud/ent"
+	"onecloud/internal/pkg/jwt"
+	"onecloud/internal/pkg/response"
+	"onecloud/internal/repository"
 	"onecloud/internal/svc"
 	"onecloud/proto/.proto/service"
 
@@ -23,9 +29,49 @@ func NewDownloadFileLogic(ctx context.Context, svcCtx *svc.ServiceContext) *Down
 	}
 }
 
-// 下载文件
+// DownloadFile 下载文件
 func (l *DownloadFileLogic) DownloadFile(in *service.DownloadFileRequest) (*service.Response, error) {
-	// todo: add your logic here and delete this line
+	if err := in.Validate(); err != nil {
+		return response.Err(errors.New("参数校验失败"))
+	}
 
-	return &service.Response{}, nil
+	userID, err := jwt.GetUserIdFromCtx(l.ctx)
+	if err != nil {
+		return response.Err(err)
+	}
+
+	fileRepo := repository.NewFileRepository(l.svcCtx.EntClient)
+	f, err := fileRepo.GetInfo(l.ctx, in.GetFileId())
+	if err != nil {
+		if ent.IsNotFound(err) {
+			return response.ErrWithCode(response.CodeFileNotFound, "文件不存在")
+		}
+		return response.Err(errors.New("查询文件失败: " + err.Error()))
+	}
+
+	// 校验文件归属
+	if f.UserID != userID {
+		return response.ErrWithCode(response.CodeFileNoPermission, "无权下载该文件")
+	}
+
+	// 通过存储驱动读取物理文件
+	reader, err := l.svcCtx.Storage.Get(l.ctx, f.Path)
+	if err != nil {
+		l.Errorf("读取物理文件失败 path=%s: %v", f.Path, err)
+		return response.ErrWithCode(response.CodeStorageRead, "文件读取失败: "+err.Error())
+	}
+	defer reader.Close()
+
+	content, err := io.ReadAll(reader)
+	if err != nil {
+		l.Errorf("读取文件流失败 path=%s: %v", f.Path, err)
+		return response.ErrWithCode(response.CodeStorageRead, "文件读取失败: "+err.Error())
+	}
+
+	l.Infof("download success user=%s file=%s size=%d", userID, f.ID, f.Size)
+
+	return response.Success(&service.DownloadFileResponse{
+		Content: content,
+		File:    toFileMeta(f),
+	})
 }

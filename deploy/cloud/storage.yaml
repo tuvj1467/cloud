@@ -1,0 +1,47 @@
+# 容器化部署专用配置（由 docker-compose.yml 挂载到 /app/etc/storage.yaml）
+# 与 cloud/etc/storage.yaml 的区别：
+#   1. MySQL / Redis 使用 compose 服务名互连（mysql:3306 / redis:6379）
+#   2. 存储根目录使用挂载卷 /data/cloud_storage
+#   3. Mode: prod —— 跳过 dev 模式下的存量数据自动迁移
+#
+# ⚠ 生产部署前必改：MySQL 密码（需与 docker-compose.yml 的 MYSQL_ROOT_PASSWORD 一致）、JWT Secret
+Name: storage.rpc
+ListenOn: 0.0.0.0:8081
+Mode: prod
+
+# MySQL 数据库配置
+MySQL:
+  Host: mysql:3306
+  User: "root"
+  Password: "onecloud123"
+  Database: "cloud"
+  Charset: utf8mb4
+  MaxOpenConns: 100
+  MaxIdleConns: 20
+  ConnMaxLifetime: 3600
+  ConnMaxIdleTime: 600
+  # 生产环境建议关闭 SQL 打印
+  Debug: false
+  Loc: Local
+
+# Redis 缓存配置
+RedisConf:
+  Host: redis:6379
+  Password: ""
+  DB: 0
+  PoolSize: 50
+
+# 存储驱动配置
+Storage:
+  Driver: local
+  Local:
+    # 挂载卷路径（docker-compose 中由 storage-data 卷持久化）
+    RootDir: /data/cloud_storage
+
+# JWT 鉴权配置
+JWT:
+  # ⚠ 生产环境必须更换为足够长的随机字符串
+  Secret: change-me-in-production
+  # 过期时间（秒），默认 604800 = 7 天
+  Expire: 604800
+  Issuer: onecloud

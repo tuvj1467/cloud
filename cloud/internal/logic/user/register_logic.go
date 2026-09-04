@@ -133,7 +133,7 @@ func (l *RegisterLogic) Register(in *service.RegisterReq) (*service.Response, er
 	token, _ := jwt.GenerateToken(res.ID)
 
 	return response.Success(&service.RegisterRes{User: &service.UserInfo{
-		Id: res.ID, Name: res.Nickname, Avatar: &res.Avatar, Phone: &res.Phone, Email: &res.Email,
+		Id: res.ID, Username: res.Username, Name: res.Nickname, Avatar: &res.Avatar, Phone: &res.Phone, Email: &res.Email,
 	}, Token: token})
 }
 

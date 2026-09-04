@@ -1,0 +1,86 @@
+syntax = "proto3";
+
+package storage;
+option go_package = ".proto/service";
+import "validate.proto";
+
+// ==========================================
+// 桶（Bucket）核心定义
+// ==========================================
+
+// 桶元信息
+message BucketMeta {
+  string bucket_id = 1;          // 桶唯一ID（雪花ID）
+  string name = 2;               // 桶名称（用户内唯一）
+  string user_id = 3;            // 所属用户ID
+  string description = 4;        // 桶描述
+  int64 size_limit = 5;          // 桶容量限制（字节）
+  int64 used_size = 6;           // 已使用容量（字节）
+  string visibility = 7;         // 访问权限：private / internal / public
+  string created_at = 8;         // 创建时间
+  string updated_at = 9;         // 更新时间
+}
+
+// ==========================================
+// 1. 创建桶
+// ==========================================
+message CreateBucketRequest {
+  string name = 1 [(validate.rules).string = {min_len:1, max_len:63}]; // 桶名称
+  optional string description = 2;                                      // 桶描述
+  int64 size_limit = 3;                                                 // 容量限制（0=默认1GB）
+  string visibility = 4 [(validate.rules).string = {in: ["private", "internal", "public"]}]; // 访问权限
+}
+
+message CreateBucketResponse {
+  BucketMeta bucket = 1;
+}
+
+// ==========================================
+// 2. 获取桶列表
+// ==========================================
+message BucketListRequest {
+  int32 page = 1 [(validate.rules).int32 = {gte: 1}];            // 页码
+  int32 page_size = 2 [(validate.rules).int32 = {gte:1, lte:50}]; // 每页数量
+}
+
+message BucketListResponse {
+  repeated BucketMeta buckets = 1;
+  int32 total = 2;
+}
+
+// ==========================================
+// 3. 获取桶详情
+// ==========================================
+message BucketInfoRequest {
+  string bucket_id = 1 [(validate.rules).string.min_len = 1];
+}
+
+message BucketInfoResponse {
+  BucketMeta bucket = 1;
+}
+
+// ==========================================
+// 4. 更新桶
+// ==========================================
+message UpdateBucketRequest {
+  string bucket_id = 1 [(validate.rules).string.min_len = 1];
+  optional string description = 2;
+  optional int64 size_limit = 3;
+  optional string visibility = 4;
+}
+
+message UpdateBucketResponse {
+  bool success = 1;
+}
+
+// ==========================================
+// 5. 删除桶（需桶为空，或 force=true）
+// ==========================================
+message DeleteBucketRequest {
+  string bucket_id = 1 [(validate.rules).string.min_len = 1];
+  bool force = 2; // 强制删除（连同桶内文件）
+}
+
+message DeleteBucketResponse {
+  bool success = 1;
+}

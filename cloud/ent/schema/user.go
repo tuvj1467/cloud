@@ -21,9 +21,14 @@ func (User) Fields() []ent.Field {
 			Immutable().
 			Comment("雪花ID（业务层禁止修改）").
 			Annotations(entsql.Annotation{WithComments: &withComments}),
+		field.String("username").
+			Optional().
+			Comment("登录账号（不可修改）").
+			Annotations(entsql.Annotation{WithComments: &withComments}),
 		field.String("nickname").
 			NotEmpty().
-			Comment("用户名").
+			Optional().
+			Comment("显示名称（可修改）").
 			Annotations(entsql.Annotation{WithComments: &withComments}),
 		field.String("avatar").
 			NotEmpty().

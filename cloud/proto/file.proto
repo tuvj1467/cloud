@@ -17,33 +17,39 @@ message FileMeta {
   int64 size = 4;              // 文件大小（字节）
   string suffix = 5;           // 文件后缀（如：png/pdf/txt）
   string user_id = 6;          // 所属用户ID
-  string created_at = 7;       // 创建时间
-  string updated_at = 8;       // 更新时间
+  string bucket_id = 7;        // 所属桶ID
+  string md5 = 8;              // 文件MD5
+  string content_type = 9;     // MIME类型
+  string created_at = 10;      // 创建时间
+  string updated_at = 11;      // 更新时间
 }
 
 // ==========================================
-// 1. 获取单个文件信息（你原有接口，修正优化）
+// 1. 获取单个文件信息
 // ==========================================
 message FileInfoRequest {
   string file_id = 1 [(validate.rules).string = {min_len: 1}]; // 文件ID必填
 }
 
 message FileInfoResponse {
-  FileMeta file = 1; // 直接复用文件元信息
+  FileMeta file = 1;
 }
 
 // ==========================================
 // 2. 上传文件
 // ==========================================
 message UploadFileRequest {
-  string name = 1 [(validate.rules).string = {min_len:1, max_len:100}]; // 文件名（限制长度）
-  string suffix = 2 [(validate.rules).string = {min_len:1}];        // 文件后缀
-  int64 size = 3 [(validate.rules).int64 = {gt: 0}];                // 文件大小必须大于0
-  bytes content = 4; // 文件二进制内容（小文件适用）
+  string bucket_id = 1 [(validate.rules).string = {min_len: 1}]; // 所属桶ID
+  string name = 2 [(validate.rules).string = {min_len:1, max_len:100}]; // 文件名
+  string suffix = 3 [(validate.rules).string = {min_len:1}];            // 文件后缀
+  int64 size = 4 [(validate.rules).int64 = {gt: 0}];                    // 文件大小必须大于0
+  bytes content = 5;                                                    // 文件二进制内容（小文件适用）
+  optional string md5 = 6;                                              // 客户端可传MD5触发秒传检查
 }
 
 message UploadFileResponse {
-  FileMeta file = 1; // 上传成功返回文件信息
+  FileMeta file = 1;   // 上传成功返回文件信息
+  bool instant = 2;    // true 表示秒传命中（未实际写入物理文件）
 }
 
 // ==========================================
@@ -58,8 +64,8 @@ message FileListRequest {
 
 message BucketFileListRequest {
   string bucket_id = 1 [(validate.rules).string.min_len = 1];
-  int32 page = 2 [(validate.rules).int32 = {gte: 1}];          // 页码，最小1
-  int32 page_size = 3 [(validate.rules).int32 = {gte:1, lte:50}]; // 每页数量 1-50
+  int32 page = 2 [(validate.rules).int32 = {gte: 1}];
+  int32 page_size = 3 [(validate.rules).int32 = {gte:1, lte:50}];
   string sort_by = 4 [(validate.rules).string = {in: ["name", "size", "create_time", "update_time"]}];
   string sort_order = 5 [(validate.rules).string = {in: ["asc", "desc"]}];
 }
@@ -103,4 +109,99 @@ message DownloadFileRequest {
 message DownloadFileResponse {
   bytes content = 1; // 文件二进制
   FileMeta file = 2; // 文件信息
+}
+
+// ==========================================
+// 7. 复制文件
+// ==========================================
+message CopyFileRequest {
+  string file_id = 1 [(validate.rules).string = {min_len: 1}];           // 源文件ID
+  string target_bucket_id = 2 [(validate.rules).string = {min_len: 1}];  // 目标桶ID
+  string new_name = 3 [(validate.rules).string = {min_len:1, max_len:100}]; // 新文件名
+}
+
+message CopyFileResponse {
+  FileMeta file = 1; // 复制后的新文件信息
+}
+
+// ==========================================
+// 8. 分片上传 - 初始化
+// ==========================================
+message InitMultipartUploadRequest {
+  string bucket_id = 1 [(validate.rules).string = {min_len: 1}];     // 目标桶ID
+  string name = 2 [(validate.rules).string = {min_len:1, max_len:100}]; // 文件名
+  string suffix = 3 [(validate.rules).string = {min_len:1}];         // 文件后缀
+  int64 size = 4 [(validate.rules).int64 = {gt: 0}];                  // 文件总大小
+  int32 total_parts = 5 [(validate.rules).int32 = {gte:1, lte:10000}]; // 分片总数
+  optional string md5 = 6;                                            // 客户端已知MD5（可选，用于秒传检查）
+}
+
+message InitMultipartUploadResponse {
+  string upload_id = 1;  // 分片上传唯一标识
+  int32 part_size = 2;   // 建议每片大小（字节）
+}
+
+// ==========================================
+// 9. 分片上传 - 上传单个分片
+// ==========================================
+message UploadPartRequest {
+  string upload_id = 1 [(validate.rules).string = {min_len: 1}]; // 上传ID
+  int32 part_number = 2 [(validate.rules).int32 = {gte:1}];      // 分片序号（从1开始）
+  bytes content = 3;                                             // 分片二进制内容
+  int64 size = 4 [(validate.rules).int64 = {gt: 0}];             // 分片大小
+}
+
+message UploadPartResponse {
+  bool success = 1;
+  string part_md5 = 2;  // 服务端计算的MD5，用于客户端校验
+}
+
+// ==========================================
+// 10. 分片上传 - 完成合并
+// ==========================================
+message CompleteMultipartUploadRequest {
+  string upload_id = 1 [(validate.rules).string = {min_len: 1}];
+}
+
+message CompleteMultipartUploadResponse {
+  FileMeta file = 1;     // 合并后的文件信息
+  bool instant = 2;      // true 表示秒传命中（合并MD5与已有文件相同）
+}
+
+// ==========================================
+// 11. 分片上传 - 取消
+// ==========================================
+message AbortMultipartUploadRequest {
+  string upload_id = 1 [(validate.rules).string = {min_len: 1}];
+}
+
+message AbortMultipartUploadResponse {
+  bool success = 1;
+}
+
+// ==========================================
+// 12. 文件分享 - 创建
+// ==========================================
+message CreateShareRequest {
+  string file_id = 1 [(validate.rules).string = {min_len: 1}];
+  string permission = 2 [(validate.rules).string = {in: ["read", "download"]}];
+  optional int64 expire_seconds = 3;  // 空=永久
+  optional int32 max_count = 4;       // 空=不限
+}
+
+message CreateShareResponse {
+  string share_code = 1;  // 提取码
+  string share_url = 2;   // 完整访问URL
+}
+
+// ==========================================
+// 13. 文件分享 - 访问（匿名）
+// ==========================================
+message AccessShareRequest {
+  string share_code = 1 [(validate.rules).string = {min_len: 1}];
+}
+
+message AccessShareResponse {
+  FileMeta file = 1;
+  string permission = 2;  // read / download
 }

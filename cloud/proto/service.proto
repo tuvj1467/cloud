@@ -6,6 +6,7 @@ option go_package = ".proto/service";
 import "file.proto" ;
 import "user.proto" ;
 import "base.proto" ;
+import "bucket.proto" ;
 
 service User {
   //注册
@@ -28,20 +29,53 @@ service User {
   rpc FindAccount(FindAccountReq) returns (Response);
 }
 
-// 存储服务定义
+// 存储桶服务定义
+service Bucket {
+  // 创建桶
+  rpc CreateBucket(CreateBucketRequest) returns (Response);
+  // 获取桶列表
+  rpc GetBucketList(BucketListRequest) returns (Response);
+  // 获取桶详情
+  rpc GetBucketInfo(BucketInfoRequest) returns (Response);
+  // 更新桶
+  rpc UpdateBucket(UpdateBucketRequest) returns (Response);
+  // 删除桶
+  rpc DeleteBucket(DeleteBucketRequest) returns (Response);
+}
+
+// 文件服务定义
 service File {
+  // ===== 基础操作 =====
   // 获取文件信息
   rpc GetFileInfo(FileInfoRequest) returns (Response);
   // 上传文件
   rpc UploadFile(UploadFileRequest) returns (Response);
-  // 获取所有桶文件列表
+  // 获取用户所有文件列表
   rpc GetFileList(FileListRequest) returns (Response);
-  //获取用户对应桶文件列表
-  rpc GetBucketFileList(FileListRequest) returns (Response);
+  // 获取用户对应桶文件列表
+  rpc GetBucketFileList(BucketFileListRequest) returns (Response);
   // 重命名文件
   rpc RenameFile(RenameFileRequest) returns (Response);
   // 删除文件
   rpc DeleteFile(DeleteFileRequest) returns (Response);
   // 下载文件
   rpc DownloadFile(DownloadFileRequest) returns (Response);
+  // 复制文件
+  rpc CopyFile(CopyFileRequest) returns (Response);
+
+  // ===== 分片上传 =====
+  // 初始化分片上传
+  rpc InitMultipartUpload(InitMultipartUploadRequest) returns (Response);
+  // 上传单个分片
+  rpc UploadPart(UploadPartRequest) returns (Response);
+  // 完成分片上传（合并）
+  rpc CompleteMultipartUpload(CompleteMultipartUploadRequest) returns (Response);
+  // 取消分片上传
+  rpc AbortMultipartUpload(AbortMultipartUploadRequest) returns (Response);
+
+  // ===== 文件分享 =====
+  // 创建分享
+  rpc CreateShare(CreateShareRequest) returns (Response);
+  // 访问分享（匿名）
+  rpc AccessShare(AccessShareRequest) returns (Response);
 }

@@ -3,7 +3,7 @@ package userlogic
 import (
 	"context"
 	"errors"
-	"onecloud/ent/ent"
+	"onecloud/ent"
 	"onecloud/internal/pkg/jwt"
 	"onecloud/internal/pkg/response"
 	"onecloud/internal/repository"
@@ -93,6 +93,6 @@ func (l *LoginByAccountLogic) LoginByAccount(in *service.LoginByAccountReq) (*se
 	token, _ := jwt.GenerateToken(query.ID)
 
 	return response.Success(&service.LoginRes{User: &service.UserInfo{
-		Id: query.ID, Name: query.Nickname, Avatar: &query.Avatar, Phone: &query.Phone, Email: &query.Email,
+		Id: query.ID, Username: query.Username, Name: query.Nickname, Avatar: &query.Avatar, Phone: &query.Phone, Email: &query.Email,
 	}, Token: token})
 }

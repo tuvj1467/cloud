@@ -5,8 +5,9 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
-	"onecloud/ent/ent"
-	"onecloud/ent/ent/user"
+	"onecloud/ent"
+	"onecloud/ent/user"
+	"onecloud/internal/pkg/passwd"
 	"onecloud/internal/pkg/snowId"
 	"onecloud/proto/.proto/service"
 )
@@ -20,42 +21,61 @@ func NewUserRepository(client *ent.Client) *UserRepository {
 	return &UserRepository{client: client}
 }
 
+// CreateByAccount 用户名注册（密码使用 bcrypt 加密）
 func (r *UserRepository) CreateByAccount(ctx context.Context, snowflake *snowId.Snowflake, name string, password string) (string, error) {
 	id := snowflake.MustIdS()
+	hashed, err := passwd.Hash(password)
+	if err != nil {
+		return id, fmt.Errorf("密码加密失败: %w", err)
+	}
 	return id, r.client.User.Create().
-		SetID(id). //雪花ID
+		SetID(id). // 雪花ID
+		SetUsername(name).
 		SetNickname(name).
-		SetPassword(password).
+		SetPassword(hashed).
 		SetAvatar("1").
 		SetNillableEmail(nil).
 		SetNillablePhone(nil).
 		Exec(ctx)
 }
 
+// CreateByPhone 手机号注册（密码使用 bcrypt 加密）
 func (r *UserRepository) CreateByPhone(ctx context.Context, snowflake *snowId.Snowflake, phone, name, password string) (string, error) {
 	id := snowflake.MustIdS()
+	hashed, err := passwd.Hash(password)
+	if err != nil {
+		return id, fmt.Errorf("密码加密失败: %w", err)
+	}
 	return id, r.client.User.Create().
-		SetID(id). //雪花ID
+		SetID(id). // 雪花ID
+		SetUsername(phone).
 		SetNickname(name).
-		SetPassword(password).
+		SetPassword(hashed).
 		SetAvatar("1").
 		SetNillableEmail(nil).
 		SetPhone(phone).
 		Exec(ctx)
 }
 
+// CreateByEmail 邮箱注册（密码使用 bcrypt 加密）
 func (r *UserRepository) CreateByEmail(ctx context.Context, snowflake *snowId.Snowflake, email, name, password string) (string, error) {
 	id := snowflake.MustIdS()
+	hashed, err := passwd.Hash(password)
+	if err != nil {
+		return id, fmt.Errorf("密码加密失败: %w", err)
+	}
 	return id, r.client.User.Create().
-		SetID(id). //雪花ID
+		SetID(id). // 雪花ID
+		SetUsername(email).
 		SetNickname(name).
-		SetPassword(password).
+		SetPassword(hashed).
 		SetAvatar("1").
 		SetEmail(email).
 		SetNillablePhone(nil).
 		Exec(ctx)
 }
 
+// GetById 根据ID获取用户
 func (r *UserRepository) GetById(ctx context.Context, id string) *ent.User {
 	res, err := r.client.User.Get(ctx, id)
 	if err != nil {
@@ -64,64 +84,94 @@ func (r *UserRepository) GetById(ctx context.Context, id string) *ent.User {
 	return res
 }
 
+// LoginByName 用户名登录
+// 支持存量明文密码渐进式迁移：若 DB 中是明文，校验通过后自动升级为 bcrypt
 func (r *UserRepository) LoginByName(ctx context.Context, in *service.LoginByAccountReq) (*ent.User, error) {
-	res, err := r.client.User.Get(ctx, in.Account)
+	res, err := r.client.User.Query().
+		Where(user.UsernameEQ(in.Account)).
+		Only(ctx)
 	if err != nil {
 		if ent.IsNotFound(err) {
-			fmt.Println("用户不存在")
-			return nil, errors.New("用户不存在")
+			return nil, errors.New("用户名或密码错误")
 		}
-
 		return nil, err
 	}
-	if res.Password != in.Password {
-		return nil, errors.New("密码或账号错误")
+	if err := r.verifyAndUpgrade(ctx, res, in.Password); err != nil {
+		return nil, err
 	}
-
 	return res, nil
 }
 
+// LoginByPhone 手机号登录
+// 支持存量明文密码渐进式迁移
 func (r *UserRepository) LoginByPhone(ctx context.Context, in *service.LoginByAccountReq) (*ent.User, error) {
 	res, err := r.client.User.Query().
-		Where(user.PhoneEQ(in.GetAccount())). //查找相同的phone
+		Where(user.PhoneEQ(in.GetAccount())). // 查找相同的phone
 		Only(ctx)
 
 	if err != nil {
 		if ent.IsNotFound(err) {
-			fmt.Println("用户不存在")
-			return nil, errors.New("用户不存在")
+			return nil, errors.New("用户名或密码错误")
 		}
 		return nil, err
 	}
-	if res.Password != in.Password {
-		return nil, errors.New("密码或电话错误")
+	if err := r.verifyAndUpgrade(ctx, res, in.Password); err != nil {
+		return nil, err
 	}
-
 	return res, nil
 }
 
+// LoginByEmail 邮箱登录
+// 支持存量明文密码渐进式迁移
 func (r *UserRepository) LoginByEmail(ctx context.Context, in *service.LoginByAccountReq) (*ent.User, error) {
 	res, err := r.client.User.Query().
-		Where(user.EmailEQ(in.GetAccount())). //查找相同的email
+		Where(user.EmailEQ(in.GetAccount())). // 查找相同的email
 		Only(ctx)
 
 	if err != nil {
 		if ent.IsNotFound(err) {
-			fmt.Println("用户不存在")
-			return nil, errors.New("用户不存在")
+			return nil, errors.New("用户名或密码错误")
 		}
 		return nil, err
 	}
-	if res.Password != in.Password { //
-		return nil, errors.New("密码或电话错误")
+	if err := r.verifyAndUpgrade(ctx, res, in.Password); err != nil {
+		return nil, err
+	}
+	return res, nil
+}
+
+// verifyAndUpgrade 校验密码并自动升级存量明文密码为 bcrypt
+// 1. 若已是 bcrypt 哈希：直接 Compare
+// 2. 若是明文：明文匹配后异步升级为 bcrypt
+// 3. 都不匹配：返回「用户名或密码错误」（不区分账号是否存在，防爆破）
+func (r *UserRepository) verifyAndUpgrade(ctx context.Context, res *ent.User, plain string) error {
+	if passwd.IsHashed(res.Password) {
+		// 已加密：直接校验
+		if err := passwd.Compare(res.Password, plain); err != nil {
+			return errors.New("用户名或密码错误")
+		}
+		return nil
 	}
 
-	return res, nil
+	// 明文兜底（存量数据）
+	if res.Password != plain {
+		return errors.New("用户名或密码错误")
+	}
+
+	// 命中明文，升级为 bcrypt（失败仅告警，不影响登录）
+	if hashed, err := passwd.Hash(plain); err == nil {
+		if err := r.client.User.UpdateOneID(res.ID).
+			SetPassword(hashed).
+			Exec(ctx); err != nil {
+			fmt.Printf("密码自动升级失败 user_id=%s: %v\n", res.ID, err)
+		}
+	}
+	return nil
 }
 
 //==========验证码登录=========//
 
-// 手机验证码
+// LoginByPhoneSms 手机验证码登录
 func (r *UserRepository) LoginByPhoneSms(ctx context.Context, in *service.LoginByPhoneSmsReq) (*ent.User, error) {
 	res, err := r.client.User.Query().
 		Where(user.PhoneEQ(in.GetPhone())).
@@ -129,7 +179,6 @@ func (r *UserRepository) LoginByPhoneSms(ctx context.Context, in *service.LoginB
 
 	if err != nil {
 		if ent.IsNotFound(err) {
-			fmt.Println("用户不存在")
 			return nil, errors.New("用户不存在")
 		}
 		return nil, err
@@ -138,7 +187,7 @@ func (r *UserRepository) LoginByPhoneSms(ctx context.Context, in *service.LoginB
 	return res, nil
 }
 
-// 邮箱验证码
+// LoginByEmailSms 邮箱验证码登录
 func (r *UserRepository) LoginByEmailSms(ctx context.Context, in *service.LoginByEmailSmsReq) (*ent.User, error) {
 	res, err := r.client.User.Query().
 		Where(user.EmailEQ(in.GetEmail())).
@@ -146,7 +195,6 @@ func (r *UserRepository) LoginByEmailSms(ctx context.Context, in *service.LoginB
 
 	if err != nil {
 		if ent.IsNotFound(err) {
-			fmt.Println("用户不存在")
 			return nil, errors.New("用户不存在")
 		}
 		return nil, err
@@ -155,9 +203,8 @@ func (r *UserRepository) LoginByEmailSms(ctx context.Context, in *service.LoginB
 	return res, nil
 }
 
-// 重置密码
+// ResetPassword 重置密码（使用 bcrypt 加密新密码）
 func (r *UserRepository) ResetPassword(ctx context.Context, in *service.ResetPasswordReq) error {
-
 	var res *ent.User
 	var err error
 	switch in.GetContact().(type) {
@@ -171,16 +218,19 @@ func (r *UserRepository) ResetPassword(ctx context.Context, in *service.ResetPas
 		if err != nil {
 			return err
 		}
+	}
 
+	hashed, err := passwd.Hash(in.GetNewPassword())
+	if err != nil {
+		return fmt.Errorf("密码加密失败: %w", err)
 	}
 	return r.client.User.UpdateOneID(res.ID).
-		SetPassword(in.GetNewPassword()).
+		SetPassword(hashed).
 		Exec(ctx)
 }
 
-// 找回
+// FindBack 找回账号
 func (r *UserRepository) FindBack(ctx context.Context, in *service.FindAccountReq) (*ent.User, error) {
-
 	var res *ent.User
 	var err error
 	switch in.GetContact().(type) {
@@ -194,14 +244,6 @@ func (r *UserRepository) FindBack(ctx context.Context, in *service.FindAccountRe
 		if err != nil {
 			return nil, err
 		}
-
 	}
 	return r.client.User.Get(ctx, res.ID)
-
 }
-
-//func (r *UserRepository) Update(ctx context.Context, u *ent.User) error {
-//	return r.client.User.UpdateOne(u).
-//		SetNickname(u.Nickname).
-//		Save(ctx)
-//}

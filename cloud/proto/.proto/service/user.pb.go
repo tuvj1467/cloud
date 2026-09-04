@@ -79,10 +79,11 @@ func (SmsType) EnumDescriptor() ([]byte, []int) {
 type UserInfo struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`               // 用户唯一ID（雪花ID）
-	Name          string                 `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`           // 用户名
-	Avatar        *string                `protobuf:"bytes,3,opt,name=avatar,proto3,oneof" json:"avatar,omitempty"` // 头像URL
-	Email         *string                `protobuf:"bytes,4,opt,name=email,proto3,oneof" json:"email,omitempty"`   // 邮箱（已脱敏）
-	Phone         *string                `protobuf:"bytes,5,opt,name=phone,proto3,oneof" json:"phone,omitempty"`   // 手机号（已脱敏，如 138****1234）
+	Username      string                 `protobuf:"bytes,2,opt,name=username,proto3" json:"username,omitempty"`   // 登录账号（唯一且不可修改）
+	Name          string                 `protobuf:"bytes,3,opt,name=name,proto3" json:"name,omitempty"`           // 显示名称（可修改）
+	Avatar        *string                `protobuf:"bytes,4,opt,name=avatar,proto3,oneof" json:"avatar,omitempty"` // 头像URL
+	Email         *string                `protobuf:"bytes,5,opt,name=email,proto3,oneof" json:"email,omitempty"`   // 邮箱（已脱敏）
+	Phone         *string                `protobuf:"bytes,6,opt,name=phone,proto3,oneof" json:"phone,omitempty"`   // 手机号（已脱敏，如 138****1234）
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -120,6 +121,13 @@ func (*UserInfo) Descriptor() ([]byte, []int) {
 func (x *UserInfo) GetId() string {
 	if x != nil {
 		return x.Id
+	}
+	return ""
+}
+
+func (x *UserInfo) GetUsername() string {
+	if x != nil {
+		return x.Username
 	}
 	return ""
 }
@@ -948,13 +956,14 @@ var File_user_proto protoreflect.FileDescriptor
 const file_user_proto_rawDesc = "" +
 	"\n" +
 	"\n" +
-	"user.proto\x12\astorage\x1a\x0evalidate.proto\"\xa0\x01\n" +
+	"user.proto\x12\astorage\x1a\x0evalidate.proto\"\xbc\x01\n" +
 	"\bUserInfo\x12\x0e\n" +
-	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +
-	"\x04name\x18\x02 \x01(\tR\x04name\x12\x1b\n" +
-	"\x06avatar\x18\x03 \x01(\tH\x00R\x06avatar\x88\x01\x01\x12\x19\n" +
-	"\x05email\x18\x04 \x01(\tH\x01R\x05email\x88\x01\x01\x12\x19\n" +
-	"\x05phone\x18\x05 \x01(\tH\x02R\x05phone\x88\x01\x01B\t\n" +
+	"\x02id\x18\x01 \x01(\tR\x02id\x12\x1a\n" +
+	"\busername\x18\x02 \x01(\tR\busername\x12\x12\n" +
+	"\x04name\x18\x03 \x01(\tR\x04name\x12\x1b\n" +
+	"\x06avatar\x18\x04 \x01(\tH\x00R\x06avatar\x88\x01\x01\x12\x19\n" +
+	"\x05email\x18\x05 \x01(\tH\x01R\x05email\x88\x01\x01\x12\x19\n" +
+	"\x05phone\x18\x06 \x01(\tH\x02R\x05phone\x88\x01\x01B\t\n" +
 	"\a_avatarB\b\n" +
 	"\x06_emailB\b\n" +
 	"\x06_phone\"\xee\x01\n" +

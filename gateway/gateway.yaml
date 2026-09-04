@@ -1,4 +1,4 @@
-# gateway.yaml（100%符合go-zero解析规则，缩进用2个空格）
+# gateway.yaml（符合 go-zero 解析规则，缩进用 2 个空格）
 Name: storage-gateway       # 0空格（顶行）
 Host: 0.0.0.0               # 0空格
 Port: 8888                  # 0空格
@@ -12,13 +12,89 @@ upstreams:                  # 0空格
       target: 127.0.0.1:8081 # 4空格（grpc下的字段）
       schema: ""            # 4空格（1.4+版本必填）
     ProtoSet: protoset.pb
-#    ProtoDir: D:/ONE_CLOUD/cloud/proto
     ProtoSets:
-      - protoset.pb  # 新增：依赖的validate.proto
-    Mappings:                # 2空格（与grpc同级！！！核心中的核心）
-      - Method: POST        # 4空格（mapping下的数组项）
-        Path: /file/get     # 6空格（与method同级）
-        RpcPath: storage.File/GetFileInfo # 6空格
+      - protoset.pb  # 依赖的 validate.proto
+    Mappings:                # 2空格（与grpc同级）
+      # ===== 文件服务 =====
       - Method: POST        # 4空格
-        Path: /user/register # 6空格
-        RpcPath: storage.User/Register # 6空格
+        Path: /file/info    # 6空格
+        RpcPath: storage.File/GetFileInfo
+      - Method: POST
+        Path: /file/upload
+        RpcPath: storage.File/UploadFile
+      - Method: GET
+        Path: /file/list
+        RpcPath: storage.File/GetFileList
+      - Method: GET
+        Path: /file/bucket_list
+        RpcPath: storage.File/GetBucketFileList
+      - Method: POST
+        Path: /file/rename
+        RpcPath: storage.File/RenameFile
+      - Method: POST
+        Path: /file/delete
+        RpcPath: storage.File/DeleteFile
+      - Method: GET
+        Path: /file/download
+        RpcPath: storage.File/DownloadFile
+      - Method: POST
+        Path: /file/copy
+        RpcPath: storage.File/CopyFile
+      # ===== 分片上传 =====
+      - Method: POST
+        Path: /file/multipart/init
+        RpcPath: storage.File/InitMultipartUpload
+      - Method: POST
+        Path: /file/multipart/upload
+        RpcPath: storage.File/UploadPart
+      - Method: POST
+        Path: /file/multipart/complete
+        RpcPath: storage.File/CompleteMultipartUpload
+      - Method: POST
+        Path: /file/multipart/abort
+        RpcPath: storage.File/AbortMultipartUpload
+      # ===== 文件分享 =====
+      - Method: POST
+        Path: /file/share/create
+        RpcPath: storage.File/CreateShare
+      - Method: GET
+        Path: /file/share/access
+        RpcPath: storage.File/AccessShare
+      # ===== 桶服务 =====
+      - Method: POST
+        Path: /bucket/create
+        RpcPath: storage.Bucket/CreateBucket
+      - Method: GET
+        Path: /bucket/list
+        RpcPath: storage.Bucket/GetBucketList
+      - Method: GET
+        Path: /bucket/info
+        RpcPath: storage.Bucket/GetBucketInfo
+      - Method: POST
+        Path: /bucket/update
+        RpcPath: storage.Bucket/UpdateBucket
+      - Method: POST
+        Path: /bucket/delete
+        RpcPath: storage.Bucket/DeleteBucket
+      # ===== 用户服务 =====
+      - Method: POST
+        Path: /user/register
+        RpcPath: storage.User/Register
+      - Method: POST
+        Path: /user/loginByAccount
+        RpcPath: storage.User/LoginByAccount
+      - Method: POST
+        Path: /user/loginByPhoneSms
+        RpcPath: storage.User/LoginByPhoneSms
+      - Method: POST
+        Path: /user/loginByEmailSms
+        RpcPath: storage.User/LoginByEmailSms
+      - Method: POST
+        Path: /user/sendVerificationCode
+        RpcPath: storage.User/SendVerificationCode
+      - Method: POST
+        Path: /user/resetPassword
+        RpcPath: storage.User/ResetPassword
+      - Method: POST
+        Path: /user/findAccount
+        RpcPath: storage.User/FindAccount

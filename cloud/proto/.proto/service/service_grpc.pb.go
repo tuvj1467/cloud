@@ -359,35 +359,327 @@ var User_ServiceDesc = grpc.ServiceDesc{
 }
 
 const (
-	File_GetFileInfo_FullMethodName       = "/storage.File/GetFileInfo"
-	File_UploadFile_FullMethodName        = "/storage.File/UploadFile"
-	File_GetFileList_FullMethodName       = "/storage.File/GetFileList"
-	File_GetBucketFileList_FullMethodName = "/storage.File/GetBucketFileList"
-	File_RenameFile_FullMethodName        = "/storage.File/RenameFile"
-	File_DeleteFile_FullMethodName        = "/storage.File/DeleteFile"
-	File_DownloadFile_FullMethodName      = "/storage.File/DownloadFile"
+	Bucket_CreateBucket_FullMethodName  = "/storage.Bucket/CreateBucket"
+	Bucket_GetBucketList_FullMethodName = "/storage.Bucket/GetBucketList"
+	Bucket_GetBucketInfo_FullMethodName = "/storage.Bucket/GetBucketInfo"
+	Bucket_UpdateBucket_FullMethodName  = "/storage.Bucket/UpdateBucket"
+	Bucket_DeleteBucket_FullMethodName  = "/storage.Bucket/DeleteBucket"
+)
+
+// BucketClient is the client API for Bucket service.
+//
+// For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
+//
+// 存储桶服务定义
+type BucketClient interface {
+	// 创建桶
+	CreateBucket(ctx context.Context, in *CreateBucketRequest, opts ...grpc.CallOption) (*Response, error)
+	// 获取桶列表
+	GetBucketList(ctx context.Context, in *BucketListRequest, opts ...grpc.CallOption) (*Response, error)
+	// 获取桶详情
+	GetBucketInfo(ctx context.Context, in *BucketInfoRequest, opts ...grpc.CallOption) (*Response, error)
+	// 更新桶
+	UpdateBucket(ctx context.Context, in *UpdateBucketRequest, opts ...grpc.CallOption) (*Response, error)
+	// 删除桶
+	DeleteBucket(ctx context.Context, in *DeleteBucketRequest, opts ...grpc.CallOption) (*Response, error)
+}
+
+type bucketClient struct {
+	cc grpc.ClientConnInterface
+}
+
+func NewBucketClient(cc grpc.ClientConnInterface) BucketClient {
+	return &bucketClient{cc}
+}
+
+func (c *bucketClient) CreateBucket(ctx context.Context, in *CreateBucketRequest, opts ...grpc.CallOption) (*Response, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(Response)
+	err := c.cc.Invoke(ctx, Bucket_CreateBucket_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *bucketClient) GetBucketList(ctx context.Context, in *BucketListRequest, opts ...grpc.CallOption) (*Response, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(Response)
+	err := c.cc.Invoke(ctx, Bucket_GetBucketList_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *bucketClient) GetBucketInfo(ctx context.Context, in *BucketInfoRequest, opts ...grpc.CallOption) (*Response, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(Response)
+	err := c.cc.Invoke(ctx, Bucket_GetBucketInfo_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *bucketClient) UpdateBucket(ctx context.Context, in *UpdateBucketRequest, opts ...grpc.CallOption) (*Response, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(Response)
+	err := c.cc.Invoke(ctx, Bucket_UpdateBucket_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *bucketClient) DeleteBucket(ctx context.Context, in *DeleteBucketRequest, opts ...grpc.CallOption) (*Response, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(Response)
+	err := c.cc.Invoke(ctx, Bucket_DeleteBucket_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+// BucketServer is the server API for Bucket service.
+// All implementations must embed UnimplementedBucketServer
+// for forward compatibility.
+//
+// 存储桶服务定义
+type BucketServer interface {
+	// 创建桶
+	CreateBucket(context.Context, *CreateBucketRequest) (*Response, error)
+	// 获取桶列表
+	GetBucketList(context.Context, *BucketListRequest) (*Response, error)
+	// 获取桶详情
+	GetBucketInfo(context.Context, *BucketInfoRequest) (*Response, error)
+	// 更新桶
+	UpdateBucket(context.Context, *UpdateBucketRequest) (*Response, error)
+	// 删除桶
+	DeleteBucket(context.Context, *DeleteBucketRequest) (*Response, error)
+	mustEmbedUnimplementedBucketServer()
+}
+
+// UnimplementedBucketServer must be embedded to have
+// forward compatible implementations.
+//
+// NOTE: this should be embedded by value instead of pointer to avoid a nil
+// pointer dereference when methods are called.
+type UnimplementedBucketServer struct{}
+
+func (UnimplementedBucketServer) CreateBucket(context.Context, *CreateBucketRequest) (*Response, error) {
+	return nil, status.Error(codes.Unimplemented, "method CreateBucket not implemented")
+}
+func (UnimplementedBucketServer) GetBucketList(context.Context, *BucketListRequest) (*Response, error) {
+	return nil, status.Error(codes.Unimplemented, "method GetBucketList not implemented")
+}
+func (UnimplementedBucketServer) GetBucketInfo(context.Context, *BucketInfoRequest) (*Response, error) {
+	return nil, status.Error(codes.Unimplemented, "method GetBucketInfo not implemented")
+}
+func (UnimplementedBucketServer) UpdateBucket(context.Context, *UpdateBucketRequest) (*Response, error) {
+	return nil, status.Error(codes.Unimplemented, "method UpdateBucket not implemented")
+}
+func (UnimplementedBucketServer) DeleteBucket(context.Context, *DeleteBucketRequest) (*Response, error) {
+	return nil, status.Error(codes.Unimplemented, "method DeleteBucket not implemented")
+}
+func (UnimplementedBucketServer) mustEmbedUnimplementedBucketServer() {}
+func (UnimplementedBucketServer) testEmbeddedByValue()                {}
+
+// UnsafeBucketServer may be embedded to opt out of forward compatibility for this service.
+// Use of this interface is not recommended, as added methods to BucketServer will
+// result in compilation errors.
+type UnsafeBucketServer interface {
+	mustEmbedUnimplementedBucketServer()
+}
+
+func RegisterBucketServer(s grpc.ServiceRegistrar, srv BucketServer) {
+	// If the following call panics, it indicates UnimplementedBucketServer was
+	// embedded by pointer and is nil.  This will cause panics if an
+	// unimplemented method is ever invoked, so we test this at initialization
+	// time to prevent it from happening at runtime later due to I/O.
+	if t, ok := srv.(interface{ testEmbeddedByValue() }); ok {
+		t.testEmbeddedByValue()
+	}
+	s.RegisterService(&Bucket_ServiceDesc, srv)
+}
+
+func _Bucket_CreateBucket_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CreateBucketRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(BucketServer).CreateBucket(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Bucket_CreateBucket_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(BucketServer).CreateBucket(ctx, req.(*CreateBucketRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Bucket_GetBucketList_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(BucketListRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(BucketServer).GetBucketList(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Bucket_GetBucketList_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(BucketServer).GetBucketList(ctx, req.(*BucketListRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Bucket_GetBucketInfo_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(BucketInfoRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(BucketServer).GetBucketInfo(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Bucket_GetBucketInfo_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(BucketServer).GetBucketInfo(ctx, req.(*BucketInfoRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Bucket_UpdateBucket_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UpdateBucketRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(BucketServer).UpdateBucket(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Bucket_UpdateBucket_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(BucketServer).UpdateBucket(ctx, req.(*UpdateBucketRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Bucket_DeleteBucket_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(DeleteBucketRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(BucketServer).DeleteBucket(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Bucket_DeleteBucket_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(BucketServer).DeleteBucket(ctx, req.(*DeleteBucketRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+// Bucket_ServiceDesc is the grpc.ServiceDesc for Bucket service.
+// It's only intended for direct use with grpc.RegisterService,
+// and not to be introspected or modified (even as a copy)
+var Bucket_ServiceDesc = grpc.ServiceDesc{
+	ServiceName: "storage.Bucket",
+	HandlerType: (*BucketServer)(nil),
+	Methods: []grpc.MethodDesc{
+		{
+			MethodName: "CreateBucket",
+			Handler:    _Bucket_CreateBucket_Handler,
+		},
+		{
+			MethodName: "GetBucketList",
+			Handler:    _Bucket_GetBucketList_Handler,
+		},
+		{
+			MethodName: "GetBucketInfo",
+			Handler:    _Bucket_GetBucketInfo_Handler,
+		},
+		{
+			MethodName: "UpdateBucket",
+			Handler:    _Bucket_UpdateBucket_Handler,
+		},
+		{
+			MethodName: "DeleteBucket",
+			Handler:    _Bucket_DeleteBucket_Handler,
+		},
+	},
+	Streams:  []grpc.StreamDesc{},
+	Metadata: "service.proto",
+}
+
+const (
+	File_GetFileInfo_FullMethodName             = "/storage.File/GetFileInfo"
+	File_UploadFile_FullMethodName              = "/storage.File/UploadFile"
+	File_GetFileList_FullMethodName             = "/storage.File/GetFileList"
+	File_GetBucketFileList_FullMethodName       = "/storage.File/GetBucketFileList"
+	File_RenameFile_FullMethodName              = "/storage.File/RenameFile"
+	File_DeleteFile_FullMethodName              = "/storage.File/DeleteFile"
+	File_DownloadFile_FullMethodName            = "/storage.File/DownloadFile"
+	File_CopyFile_FullMethodName                = "/storage.File/CopyFile"
+	File_InitMultipartUpload_FullMethodName     = "/storage.File/InitMultipartUpload"
+	File_UploadPart_FullMethodName              = "/storage.File/UploadPart"
+	File_CompleteMultipartUpload_FullMethodName = "/storage.File/CompleteMultipartUpload"
+	File_AbortMultipartUpload_FullMethodName    = "/storage.File/AbortMultipartUpload"
+	File_CreateShare_FullMethodName             = "/storage.File/CreateShare"
+	File_AccessShare_FullMethodName             = "/storage.File/AccessShare"
 )
 
 // FileClient is the client API for File service.
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 //
-// 存储服务定义
+// 文件服务定义
 type FileClient interface {
+	// ===== 基础操作 =====
 	// 获取文件信息
 	GetFileInfo(ctx context.Context, in *FileInfoRequest, opts ...grpc.CallOption) (*Response, error)
 	// 上传文件
 	UploadFile(ctx context.Context, in *UploadFileRequest, opts ...grpc.CallOption) (*Response, error)
-	// 获取所有桶文件列表
+	// 获取用户所有文件列表
 	GetFileList(ctx context.Context, in *FileListRequest, opts ...grpc.CallOption) (*Response, error)
 	// 获取用户对应桶文件列表
-	GetBucketFileList(ctx context.Context, in *FileListRequest, opts ...grpc.CallOption) (*Response, error)
+	GetBucketFileList(ctx context.Context, in *BucketFileListRequest, opts ...grpc.CallOption) (*Response, error)
 	// 重命名文件
 	RenameFile(ctx context.Context, in *RenameFileRequest, opts ...grpc.CallOption) (*Response, error)
 	// 删除文件
 	DeleteFile(ctx context.Context, in *DeleteFileRequest, opts ...grpc.CallOption) (*Response, error)
 	// 下载文件
 	DownloadFile(ctx context.Context, in *DownloadFileRequest, opts ...grpc.CallOption) (*Response, error)
+	// 复制文件
+	CopyFile(ctx context.Context, in *CopyFileRequest, opts ...grpc.CallOption) (*Response, error)
+	// ===== 分片上传 =====
+	// 初始化分片上传
+	InitMultipartUpload(ctx context.Context, in *InitMultipartUploadRequest, opts ...grpc.CallOption) (*Response, error)
+	// 上传单个分片
+	UploadPart(ctx context.Context, in *UploadPartRequest, opts ...grpc.CallOption) (*Response, error)
+	// 完成分片上传（合并）
+	CompleteMultipartUpload(ctx context.Context, in *CompleteMultipartUploadRequest, opts ...grpc.CallOption) (*Response, error)
+	// 取消分片上传
+	AbortMultipartUpload(ctx context.Context, in *AbortMultipartUploadRequest, opts ...grpc.CallOption) (*Response, error)
+	// ===== 文件分享 =====
+	// 创建分享
+	CreateShare(ctx context.Context, in *CreateShareRequest, opts ...grpc.CallOption) (*Response, error)
+	// 访问分享（匿名）
+	AccessShare(ctx context.Context, in *AccessShareRequest, opts ...grpc.CallOption) (*Response, error)
 }
 
 type fileClient struct {
@@ -428,7 +720,7 @@ func (c *fileClient) GetFileList(ctx context.Context, in *FileListRequest, opts 
 	return out, nil
 }
 
-func (c *fileClient) GetBucketFileList(ctx context.Context, in *FileListRequest, opts ...grpc.CallOption) (*Response, error) {
+func (c *fileClient) GetBucketFileList(ctx context.Context, in *BucketFileListRequest, opts ...grpc.CallOption) (*Response, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(Response)
 	err := c.cc.Invoke(ctx, File_GetBucketFileList_FullMethodName, in, out, cOpts...)
@@ -468,26 +760,113 @@ func (c *fileClient) DownloadFile(ctx context.Context, in *DownloadFileRequest, 
 	return out, nil
 }
 
+func (c *fileClient) CopyFile(ctx context.Context, in *CopyFileRequest, opts ...grpc.CallOption) (*Response, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(Response)
+	err := c.cc.Invoke(ctx, File_CopyFile_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *fileClient) InitMultipartUpload(ctx context.Context, in *InitMultipartUploadRequest, opts ...grpc.CallOption) (*Response, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(Response)
+	err := c.cc.Invoke(ctx, File_InitMultipartUpload_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *fileClient) UploadPart(ctx context.Context, in *UploadPartRequest, opts ...grpc.CallOption) (*Response, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(Response)
+	err := c.cc.Invoke(ctx, File_UploadPart_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *fileClient) CompleteMultipartUpload(ctx context.Context, in *CompleteMultipartUploadRequest, opts ...grpc.CallOption) (*Response, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(Response)
+	err := c.cc.Invoke(ctx, File_CompleteMultipartUpload_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *fileClient) AbortMultipartUpload(ctx context.Context, in *AbortMultipartUploadRequest, opts ...grpc.CallOption) (*Response, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(Response)
+	err := c.cc.Invoke(ctx, File_AbortMultipartUpload_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *fileClient) CreateShare(ctx context.Context, in *CreateShareRequest, opts ...grpc.CallOption) (*Response, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(Response)
+	err := c.cc.Invoke(ctx, File_CreateShare_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *fileClient) AccessShare(ctx context.Context, in *AccessShareRequest, opts ...grpc.CallOption) (*Response, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(Response)
+	err := c.cc.Invoke(ctx, File_AccessShare_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // FileServer is the server API for File service.
 // All implementations must embed UnimplementedFileServer
 // for forward compatibility.
 //
-// 存储服务定义
+// 文件服务定义
 type FileServer interface {
+	// ===== 基础操作 =====
 	// 获取文件信息
 	GetFileInfo(context.Context, *FileInfoRequest) (*Response, error)
 	// 上传文件
 	UploadFile(context.Context, *UploadFileRequest) (*Response, error)
-	// 获取所有桶文件列表
+	// 获取用户所有文件列表
 	GetFileList(context.Context, *FileListRequest) (*Response, error)
 	// 获取用户对应桶文件列表
-	GetBucketFileList(context.Context, *FileListRequest) (*Response, error)
+	GetBucketFileList(context.Context, *BucketFileListRequest) (*Response, error)
 	// 重命名文件
 	RenameFile(context.Context, *RenameFileRequest) (*Response, error)
 	// 删除文件
 	DeleteFile(context.Context, *DeleteFileRequest) (*Response, error)
 	// 下载文件
 	DownloadFile(context.Context, *DownloadFileRequest) (*Response, error)
+	// 复制文件
+	CopyFile(context.Context, *CopyFileRequest) (*Response, error)
+	// ===== 分片上传 =====
+	// 初始化分片上传
+	InitMultipartUpload(context.Context, *InitMultipartUploadRequest) (*Response, error)
+	// 上传单个分片
+	UploadPart(context.Context, *UploadPartRequest) (*Response, error)
+	// 完成分片上传（合并）
+	CompleteMultipartUpload(context.Context, *CompleteMultipartUploadRequest) (*Response, error)
+	// 取消分片上传
+	AbortMultipartUpload(context.Context, *AbortMultipartUploadRequest) (*Response, error)
+	// ===== 文件分享 =====
+	// 创建分享
+	CreateShare(context.Context, *CreateShareRequest) (*Response, error)
+	// 访问分享（匿名）
+	AccessShare(context.Context, *AccessShareRequest) (*Response, error)
 	mustEmbedUnimplementedFileServer()
 }
 
@@ -507,7 +886,7 @@ func (UnimplementedFileServer) UploadFile(context.Context, *UploadFileRequest) (
 func (UnimplementedFileServer) GetFileList(context.Context, *FileListRequest) (*Response, error) {
 	return nil, status.Error(codes.Unimplemented, "method GetFileList not implemented")
 }
-func (UnimplementedFileServer) GetBucketFileList(context.Context, *FileListRequest) (*Response, error) {
+func (UnimplementedFileServer) GetBucketFileList(context.Context, *BucketFileListRequest) (*Response, error) {
 	return nil, status.Error(codes.Unimplemented, "method GetBucketFileList not implemented")
 }
 func (UnimplementedFileServer) RenameFile(context.Context, *RenameFileRequest) (*Response, error) {
@@ -518,6 +897,27 @@ func (UnimplementedFileServer) DeleteFile(context.Context, *DeleteFileRequest) (
 }
 func (UnimplementedFileServer) DownloadFile(context.Context, *DownloadFileRequest) (*Response, error) {
 	return nil, status.Error(codes.Unimplemented, "method DownloadFile not implemented")
+}
+func (UnimplementedFileServer) CopyFile(context.Context, *CopyFileRequest) (*Response, error) {
+	return nil, status.Error(codes.Unimplemented, "method CopyFile not implemented")
+}
+func (UnimplementedFileServer) InitMultipartUpload(context.Context, *InitMultipartUploadRequest) (*Response, error) {
+	return nil, status.Error(codes.Unimplemented, "method InitMultipartUpload not implemented")
+}
+func (UnimplementedFileServer) UploadPart(context.Context, *UploadPartRequest) (*Response, error) {
+	return nil, status.Error(codes.Unimplemented, "method UploadPart not implemented")
+}
+func (UnimplementedFileServer) CompleteMultipartUpload(context.Context, *CompleteMultipartUploadRequest) (*Response, error) {
+	return nil, status.Error(codes.Unimplemented, "method CompleteMultipartUpload not implemented")
+}
+func (UnimplementedFileServer) AbortMultipartUpload(context.Context, *AbortMultipartUploadRequest) (*Response, error) {
+	return nil, status.Error(codes.Unimplemented, "method AbortMultipartUpload not implemented")
+}
+func (UnimplementedFileServer) CreateShare(context.Context, *CreateShareRequest) (*Response, error) {
+	return nil, status.Error(codes.Unimplemented, "method CreateShare not implemented")
+}
+func (UnimplementedFileServer) AccessShare(context.Context, *AccessShareRequest) (*Response, error) {
+	return nil, status.Error(codes.Unimplemented, "method AccessShare not implemented")
 }
 func (UnimplementedFileServer) mustEmbedUnimplementedFileServer() {}
 func (UnimplementedFileServer) testEmbeddedByValue()              {}
@@ -595,7 +995,7 @@ func _File_GetFileList_Handler(srv interface{}, ctx context.Context, dec func(in
 }
 
 func _File_GetBucketFileList_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(FileListRequest)
+	in := new(BucketFileListRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -607,7 +1007,7 @@ func _File_GetBucketFileList_Handler(srv interface{}, ctx context.Context, dec f
 		FullMethod: File_GetBucketFileList_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(FileServer).GetBucketFileList(ctx, req.(*FileListRequest))
+		return srv.(FileServer).GetBucketFileList(ctx, req.(*BucketFileListRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -666,6 +1066,132 @@ func _File_DownloadFile_Handler(srv interface{}, ctx context.Context, dec func(i
 	return interceptor(ctx, in, info, handler)
 }
 
+func _File_CopyFile_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CopyFileRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(FileServer).CopyFile(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: File_CopyFile_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(FileServer).CopyFile(ctx, req.(*CopyFileRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _File_InitMultipartUpload_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(InitMultipartUploadRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(FileServer).InitMultipartUpload(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: File_InitMultipartUpload_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(FileServer).InitMultipartUpload(ctx, req.(*InitMultipartUploadRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _File_UploadPart_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UploadPartRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(FileServer).UploadPart(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: File_UploadPart_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(FileServer).UploadPart(ctx, req.(*UploadPartRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _File_CompleteMultipartUpload_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CompleteMultipartUploadRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(FileServer).CompleteMultipartUpload(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: File_CompleteMultipartUpload_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(FileServer).CompleteMultipartUpload(ctx, req.(*CompleteMultipartUploadRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _File_AbortMultipartUpload_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(AbortMultipartUploadRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(FileServer).AbortMultipartUpload(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: File_AbortMultipartUpload_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(FileServer).AbortMultipartUpload(ctx, req.(*AbortMultipartUploadRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _File_CreateShare_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CreateShareRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(FileServer).CreateShare(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: File_CreateShare_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(FileServer).CreateShare(ctx, req.(*CreateShareRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _File_AccessShare_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(AccessShareRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(FileServer).AccessShare(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: File_AccessShare_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(FileServer).AccessShare(ctx, req.(*AccessShareRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // File_ServiceDesc is the grpc.ServiceDesc for File service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -700,6 +1226,34 @@ var File_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "DownloadFile",
 			Handler:    _File_DownloadFile_Handler,
+		},
+		{
+			MethodName: "CopyFile",
+			Handler:    _File_CopyFile_Handler,
+		},
+		{
+			MethodName: "InitMultipartUpload",
+			Handler:    _File_InitMultipartUpload_Handler,
+		},
+		{
+			MethodName: "UploadPart",
+			Handler:    _File_UploadPart_Handler,
+		},
+		{
+			MethodName: "CompleteMultipartUpload",
+			Handler:    _File_CompleteMultipartUpload_Handler,
+		},
+		{
+			MethodName: "AbortMultipartUpload",
+			Handler:    _File_AbortMultipartUpload_Handler,
+		},
+		{
+			MethodName: "CreateShare",
+			Handler:    _File_CreateShare_Handler,
+		},
+		{
+			MethodName: "AccessShare",
+			Handler:    _File_AccessShare_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

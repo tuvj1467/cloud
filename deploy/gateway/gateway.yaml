@@ -1,0 +1,102 @@
+# 容器化部署专用网关配置（由 docker-compose.yml 挂载到 /app/gateway.yaml）
+# 与 gateway/gateway.yaml 的唯一区别：gRPC 目标使用 compose 服务名 cloud:8081
+# 路由映射必须与 gateway/gateway.yaml 保持同步
+Name: storage-gateway
+Host: 0.0.0.0
+Port: 8888
+Timeout: 3000
+
+Header: Authorization
+
+upstreams:
+  - Name: storage.rpc
+    Grpc:
+      target: cloud:8081
+      schema: ""
+    ProtoSet: protoset.pb
+    ProtoSets:
+      - protoset.pb  # 依赖的 validate.proto
+    Mappings:
+      # ===== 文件服务 =====
+      - Method: POST
+        Path: /file/info
+        RpcPath: storage.File/GetFileInfo
+      - Method: POST
+        Path: /file/upload
+        RpcPath: storage.File/UploadFile
+      - Method: GET
+        Path: /file/list
+        RpcPath: storage.File/GetFileList
+      - Method: GET
+        Path: /file/bucket_list
+        RpcPath: storage.File/GetBucketFileList
+      - Method: POST
+        Path: /file/rename
+        RpcPath: storage.File/RenameFile
+      - Method: POST
+        Path: /file/delete
+        RpcPath: storage.File/DeleteFile
+      - Method: GET
+        Path: /file/download
+        RpcPath: storage.File/DownloadFile
+      - Method: POST
+        Path: /file/copy
+        RpcPath: storage.File/CopyFile
+      # ===== 分片上传 =====
+      - Method: POST
+        Path: /file/multipart/init
+        RpcPath: storage.File/InitMultipartUpload
+      - Method: POST
+        Path: /file/multipart/upload
+        RpcPath: storage.File/UploadPart
+      - Method: POST
+        Path: /file/multipart/complete
+        RpcPath: storage.File/CompleteMultipartUpload
+      - Method: POST
+        Path: /file/multipart/abort
+        RpcPath: storage.File/AbortMultipartUpload
+      # ===== 文件分享 =====
+      - Method: POST
+        Path: /file/share/create
+        RpcPath: storage.File/CreateShare
+      - Method: GET
+        Path: /file/share/access
+        RpcPath: storage.File/AccessShare
+      # ===== 桶服务 =====
+      - Method: POST
+        Path: /bucket/create
+        RpcPath: storage.Bucket/CreateBucket
+      - Method: GET
+        Path: /bucket/list
+        RpcPath: storage.Bucket/GetBucketList
+      - Method: GET
+        Path: /bucket/info
+        RpcPath: storage.Bucket/GetBucketInfo
+      - Method: POST
+        Path: /bucket/update
+        RpcPath: storage.Bucket/UpdateBucket
+      - Method: POST
+        Path: /bucket/delete
+        RpcPath: storage.Bucket/DeleteBucket
+      # ===== 用户服务 =====
+      - Method: POST
+        Path: /user/register
+        RpcPath: storage.User/Register
+      - Method: POST
+        Path: /user/loginByAccount
+        RpcPath: storage.User/LoginByAccount
+      - Method: POST
+        Path: /user/loginByPhoneSms
+        RpcPath: storage.User/LoginByPhoneSms
+      - Method: POST
+        Path: /user/loginByEmailSms
+        RpcPath: storage.User/LoginByEmailSms
+      - Method: POST
+        Path: /user/sendVerificationCode
+        RpcPath: storage.User/SendVerificationCode
+      - Method: POST
+        Path: /user/resetPassword
+        RpcPath: storage.User/ResetPassword
+      - Method: POST
+        Path: /user/findAccount
+        RpcPath: storage.User/FindAccount

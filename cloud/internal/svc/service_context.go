@@ -5,46 +5,63 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
-	"onecloud/ent/ent"
+	"onecloud/ent"
 	"onecloud/internal/config"
 	"onecloud/internal/pkg/cache"
 	"onecloud/internal/pkg/database"
+	"onecloud/internal/pkg/jwt"
 	"onecloud/internal/pkg/snowId"
+	"onecloud/internal/pkg/storage"
 	"time"
 
 	"github.com/redis/go-redis/v9"
 )
 
+// ServiceContext 服务上下文，集中管理所有依赖
 type ServiceContext struct {
 	Config    config.Config
 	Db        *sql.DB
 	EntClient *ent.Client
 	Redis     *redis.Client
-	Snowflake *snowId.Snowflake //雪花id生成器
+	Snowflake *snowId.Snowflake // 雪花id生成器
+	Storage   storage.Driver    // 存储驱动
 }
 
+// NewServiceContext 创建服务上下文，初始化所有依赖
 func NewServiceContext(c config.Config) *ServiceContext {
-	// 初始化数据库连接
 	ctx := &ServiceContext{Config: c}
+
+	// 初始化 JWT 配置（密钥、过期时间、签发者）
+	jwt.Init(c.JWT.Secret, c.JWT.Expire, c.JWT.Issuer)
 
 	// 连接 MySQL
 	if err := ctx.initDatabase(); err != nil {
 		panic(fmt.Errorf("数据库初始化失败: %v", err))
 	}
 
-	if err := ctx.IntSnowFlake(); err != nil {
-		fmt.Printf("SnowFlake 加入失败")
+	// 初始化雪花 ID 生成器
+	if err := ctx.initSnowFlake(); err != nil {
+		panic(fmt.Errorf("雪花 ID 生成器初始化失败: %v", err))
 	}
-	// 连接 Redis（可选）
-	//if err := ctx.initRedis(); err != nil {
-	//	fmt.Printf("Redis 连接失败（可选组件）: %v\n", err)
-	//}
+
+	// 初始化存储驱动
+	if err := ctx.initStorage(); err != nil {
+		panic(fmt.Errorf("存储驱动初始化失败: %v", err))
+	}
+
+	// 连接 Redis（可选，失败仅告警不中断）
+	if err := ctx.initRedis(); err != nil {
+		fmt.Printf("Redis 连接失败（可选组件）: %v\n", err)
+	} else {
+		fmt.Println("Redis 连接成功!")
+	}
 
 	return ctx
 }
 
+// initDatabase 初始化数据库连接与 ent 客户端
 func (s *ServiceContext) initDatabase() error {
-	// 1. 从dbConfig拼接MySQL DSN（ent.Open需要的格式）
+	// 1. 从 dbConfig 拼接 MySQL DSN（ent.Open 需要的格式）
 	dbConfig := database.DBConfig{
 		Host:            s.Config.MySQL.Host,
 		User:            s.Config.MySQL.User,
@@ -59,7 +76,7 @@ func (s *ServiceContext) initDatabase() error {
 		Loc:             s.Config.MySQL.Loc,
 	}
 
-	// 拼接标准MySQL DSN字符串（ent.Open的核心参数）
+	// 拼接标准 MySQL DSN 字符串
 	dsn := fmt.Sprintf("%s:%s@tcp(%s)/%s?charset=%s&parseTime=True&loc=%s",
 		dbConfig.User,
 		dbConfig.Password,
@@ -69,13 +86,13 @@ func (s *ServiceContext) initDatabase() error {
 		dbConfig.Loc,
 	)
 
-	// 2. 先用sql.Open创建原始*sql.DB连接（便于配置连接池）
+	// 2. 创建原始 *sql.DB 连接（便于配置连接池）
 	dbConn, err := sql.Open("mysql", dsn)
 	if err != nil {
 		return fmt.Errorf("创建原始数据库连接失败: %w", err)
 	}
 
-	// 3. 配置连接池参数（复用你的dbConfig配置）
+	// 3. 配置连接池参数
 	dbConn.SetMaxOpenConns(dbConfig.MaxOpenConns)
 	dbConn.SetMaxIdleConns(dbConfig.MaxIdleConns)
 	dbConn.SetConnMaxLifetime(time.Duration(dbConfig.ConnMaxLifetime) * time.Second)
@@ -86,47 +103,39 @@ func (s *ServiceContext) initDatabase() error {
 		return fmt.Errorf("数据库连接校验失败: %w", err)
 	}
 
-	// 5. 用ent.Open创建ent客户端（两种方式可选）
-	// 方式1：直接用DSN创建（简单，无需手动管理*sql.DB）
+	// 5. 用 ent.Open 创建 ent 客户端
 	entClient, err := ent.Open("mysql", dsn)
 	if err != nil {
-		return fmt.Errorf("初始化ent客户端失败: %w", err)
+		return fmt.Errorf("初始化 ent 客户端失败: %w", err)
 	}
-	//defer entClient.Close()
 
-	// 方式2：用已配置的*sql.DB创建（推荐，可自定义连接池参数）
-	//entClient, err := ent.NewClient(ent.Driver(sql.OpenDB(dbConn.Driver())))
-	//if err != nil {
-	//	return fmt.Errorf("初始化ent客户端失败: %w", err)
-	//}
-
-	// 6. 开发模式下自动迁移（保留原有逻辑）
+	// 6. 开发模式下自动迁移
 	if s.Config.Mode == "dev" {
 		err := entClient.Schema.Create(context.Background())
-
 		if err != nil {
 			return fmt.Errorf("数据库自动迁移失败: %w", err)
 		}
+		fmt.Println("数据库自动迁移成功")
 	}
-	fmt.Println("数据库自动迁移成功")
 
-	// 7. 赋值给ServiceContext
-	s.Db = dbConn // 可选：保留原始*sql.DB连接
+	// 7. 赋值给 ServiceContext
+	s.Db = dbConn
 	s.EntClient = entClient
 	return nil
 }
 
+// initRedis 初始化 Redis 连接
 func (s *ServiceContext) initRedis() error {
 	// 如果没有配置 Redis 则跳过
-	if s.Config.Redis.Addr == "" {
-		return nil
+	if s.Config.RedisConf.Host == "" {
+		return errors.New("Redis 未配置")
 	}
 
 	redisConfig := cache.RedisConfig{
-		Addr:     s.Config.Redis.Addr,
-		Password: s.Config.Redis.Password,
-		DB:       s.Config.Redis.DB,
-		PoolSize: s.Config.Redis.PoolSize,
+		Addr:     s.Config.RedisConf.Host,
+		Password: s.Config.RedisConf.Password,
+		DB:       s.Config.RedisConf.DB,
+		PoolSize: s.Config.RedisConf.PoolSize,
 	}
 
 	client, err := cache.ConnectRedis(redisConfig)
@@ -137,12 +146,25 @@ func (s *ServiceContext) initRedis() error {
 	s.Redis = client
 	return nil
 }
-func (s *ServiceContext) IntSnowFlake() error {
+
+// initStorage 初始化存储驱动
+func (s *ServiceContext) initStorage() error {
+	driver, err := storage.NewDriver(s.Config.Storage)
+	if err != nil {
+		return err
+	}
+	s.Storage = driver
+	fmt.Printf("存储驱动初始化成功: %s\n", s.Config.Storage.Driver)
+	return nil
+}
+
+// initSnowFlake 初始化雪花 ID 生成器
+func (s *ServiceContext) initSnowFlake() error {
 	if snowId.Instance != nil {
 		s.Snowflake = snowId.Instance
 		return nil
 	}
-	return errors.New("")
+	return errors.New("雪花 ID 生成器单例未初始化")
 }
 
 // Close 关闭所有连接
@@ -152,5 +174,8 @@ func (s *ServiceContext) Close() {
 	}
 	if s.Redis != nil {
 		s.Redis.Close()
+	}
+	if s.Db != nil {
+		s.Db.Close()
 	}
 }

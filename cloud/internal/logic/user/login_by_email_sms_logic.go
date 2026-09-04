@@ -67,6 +67,6 @@ func (l *LoginByEmailSmsLogic) LoginByEmailSms(in *service.LoginByEmailSmsReq) (
 	token, _ := jwt.GenerateToken(res.ID)
 
 	return response.Success(&service.LoginRes{User: &service.UserInfo{
-		Id: res.ID, Name: res.Nickname, Avatar: &res.Avatar, Phone: &res.Phone, Email: &res.Email,
+		Id: res.ID, Username: res.Username, Name: res.Nickname, Avatar: &res.Avatar, Phone: &res.Phone, Email: &res.Email,
 	}, Token: token})
 }

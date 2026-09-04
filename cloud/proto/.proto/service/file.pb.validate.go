@@ -69,6 +69,12 @@ func (m *FileMeta) validate(all bool) error {
 
 	// no validation rules for UserId
 
+	// no validation rules for BucketId
+
+	// no validation rules for Md5
+
+	// no validation rules for ContentType
+
 	// no validation rules for CreatedAt
 
 	// no validation rules for UpdatedAt
@@ -412,6 +418,17 @@ func (m *UploadFileRequest) validate(all bool) error {
 
 	var errors []error
 
+	if utf8.RuneCountInString(m.GetBucketId()) < 1 {
+		err := UploadFileRequestValidationError{
+			field:  "BucketId",
+			reason: "value length must be at least 1 runes",
+		}
+		if !all {
+			return err
+		}
+		errors = append(errors, err)
+	}
+
 	if l := utf8.RuneCountInString(m.GetName()); l < 1 || l > 100 {
 		err := UploadFileRequestValidationError{
 			field:  "Name",
@@ -446,6 +463,10 @@ func (m *UploadFileRequest) validate(all bool) error {
 	}
 
 	// no validation rules for Content
+
+	if m.Md5 != nil {
+		// no validation rules for Md5
+	}
 
 	if len(errors) > 0 {
 		return UploadFileRequestMultiError(errors)
@@ -577,6 +598,8 @@ func (m *UploadFileResponse) validate(all bool) error {
 			}
 		}
 	}
+
+	// no validation rules for Instant
 
 	if len(errors) > 0 {
 		return UploadFileResponseMultiError(errors)
@@ -1809,3 +1832,1732 @@ var _ interface {
 	Cause() error
 	ErrorName() string
 } = DownloadFileResponseValidationError{}
+
+// Validate checks the field values on CopyFileRequest with the rules defined
+// in the proto definition for this message. If any rules are violated, the
+// first error encountered is returned, or nil if there are no violations.
+func (m *CopyFileRequest) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on CopyFileRequest with the rules
+// defined in the proto definition for this message. If any rules are
+// violated, the result is a list of violation errors wrapped in
+// CopyFileRequestMultiError, or nil if none found.
+func (m *CopyFileRequest) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *CopyFileRequest) validate(all bool) error {
+	if m == nil {
+		return nil
+	}
+
+	var errors []error
+
+	if utf8.RuneCountInString(m.GetFileId()) < 1 {
+		err := CopyFileRequestValidationError{
+			field:  "FileId",
+			reason: "value length must be at least 1 runes",
+		}
+		if !all {
+			return err
+		}
+		errors = append(errors, err)
+	}
+
+	if utf8.RuneCountInString(m.GetTargetBucketId()) < 1 {
+		err := CopyFileRequestValidationError{
+			field:  "TargetBucketId",
+			reason: "value length must be at least 1 runes",
+		}
+		if !all {
+			return err
+		}
+		errors = append(errors, err)
+	}
+
+	if l := utf8.RuneCountInString(m.GetNewName()); l < 1 || l > 100 {
+		err := CopyFileRequestValidationError{
+			field:  "NewName",
+			reason: "value length must be between 1 and 100 runes, inclusive",
+		}
+		if !all {
+			return err
+		}
+		errors = append(errors, err)
+	}
+
+	if len(errors) > 0 {
+		return CopyFileRequestMultiError(errors)
+	}
+
+	return nil
+}
+
+// CopyFileRequestMultiError is an error wrapping multiple validation errors
+// returned by CopyFileRequest.ValidateAll() if the designated constraints
+// aren't met.
+type CopyFileRequestMultiError []error
+
+// Error returns a concatenation of all the error messages it wraps.
+func (m CopyFileRequestMultiError) Error() string {
+	msgs := make([]string, 0, len(m))
+	for _, err := range m {
+		msgs = append(msgs, err.Error())
+	}
+	return strings.Join(msgs, "; ")
+}
+
+// AllErrors returns a list of validation violation errors.
+func (m CopyFileRequestMultiError) AllErrors() []error { return m }
+
+// CopyFileRequestValidationError is the validation error returned by
+// CopyFileRequest.Validate if the designated constraints aren't met.
+type CopyFileRequestValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e CopyFileRequestValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e CopyFileRequestValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e CopyFileRequestValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e CopyFileRequestValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e CopyFileRequestValidationError) ErrorName() string { return "CopyFileRequestValidationError" }
+
+// Error satisfies the builtin error interface
+func (e CopyFileRequestValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sCopyFileRequest.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = CopyFileRequestValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = CopyFileRequestValidationError{}
+
+// Validate checks the field values on CopyFileResponse with the rules defined
+// in the proto definition for this message. If any rules are violated, the
+// first error encountered is returned, or nil if there are no violations.
+func (m *CopyFileResponse) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on CopyFileResponse with the rules
+// defined in the proto definition for this message. If any rules are
+// violated, the result is a list of violation errors wrapped in
+// CopyFileResponseMultiError, or nil if none found.
+func (m *CopyFileResponse) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *CopyFileResponse) validate(all bool) error {
+	if m == nil {
+		return nil
+	}
+
+	var errors []error
+
+	if all {
+		switch v := interface{}(m.GetFile()).(type) {
+		case interface{ ValidateAll() error }:
+			if err := v.ValidateAll(); err != nil {
+				errors = append(errors, CopyFileResponseValidationError{
+					field:  "File",
+					reason: "embedded message failed validation",
+					cause:  err,
+				})
+			}
+		case interface{ Validate() error }:
+			if err := v.Validate(); err != nil {
+				errors = append(errors, CopyFileResponseValidationError{
+					field:  "File",
+					reason: "embedded message failed validation",
+					cause:  err,
+				})
+			}
+		}
+	} else if v, ok := interface{}(m.GetFile()).(interface{ Validate() error }); ok {
+		if err := v.Validate(); err != nil {
+			return CopyFileResponseValidationError{
+				field:  "File",
+				reason: "embedded message failed validation",
+				cause:  err,
+			}
+		}
+	}
+
+	if len(errors) > 0 {
+		return CopyFileResponseMultiError(errors)
+	}
+
+	return nil
+}
+
+// CopyFileResponseMultiError is an error wrapping multiple validation errors
+// returned by CopyFileResponse.ValidateAll() if the designated constraints
+// aren't met.
+type CopyFileResponseMultiError []error
+
+// Error returns a concatenation of all the error messages it wraps.
+func (m CopyFileResponseMultiError) Error() string {
+	msgs := make([]string, 0, len(m))
+	for _, err := range m {
+		msgs = append(msgs, err.Error())
+	}
+	return strings.Join(msgs, "; ")
+}
+
+// AllErrors returns a list of validation violation errors.
+func (m CopyFileResponseMultiError) AllErrors() []error { return m }
+
+// CopyFileResponseValidationError is the validation error returned by
+// CopyFileResponse.Validate if the designated constraints aren't met.
+type CopyFileResponseValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e CopyFileResponseValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e CopyFileResponseValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e CopyFileResponseValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e CopyFileResponseValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e CopyFileResponseValidationError) ErrorName() string { return "CopyFileResponseValidationError" }
+
+// Error satisfies the builtin error interface
+func (e CopyFileResponseValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sCopyFileResponse.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = CopyFileResponseValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = CopyFileResponseValidationError{}
+
+// Validate checks the field values on InitMultipartUploadRequest with the
+// rules defined in the proto definition for this message. If any rules are
+// violated, the first error encountered is returned, or nil if there are no violations.
+func (m *InitMultipartUploadRequest) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on InitMultipartUploadRequest with the
+// rules defined in the proto definition for this message. If any rules are
+// violated, the result is a list of violation errors wrapped in
+// InitMultipartUploadRequestMultiError, or nil if none found.
+func (m *InitMultipartUploadRequest) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *InitMultipartUploadRequest) validate(all bool) error {
+	if m == nil {
+		return nil
+	}
+
+	var errors []error
+
+	if utf8.RuneCountInString(m.GetBucketId()) < 1 {
+		err := InitMultipartUploadRequestValidationError{
+			field:  "BucketId",
+			reason: "value length must be at least 1 runes",
+		}
+		if !all {
+			return err
+		}
+		errors = append(errors, err)
+	}
+
+	if l := utf8.RuneCountInString(m.GetName()); l < 1 || l > 100 {
+		err := InitMultipartUploadRequestValidationError{
+			field:  "Name",
+			reason: "value length must be between 1 and 100 runes, inclusive",
+		}
+		if !all {
+			return err
+		}
+		errors = append(errors, err)
+	}
+
+	if utf8.RuneCountInString(m.GetSuffix()) < 1 {
+		err := InitMultipartUploadRequestValidationError{
+			field:  "Suffix",
+			reason: "value length must be at least 1 runes",
+		}
+		if !all {
+			return err
+		}
+		errors = append(errors, err)
+	}
+
+	if m.GetSize() <= 0 {
+		err := InitMultipartUploadRequestValidationError{
+			field:  "Size",
+			reason: "value must be greater than 0",
+		}
+		if !all {
+			return err
+		}
+		errors = append(errors, err)
+	}
+
+	if val := m.GetTotalParts(); val < 1 || val > 10000 {
+		err := InitMultipartUploadRequestValidationError{
+			field:  "TotalParts",
+			reason: "value must be inside range [1, 10000]",
+		}
+		if !all {
+			return err
+		}
+		errors = append(errors, err)
+	}
+
+	if m.Md5 != nil {
+		// no validation rules for Md5
+	}
+
+	if len(errors) > 0 {
+		return InitMultipartUploadRequestMultiError(errors)
+	}
+
+	return nil
+}
+
+// InitMultipartUploadRequestMultiError is an error wrapping multiple
+// validation errors returned by InitMultipartUploadRequest.ValidateAll() if
+// the designated constraints aren't met.
+type InitMultipartUploadRequestMultiError []error
+
+// Error returns a concatenation of all the error messages it wraps.
+func (m InitMultipartUploadRequestMultiError) Error() string {
+	msgs := make([]string, 0, len(m))
+	for _, err := range m {
+		msgs = append(msgs, err.Error())
+	}
+	return strings.Join(msgs, "; ")
+}
+
+// AllErrors returns a list of validation violation errors.
+func (m InitMultipartUploadRequestMultiError) AllErrors() []error { return m }
+
+// InitMultipartUploadRequestValidationError is the validation error returned
+// by InitMultipartUploadRequest.Validate if the designated constraints aren't met.
+type InitMultipartUploadRequestValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e InitMultipartUploadRequestValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e InitMultipartUploadRequestValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e InitMultipartUploadRequestValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e InitMultipartUploadRequestValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e InitMultipartUploadRequestValidationError) ErrorName() string {
+	return "InitMultipartUploadRequestValidationError"
+}
+
+// Error satisfies the builtin error interface
+func (e InitMultipartUploadRequestValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sInitMultipartUploadRequest.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = InitMultipartUploadRequestValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = InitMultipartUploadRequestValidationError{}
+
+// Validate checks the field values on InitMultipartUploadResponse with the
+// rules defined in the proto definition for this message. If any rules are
+// violated, the first error encountered is returned, or nil if there are no violations.
+func (m *InitMultipartUploadResponse) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on InitMultipartUploadResponse with the
+// rules defined in the proto definition for this message. If any rules are
+// violated, the result is a list of violation errors wrapped in
+// InitMultipartUploadResponseMultiError, or nil if none found.
+func (m *InitMultipartUploadResponse) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *InitMultipartUploadResponse) validate(all bool) error {
+	if m == nil {
+		return nil
+	}
+
+	var errors []error
+
+	// no validation rules for UploadId
+
+	// no validation rules for PartSize
+
+	if len(errors) > 0 {
+		return InitMultipartUploadResponseMultiError(errors)
+	}
+
+	return nil
+}
+
+// InitMultipartUploadResponseMultiError is an error wrapping multiple
+// validation errors returned by InitMultipartUploadResponse.ValidateAll() if
+// the designated constraints aren't met.
+type InitMultipartUploadResponseMultiError []error
+
+// Error returns a concatenation of all the error messages it wraps.
+func (m InitMultipartUploadResponseMultiError) Error() string {
+	msgs := make([]string, 0, len(m))
+	for _, err := range m {
+		msgs = append(msgs, err.Error())
+	}
+	return strings.Join(msgs, "; ")
+}
+
+// AllErrors returns a list of validation violation errors.
+func (m InitMultipartUploadResponseMultiError) AllErrors() []error { return m }
+
+// InitMultipartUploadResponseValidationError is the validation error returned
+// by InitMultipartUploadResponse.Validate if the designated constraints
+// aren't met.
+type InitMultipartUploadResponseValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e InitMultipartUploadResponseValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e InitMultipartUploadResponseValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e InitMultipartUploadResponseValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e InitMultipartUploadResponseValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e InitMultipartUploadResponseValidationError) ErrorName() string {
+	return "InitMultipartUploadResponseValidationError"
+}
+
+// Error satisfies the builtin error interface
+func (e InitMultipartUploadResponseValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sInitMultipartUploadResponse.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = InitMultipartUploadResponseValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = InitMultipartUploadResponseValidationError{}
+
+// Validate checks the field values on UploadPartRequest with the rules defined
+// in the proto definition for this message. If any rules are violated, the
+// first error encountered is returned, or nil if there are no violations.
+func (m *UploadPartRequest) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on UploadPartRequest with the rules
+// defined in the proto definition for this message. If any rules are
+// violated, the result is a list of violation errors wrapped in
+// UploadPartRequestMultiError, or nil if none found.
+func (m *UploadPartRequest) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *UploadPartRequest) validate(all bool) error {
+	if m == nil {
+		return nil
+	}
+
+	var errors []error
+
+	if utf8.RuneCountInString(m.GetUploadId()) < 1 {
+		err := UploadPartRequestValidationError{
+			field:  "UploadId",
+			reason: "value length must be at least 1 runes",
+		}
+		if !all {
+			return err
+		}
+		errors = append(errors, err)
+	}
+
+	if m.GetPartNumber() < 1 {
+		err := UploadPartRequestValidationError{
+			field:  "PartNumber",
+			reason: "value must be greater than or equal to 1",
+		}
+		if !all {
+			return err
+		}
+		errors = append(errors, err)
+	}
+
+	// no validation rules for Content
+
+	if m.GetSize() <= 0 {
+		err := UploadPartRequestValidationError{
+			field:  "Size",
+			reason: "value must be greater than 0",
+		}
+		if !all {
+			return err
+		}
+		errors = append(errors, err)
+	}
+
+	if len(errors) > 0 {
+		return UploadPartRequestMultiError(errors)
+	}
+
+	return nil
+}
+
+// UploadPartRequestMultiError is an error wrapping multiple validation errors
+// returned by UploadPartRequest.ValidateAll() if the designated constraints
+// aren't met.
+type UploadPartRequestMultiError []error
+
+// Error returns a concatenation of all the error messages it wraps.
+func (m UploadPartRequestMultiError) Error() string {
+	msgs := make([]string, 0, len(m))
+	for _, err := range m {
+		msgs = append(msgs, err.Error())
+	}
+	return strings.Join(msgs, "; ")
+}
+
+// AllErrors returns a list of validation violation errors.
+func (m UploadPartRequestMultiError) AllErrors() []error { return m }
+
+// UploadPartRequestValidationError is the validation error returned by
+// UploadPartRequest.Validate if the designated constraints aren't met.
+type UploadPartRequestValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e UploadPartRequestValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e UploadPartRequestValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e UploadPartRequestValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e UploadPartRequestValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e UploadPartRequestValidationError) ErrorName() string {
+	return "UploadPartRequestValidationError"
+}
+
+// Error satisfies the builtin error interface
+func (e UploadPartRequestValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sUploadPartRequest.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = UploadPartRequestValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = UploadPartRequestValidationError{}
+
+// Validate checks the field values on UploadPartResponse with the rules
+// defined in the proto definition for this message. If any rules are
+// violated, the first error encountered is returned, or nil if there are no violations.
+func (m *UploadPartResponse) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on UploadPartResponse with the rules
+// defined in the proto definition for this message. If any rules are
+// violated, the result is a list of violation errors wrapped in
+// UploadPartResponseMultiError, or nil if none found.
+func (m *UploadPartResponse) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *UploadPartResponse) validate(all bool) error {
+	if m == nil {
+		return nil
+	}
+
+	var errors []error
+
+	// no validation rules for Success
+
+	// no validation rules for PartMd5
+
+	if len(errors) > 0 {
+		return UploadPartResponseMultiError(errors)
+	}
+
+	return nil
+}
+
+// UploadPartResponseMultiError is an error wrapping multiple validation errors
+// returned by UploadPartResponse.ValidateAll() if the designated constraints
+// aren't met.
+type UploadPartResponseMultiError []error
+
+// Error returns a concatenation of all the error messages it wraps.
+func (m UploadPartResponseMultiError) Error() string {
+	msgs := make([]string, 0, len(m))
+	for _, err := range m {
+		msgs = append(msgs, err.Error())
+	}
+	return strings.Join(msgs, "; ")
+}
+
+// AllErrors returns a list of validation violation errors.
+func (m UploadPartResponseMultiError) AllErrors() []error { return m }
+
+// UploadPartResponseValidationError is the validation error returned by
+// UploadPartResponse.Validate if the designated constraints aren't met.
+type UploadPartResponseValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e UploadPartResponseValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e UploadPartResponseValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e UploadPartResponseValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e UploadPartResponseValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e UploadPartResponseValidationError) ErrorName() string {
+	return "UploadPartResponseValidationError"
+}
+
+// Error satisfies the builtin error interface
+func (e UploadPartResponseValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sUploadPartResponse.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = UploadPartResponseValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = UploadPartResponseValidationError{}
+
+// Validate checks the field values on CompleteMultipartUploadRequest with the
+// rules defined in the proto definition for this message. If any rules are
+// violated, the first error encountered is returned, or nil if there are no violations.
+func (m *CompleteMultipartUploadRequest) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on CompleteMultipartUploadRequest with
+// the rules defined in the proto definition for this message. If any rules
+// are violated, the result is a list of violation errors wrapped in
+// CompleteMultipartUploadRequestMultiError, or nil if none found.
+func (m *CompleteMultipartUploadRequest) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *CompleteMultipartUploadRequest) validate(all bool) error {
+	if m == nil {
+		return nil
+	}
+
+	var errors []error
+
+	if utf8.RuneCountInString(m.GetUploadId()) < 1 {
+		err := CompleteMultipartUploadRequestValidationError{
+			field:  "UploadId",
+			reason: "value length must be at least 1 runes",
+		}
+		if !all {
+			return err
+		}
+		errors = append(errors, err)
+	}
+
+	if len(errors) > 0 {
+		return CompleteMultipartUploadRequestMultiError(errors)
+	}
+
+	return nil
+}
+
+// CompleteMultipartUploadRequestMultiError is an error wrapping multiple
+// validation errors returned by CompleteMultipartUploadRequest.ValidateAll()
+// if the designated constraints aren't met.
+type CompleteMultipartUploadRequestMultiError []error
+
+// Error returns a concatenation of all the error messages it wraps.
+func (m CompleteMultipartUploadRequestMultiError) Error() string {
+	msgs := make([]string, 0, len(m))
+	for _, err := range m {
+		msgs = append(msgs, err.Error())
+	}
+	return strings.Join(msgs, "; ")
+}
+
+// AllErrors returns a list of validation violation errors.
+func (m CompleteMultipartUploadRequestMultiError) AllErrors() []error { return m }
+
+// CompleteMultipartUploadRequestValidationError is the validation error
+// returned by CompleteMultipartUploadRequest.Validate if the designated
+// constraints aren't met.
+type CompleteMultipartUploadRequestValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e CompleteMultipartUploadRequestValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e CompleteMultipartUploadRequestValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e CompleteMultipartUploadRequestValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e CompleteMultipartUploadRequestValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e CompleteMultipartUploadRequestValidationError) ErrorName() string {
+	return "CompleteMultipartUploadRequestValidationError"
+}
+
+// Error satisfies the builtin error interface
+func (e CompleteMultipartUploadRequestValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sCompleteMultipartUploadRequest.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = CompleteMultipartUploadRequestValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = CompleteMultipartUploadRequestValidationError{}
+
+// Validate checks the field values on CompleteMultipartUploadResponse with the
+// rules defined in the proto definition for this message. If any rules are
+// violated, the first error encountered is returned, or nil if there are no violations.
+func (m *CompleteMultipartUploadResponse) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on CompleteMultipartUploadResponse with
+// the rules defined in the proto definition for this message. If any rules
+// are violated, the result is a list of violation errors wrapped in
+// CompleteMultipartUploadResponseMultiError, or nil if none found.
+func (m *CompleteMultipartUploadResponse) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *CompleteMultipartUploadResponse) validate(all bool) error {
+	if m == nil {
+		return nil
+	}
+
+	var errors []error
+
+	if all {
+		switch v := interface{}(m.GetFile()).(type) {
+		case interface{ ValidateAll() error }:
+			if err := v.ValidateAll(); err != nil {
+				errors = append(errors, CompleteMultipartUploadResponseValidationError{
+					field:  "File",
+					reason: "embedded message failed validation",
+					cause:  err,
+				})
+			}
+		case interface{ Validate() error }:
+			if err := v.Validate(); err != nil {
+				errors = append(errors, CompleteMultipartUploadResponseValidationError{
+					field:  "File",
+					reason: "embedded message failed validation",
+					cause:  err,
+				})
+			}
+		}
+	} else if v, ok := interface{}(m.GetFile()).(interface{ Validate() error }); ok {
+		if err := v.Validate(); err != nil {
+			return CompleteMultipartUploadResponseValidationError{
+				field:  "File",
+				reason: "embedded message failed validation",
+				cause:  err,
+			}
+		}
+	}
+
+	// no validation rules for Instant
+
+	if len(errors) > 0 {
+		return CompleteMultipartUploadResponseMultiError(errors)
+	}
+
+	return nil
+}
+
+// CompleteMultipartUploadResponseMultiError is an error wrapping multiple
+// validation errors returned by CompleteMultipartUploadResponse.ValidateAll()
+// if the designated constraints aren't met.
+type CompleteMultipartUploadResponseMultiError []error
+
+// Error returns a concatenation of all the error messages it wraps.
+func (m CompleteMultipartUploadResponseMultiError) Error() string {
+	msgs := make([]string, 0, len(m))
+	for _, err := range m {
+		msgs = append(msgs, err.Error())
+	}
+	return strings.Join(msgs, "; ")
+}
+
+// AllErrors returns a list of validation violation errors.
+func (m CompleteMultipartUploadResponseMultiError) AllErrors() []error { return m }
+
+// CompleteMultipartUploadResponseValidationError is the validation error
+// returned by CompleteMultipartUploadResponse.Validate if the designated
+// constraints aren't met.
+type CompleteMultipartUploadResponseValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e CompleteMultipartUploadResponseValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e CompleteMultipartUploadResponseValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e CompleteMultipartUploadResponseValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e CompleteMultipartUploadResponseValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e CompleteMultipartUploadResponseValidationError) ErrorName() string {
+	return "CompleteMultipartUploadResponseValidationError"
+}
+
+// Error satisfies the builtin error interface
+func (e CompleteMultipartUploadResponseValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sCompleteMultipartUploadResponse.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = CompleteMultipartUploadResponseValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = CompleteMultipartUploadResponseValidationError{}
+
+// Validate checks the field values on AbortMultipartUploadRequest with the
+// rules defined in the proto definition for this message. If any rules are
+// violated, the first error encountered is returned, or nil if there are no violations.
+func (m *AbortMultipartUploadRequest) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on AbortMultipartUploadRequest with the
+// rules defined in the proto definition for this message. If any rules are
+// violated, the result is a list of violation errors wrapped in
+// AbortMultipartUploadRequestMultiError, or nil if none found.
+func (m *AbortMultipartUploadRequest) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *AbortMultipartUploadRequest) validate(all bool) error {
+	if m == nil {
+		return nil
+	}
+
+	var errors []error
+
+	if utf8.RuneCountInString(m.GetUploadId()) < 1 {
+		err := AbortMultipartUploadRequestValidationError{
+			field:  "UploadId",
+			reason: "value length must be at least 1 runes",
+		}
+		if !all {
+			return err
+		}
+		errors = append(errors, err)
+	}
+
+	if len(errors) > 0 {
+		return AbortMultipartUploadRequestMultiError(errors)
+	}
+
+	return nil
+}
+
+// AbortMultipartUploadRequestMultiError is an error wrapping multiple
+// validation errors returned by AbortMultipartUploadRequest.ValidateAll() if
+// the designated constraints aren't met.
+type AbortMultipartUploadRequestMultiError []error
+
+// Error returns a concatenation of all the error messages it wraps.
+func (m AbortMultipartUploadRequestMultiError) Error() string {
+	msgs := make([]string, 0, len(m))
+	for _, err := range m {
+		msgs = append(msgs, err.Error())
+	}
+	return strings.Join(msgs, "; ")
+}
+
+// AllErrors returns a list of validation violation errors.
+func (m AbortMultipartUploadRequestMultiError) AllErrors() []error { return m }
+
+// AbortMultipartUploadRequestValidationError is the validation error returned
+// by AbortMultipartUploadRequest.Validate if the designated constraints
+// aren't met.
+type AbortMultipartUploadRequestValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e AbortMultipartUploadRequestValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e AbortMultipartUploadRequestValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e AbortMultipartUploadRequestValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e AbortMultipartUploadRequestValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e AbortMultipartUploadRequestValidationError) ErrorName() string {
+	return "AbortMultipartUploadRequestValidationError"
+}
+
+// Error satisfies the builtin error interface
+func (e AbortMultipartUploadRequestValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sAbortMultipartUploadRequest.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = AbortMultipartUploadRequestValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = AbortMultipartUploadRequestValidationError{}
+
+// Validate checks the field values on AbortMultipartUploadResponse with the
+// rules defined in the proto definition for this message. If any rules are
+// violated, the first error encountered is returned, or nil if there are no violations.
+func (m *AbortMultipartUploadResponse) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on AbortMultipartUploadResponse with the
+// rules defined in the proto definition for this message. If any rules are
+// violated, the result is a list of violation errors wrapped in
+// AbortMultipartUploadResponseMultiError, or nil if none found.
+func (m *AbortMultipartUploadResponse) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *AbortMultipartUploadResponse) validate(all bool) error {
+	if m == nil {
+		return nil
+	}
+
+	var errors []error
+
+	// no validation rules for Success
+
+	if len(errors) > 0 {
+		return AbortMultipartUploadResponseMultiError(errors)
+	}
+
+	return nil
+}
+
+// AbortMultipartUploadResponseMultiError is an error wrapping multiple
+// validation errors returned by AbortMultipartUploadResponse.ValidateAll() if
+// the designated constraints aren't met.
+type AbortMultipartUploadResponseMultiError []error
+
+// Error returns a concatenation of all the error messages it wraps.
+func (m AbortMultipartUploadResponseMultiError) Error() string {
+	msgs := make([]string, 0, len(m))
+	for _, err := range m {
+		msgs = append(msgs, err.Error())
+	}
+	return strings.Join(msgs, "; ")
+}
+
+// AllErrors returns a list of validation violation errors.
+func (m AbortMultipartUploadResponseMultiError) AllErrors() []error { return m }
+
+// AbortMultipartUploadResponseValidationError is the validation error returned
+// by AbortMultipartUploadResponse.Validate if the designated constraints
+// aren't met.
+type AbortMultipartUploadResponseValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e AbortMultipartUploadResponseValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e AbortMultipartUploadResponseValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e AbortMultipartUploadResponseValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e AbortMultipartUploadResponseValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e AbortMultipartUploadResponseValidationError) ErrorName() string {
+	return "AbortMultipartUploadResponseValidationError"
+}
+
+// Error satisfies the builtin error interface
+func (e AbortMultipartUploadResponseValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sAbortMultipartUploadResponse.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = AbortMultipartUploadResponseValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = AbortMultipartUploadResponseValidationError{}
+
+// Validate checks the field values on CreateShareRequest with the rules
+// defined in the proto definition for this message. If any rules are
+// violated, the first error encountered is returned, or nil if there are no violations.
+func (m *CreateShareRequest) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on CreateShareRequest with the rules
+// defined in the proto definition for this message. If any rules are
+// violated, the result is a list of violation errors wrapped in
+// CreateShareRequestMultiError, or nil if none found.
+func (m *CreateShareRequest) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *CreateShareRequest) validate(all bool) error {
+	if m == nil {
+		return nil
+	}
+
+	var errors []error
+
+	if utf8.RuneCountInString(m.GetFileId()) < 1 {
+		err := CreateShareRequestValidationError{
+			field:  "FileId",
+			reason: "value length must be at least 1 runes",
+		}
+		if !all {
+			return err
+		}
+		errors = append(errors, err)
+	}
+
+	if _, ok := _CreateShareRequest_Permission_InLookup[m.GetPermission()]; !ok {
+		err := CreateShareRequestValidationError{
+			field:  "Permission",
+			reason: "value must be in list [read download]",
+		}
+		if !all {
+			return err
+		}
+		errors = append(errors, err)
+	}
+
+	if m.ExpireSeconds != nil {
+		// no validation rules for ExpireSeconds
+	}
+
+	if m.MaxCount != nil {
+		// no validation rules for MaxCount
+	}
+
+	if len(errors) > 0 {
+		return CreateShareRequestMultiError(errors)
+	}
+
+	return nil
+}
+
+// CreateShareRequestMultiError is an error wrapping multiple validation errors
+// returned by CreateShareRequest.ValidateAll() if the designated constraints
+// aren't met.
+type CreateShareRequestMultiError []error
+
+// Error returns a concatenation of all the error messages it wraps.
+func (m CreateShareRequestMultiError) Error() string {
+	msgs := make([]string, 0, len(m))
+	for _, err := range m {
+		msgs = append(msgs, err.Error())
+	}
+	return strings.Join(msgs, "; ")
+}
+
+// AllErrors returns a list of validation violation errors.
+func (m CreateShareRequestMultiError) AllErrors() []error { return m }
+
+// CreateShareRequestValidationError is the validation error returned by
+// CreateShareRequest.Validate if the designated constraints aren't met.
+type CreateShareRequestValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e CreateShareRequestValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e CreateShareRequestValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e CreateShareRequestValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e CreateShareRequestValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e CreateShareRequestValidationError) ErrorName() string {
+	return "CreateShareRequestValidationError"
+}
+
+// Error satisfies the builtin error interface
+func (e CreateShareRequestValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sCreateShareRequest.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = CreateShareRequestValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = CreateShareRequestValidationError{}
+
+var _CreateShareRequest_Permission_InLookup = map[string]struct{}{
+	"read":     {},
+	"download": {},
+}
+
+// Validate checks the field values on CreateShareResponse with the rules
+// defined in the proto definition for this message. If any rules are
+// violated, the first error encountered is returned, or nil if there are no violations.
+func (m *CreateShareResponse) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on CreateShareResponse with the rules
+// defined in the proto definition for this message. If any rules are
+// violated, the result is a list of violation errors wrapped in
+// CreateShareResponseMultiError, or nil if none found.
+func (m *CreateShareResponse) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *CreateShareResponse) validate(all bool) error {
+	if m == nil {
+		return nil
+	}
+
+	var errors []error
+
+	// no validation rules for ShareCode
+
+	// no validation rules for ShareUrl
+
+	if len(errors) > 0 {
+		return CreateShareResponseMultiError(errors)
+	}
+
+	return nil
+}
+
+// CreateShareResponseMultiError is an error wrapping multiple validation
+// errors returned by CreateShareResponse.ValidateAll() if the designated
+// constraints aren't met.
+type CreateShareResponseMultiError []error
+
+// Error returns a concatenation of all the error messages it wraps.
+func (m CreateShareResponseMultiError) Error() string {
+	msgs := make([]string, 0, len(m))
+	for _, err := range m {
+		msgs = append(msgs, err.Error())
+	}
+	return strings.Join(msgs, "; ")
+}
+
+// AllErrors returns a list of validation violation errors.
+func (m CreateShareResponseMultiError) AllErrors() []error { return m }
+
+// CreateShareResponseValidationError is the validation error returned by
+// CreateShareResponse.Validate if the designated constraints aren't met.
+type CreateShareResponseValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e CreateShareResponseValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e CreateShareResponseValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e CreateShareResponseValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e CreateShareResponseValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e CreateShareResponseValidationError) ErrorName() string {
+	return "CreateShareResponseValidationError"
+}
+
+// Error satisfies the builtin error interface
+func (e CreateShareResponseValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sCreateShareResponse.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = CreateShareResponseValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = CreateShareResponseValidationError{}
+
+// Validate checks the field values on AccessShareRequest with the rules
+// defined in the proto definition for this message. If any rules are
+// violated, the first error encountered is returned, or nil if there are no violations.
+func (m *AccessShareRequest) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on AccessShareRequest with the rules
+// defined in the proto definition for this message. If any rules are
+// violated, the result is a list of violation errors wrapped in
+// AccessShareRequestMultiError, or nil if none found.
+func (m *AccessShareRequest) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *AccessShareRequest) validate(all bool) error {
+	if m == nil {
+		return nil
+	}
+
+	var errors []error
+
+	if utf8.RuneCountInString(m.GetShareCode()) < 1 {
+		err := AccessShareRequestValidationError{
+			field:  "ShareCode",
+			reason: "value length must be at least 1 runes",
+		}
+		if !all {
+			return err
+		}
+		errors = append(errors, err)
+	}
+
+	if len(errors) > 0 {
+		return AccessShareRequestMultiError(errors)
+	}
+
+	return nil
+}
+
+// AccessShareRequestMultiError is an error wrapping multiple validation errors
+// returned by AccessShareRequest.ValidateAll() if the designated constraints
+// aren't met.
+type AccessShareRequestMultiError []error
+
+// Error returns a concatenation of all the error messages it wraps.
+func (m AccessShareRequestMultiError) Error() string {
+	msgs := make([]string, 0, len(m))
+	for _, err := range m {
+		msgs = append(msgs, err.Error())
+	}
+	return strings.Join(msgs, "; ")
+}
+
+// AllErrors returns a list of validation violation errors.
+func (m AccessShareRequestMultiError) AllErrors() []error { return m }
+
+// AccessShareRequestValidationError is the validation error returned by
+// AccessShareRequest.Validate if the designated constraints aren't met.
+type AccessShareRequestValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e AccessShareRequestValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e AccessShareRequestValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e AccessShareRequestValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e AccessShareRequestValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e AccessShareRequestValidationError) ErrorName() string {
+	return "AccessShareRequestValidationError"
+}
+
+// Error satisfies the builtin error interface
+func (e AccessShareRequestValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sAccessShareRequest.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = AccessShareRequestValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = AccessShareRequestValidationError{}
+
+// Validate checks the field values on AccessShareResponse with the rules
+// defined in the proto definition for this message. If any rules are
+// violated, the first error encountered is returned, or nil if there are no violations.
+func (m *AccessShareResponse) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on AccessShareResponse with the rules
+// defined in the proto definition for this message. If any rules are
+// violated, the result is a list of violation errors wrapped in
+// AccessShareResponseMultiError, or nil if none found.
+func (m *AccessShareResponse) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *AccessShareResponse) validate(all bool) error {
+	if m == nil {
+		return nil
+	}
+
+	var errors []error
+
+	if all {
+		switch v := interface{}(m.GetFile()).(type) {
+		case interface{ ValidateAll() error }:
+			if err := v.ValidateAll(); err != nil {
+				errors = append(errors, AccessShareResponseValidationError{
+					field:  "File",
+					reason: "embedded message failed validation",
+					cause:  err,
+				})
+			}
+		case interface{ Validate() error }:
+			if err := v.Validate(); err != nil {
+				errors = append(errors, AccessShareResponseValidationError{
+					field:  "File",
+					reason: "embedded message failed validation",
+					cause:  err,
+				})
+			}
+		}
+	} else if v, ok := interface{}(m.GetFile()).(interface{ Validate() error }); ok {
+		if err := v.Validate(); err != nil {
+			return AccessShareResponseValidationError{
+				field:  "File",
+				reason: "embedded message failed validation",
+				cause:  err,
+			}
+		}
+	}
+
+	// no validation rules for Permission
+
+	if len(errors) > 0 {
+		return AccessShareResponseMultiError(errors)
+	}
+
+	return nil
+}
+
+// AccessShareResponseMultiError is an error wrapping multiple validation
+// errors returned by AccessShareResponse.ValidateAll() if the designated
+// constraints aren't met.
+type AccessShareResponseMultiError []error
+
+// Error returns a concatenation of all the error messages it wraps.
+func (m AccessShareResponseMultiError) Error() string {
+	msgs := make([]string, 0, len(m))
+	for _, err := range m {
+		msgs = append(msgs, err.Error())
+	}
+	return strings.Join(msgs, "; ")
+}
+
+// AllErrors returns a list of validation violation errors.
+func (m AccessShareResponseMultiError) AllErrors() []error { return m }
+
+// AccessShareResponseValidationError is the validation error returned by
+// AccessShareResponse.Validate if the designated constraints aren't met.
+type AccessShareResponseValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e AccessShareResponseValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e AccessShareResponseValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e AccessShareResponseValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e AccessShareResponseValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e AccessShareResponseValidationError) ErrorName() string {
+	return "AccessShareResponseValidationError"
+}
+
+// Error satisfies the builtin error interface
+func (e AccessShareResponseValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sAccessShareResponse.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = AccessShareResponseValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = AccessShareResponseValidationError{}

@@ -1,0 +1,11 @@
+# web/Dockerfile 的构建上下文是仓库根目录，只需要 go.mod 与 web/
+.git/
+.idea/
+cloud/
+gateway/
+doc/
+template/
+deploy/
+zcode/
+**/*.exe
+cloud_storage/

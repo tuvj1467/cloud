@@ -3,7 +3,7 @@ package database
 import (
 	"context"
 	"fmt"
-	"onecloud/ent/ent"
+	"onecloud/ent"
 
 	"entgo.io/ent/dialect"
 	_ "github.com/go-sql-driver/mysql"

@@ -59,6 +59,8 @@ func (m *UserInfo) validate(all bool) error {
 
 	// no validation rules for Id
 
+	// no validation rules for Username
+
 	// no validation rules for Name
 
 	if m.Avatar != nil {

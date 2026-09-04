@@ -69,6 +69,6 @@ func (l *FindAccountLogic) FindAccount(in *service.FindAccountReq) (*service.Res
 	}
 
 	return response.Success(&service.FindAccountRes{User: &service.UserInfo{
-		Id: res.ID, Name: res.Nickname, Avatar: &res.Avatar, Phone: &res.Phone, Email: &res.Email,
+		Id: res.ID, Username: res.Username, Name: res.Nickname, Avatar: &res.Avatar, Phone: &res.Phone, Email: &res.Email,
 	}})
 }

@@ -1,0 +1,189 @@
+package filelogic
+
+import (
+	"context"
+	"crypto/md5"
+	"encoding/hex"
+	"errors"
+	"fmt"
+	"io"
+	"mime"
+	"time"
+
+	"onecloud/internal/pkg/cache"
+	"onecloud/internal/pkg/jwt"
+	"onecloud/internal/pkg/response"
+	"onecloud/internal/repository"
+	"onecloud/internal/svc"
+	"onecloud/proto/.proto/service"
+
+	"github.com/zeromicro/go-zero/core/logx"
+)
+
+type CompleteMultipartUploadLogic struct {
+	ctx    context.Context
+	svcCtx *svc.ServiceContext
+	logx.Logger
+}
+
+func NewCompleteMultipartUploadLogic(ctx context.Context, svcCtx *svc.ServiceContext) *CompleteMultipartUploadLogic {
+	return &CompleteMultipartUploadLogic{
+		ctx:    ctx,
+		svcCtx: svcCtx,
+		Logger: logx.WithContext(ctx),
+	}
+}
+
+// CompleteMultipartUpload 完成分片上传
+// 步骤：校验 upload_id → 校验分片完整性 → 生成目标路径 → 调用驱动 CompletePart 合并
+//
+//	→ 计算合并后 MD5 → 秒传检查 → 创建 File 元数据 → 更新桶容量
+//	→ 写 Redis MD5 索引 → 更新分片状态为 merged → 清理 Redis meta/parts
+func (l *CompleteMultipartUploadLogic) CompleteMultipartUpload(in *service.CompleteMultipartUploadRequest) (*service.Response, error) {
+	// 1. 校验入参
+	if err := in.Validate(); err != nil {
+		return response.Err(errors.New("参数校验失败: " + err.Error()))
+	}
+
+	// 2. 获取当前用户
+	userID, err := jwt.GetUserIdFromCtx(l.ctx)
+	if err != nil {
+		return response.Err(err)
+	}
+
+	bucketRepo := repository.NewBucketRepository(l.svcCtx.EntClient)
+	fileRepo := repository.NewFileRepository(l.svcCtx.EntClient)
+	partRepo := repository.NewFilePartRepository(l.svcCtx.EntClient)
+	multipartCache := cache.NewMultipartCache(l.svcCtx.Redis)
+	md5Cache := cache.NewMD5Cache(l.svcCtx.Redis)
+
+	// 3. 读取上传元信息（Redis 优先，DB 兜底）
+	meta, err := multipartCache.GetMeta(l.ctx, in.GetUploadId())
+	if err != nil {
+		return response.Err(errors.New("查询上传元信息失败: " + err.Error()))
+	}
+	if meta == nil {
+		// Redis 未命中，查 DB 兜底
+		part, err := partRepo.GetMetaByUploadID(l.ctx, in.GetUploadId())
+		if err != nil {
+			return response.Err(errors.New("上传任务不存在或已过期"))
+		}
+		meta = &cache.MultipartMeta{
+			UploadID:   in.GetUploadId(),
+			UserID:     part.UserID,
+			BucketID:   part.BucketID,
+			FileName:   part.FileName,
+			FileSuffix: part.FileSuffix,
+			FileSize:   part.FileSize,
+			TotalParts: part.TotalParts,
+			StorageID:  in.GetUploadId(),
+		}
+	}
+
+	// 4. 校验归属
+	if meta.UserID != userID {
+		return response.Err(errors.New("无权操作该上传任务"))
+	}
+
+	// 5. 校验分片完整性
+	uploadedCount, err := partRepo.CountUploaded(l.ctx, in.GetUploadId())
+	if err != nil {
+		return response.Err(errors.New("查询已上传分片数失败: " + err.Error()))
+	}
+	if uploadedCount != meta.TotalParts {
+		return response.Err(fmt.Errorf("分片不完整：已上传 %d / 共 %d", uploadedCount, meta.TotalParts))
+	}
+
+	// 6. 生成目标路径
+	fileID := l.svcCtx.Snowflake.MustIdS()
+	date := time.Now().Format("20060102")
+	targetPath := fmt.Sprintf("%s/%s/%s.%s", userID, date, fileID, meta.FileSuffix)
+
+	// 7. 调用驱动合并分片
+	if err := l.svcCtx.Storage.CompletePart(l.ctx, meta.StorageID, targetPath); err != nil {
+		return response.Err(errors.New("合并分片失败: " + err.Error()))
+	}
+
+	// 8. 计算合并后文件的 MD5（重新读取物理文件）
+	fileMD5, err := l.computeFileMD5(targetPath)
+	if err != nil {
+		l.Errorf("计算合并后文件 MD5 失败 path=%s: %v", targetPath, err)
+		fileMD5 = ""
+	}
+
+	// 9. 秒传检查：若 MD5 命中已有文件，删除刚合并的物理文件，复用旧记录
+	if fileMD5 != "" {
+		if exist, _ := fileRepo.GetByMD5(l.ctx, userID, fileMD5); exist != nil {
+			// 删除刚合并的物理文件
+			_ = l.svcCtx.Storage.Delete(l.ctx, targetPath)
+			// 回写 Redis 索引
+			_ = md5Cache.Set(l.ctx, userID, fileMD5, exist.ID)
+			// 更新分片状态
+			_ = partRepo.MarkMerged(l.ctx, in.GetUploadId())
+			// 清理 Redis
+			_ = multipartCache.Clear(l.ctx, in.GetUploadId())
+			l.Infof("multipart complete instant hit user=%s md5=%s file=%s", userID, fileMD5, exist.ID)
+			return response.Success(&service.CompleteMultipartUploadResponse{
+				File:    toFileMeta(exist),
+				Instant: true,
+			})
+		}
+	}
+
+	// 10. 计算 content_type
+	contentType := mime.TypeByExtension("." + meta.FileSuffix)
+	if contentType == "" {
+		contentType = "application/octet-stream"
+	}
+
+	// 11. 创建文件元数据
+	newFile, err := fileRepo.CreateMultipart(
+		l.ctx, fileID, userID, meta.BucketID, meta.FileName, targetPath,
+		meta.FileSuffix, contentType, fileMD5, meta.FileSize,
+	)
+	if err != nil {
+		// 入库失败，删除已合并的物理文件
+		_ = l.svcCtx.Storage.Delete(l.ctx, targetPath)
+		return response.Err(errors.New("文件入库失败: " + err.Error()))
+	}
+
+	// 12. 写 Redis MD5 索引
+	if fileMD5 != "" {
+		_ = md5Cache.Set(l.ctx, userID, fileMD5, newFile.ID)
+	}
+
+	// 13. 扣减桶容量
+	if err := bucketRepo.IncUsedSize(l.ctx, meta.BucketID, meta.FileSize); err != nil {
+		l.Errorf("桶容量更新失败（文件已入库）bucket=%s: %v", meta.BucketID, err)
+	}
+
+	// 14. 更新分片状态为 merged
+	if err := partRepo.MarkMerged(l.ctx, in.GetUploadId()); err != nil {
+		l.Errorf("更新分片状态为 merged 失败 upload_id=%s: %v", in.GetUploadId(), err)
+	}
+
+	// 15. 清理 Redis meta/parts
+	_ = multipartCache.Clear(l.ctx, in.GetUploadId())
+
+	l.Infof("multipart complete success user=%s upload_id=%s file=%s size=%d md5=%s",
+		userID, in.GetUploadId(), newFile.ID, meta.FileSize, fileMD5)
+
+	return response.Success(&service.CompleteMultipartUploadResponse{
+		File:    toFileMeta(newFile),
+		Instant: false,
+	})
+}
+
+// computeFileMD5 读取物理文件计算 MD5
+func (l *CompleteMultipartUploadLogic) computeFileMD5(path string) (string, error) {
+	reader, err := l.svcCtx.Storage.Get(l.ctx, path)
+	if err != nil {
+		return "", err
+	}
+	defer reader.Close()
+	hash := md5.New()
+	if _, err := io.Copy(hash, reader); err != nil {
+		return "", err
+	}
+	return hex.EncodeToString(hash.Sum(nil)), nil
+}

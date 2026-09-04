@@ -32,6 +32,9 @@ func JwtInterceptor() grpc.UnaryServerInterceptor {
 
 		tokenStrings := md.Get("authorization")
 		if len(tokenStrings) == 0 {
+			tokenStrings = md.Get("gateway-authorization")
+		}
+		if len(tokenStrings) == 0 {
 			return nil, status.Error(codes.Unauthenticated, "缺少 token")
 		}
 
@@ -54,15 +57,19 @@ func JwtInterceptor() grpc.UnaryServerInterceptor {
 }
 
 // isPublicMethod 判断是否是公开方法（不需要认证）
+// 注意：方法名必须与 service.proto 中定义的 rpc 方法名完全一致
 func isPublicMethod(fullMethod string) bool {
 	publicMethods := []string{
+		// 用户认证相关
 		"/storage.User/Register",
 		"/storage.User/LoginByAccount",
-		"/storage.User/LoginByPhone",
-		"/storage.User/LoginBySms",
+		"/storage.User/LoginByPhoneSms",
+		"/storage.User/LoginByEmailSms",
 		"/storage.User/SendVerificationCode",
 		"/storage.User/ResetPassword",
 		"/storage.User/FindAccount",
+		// 文件分享访问（匿名可访问）
+		"/storage.File/AccessShare",
 	}
 
 	for _, method := range publicMethods {

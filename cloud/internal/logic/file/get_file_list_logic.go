@@ -2,6 +2,8 @@ package filelogic
 
 import (
 	"context"
+	"errors"
+
 	"onecloud/internal/pkg/jwt"
 	"onecloud/internal/pkg/response"
 	"onecloud/internal/repository"
@@ -25,35 +27,30 @@ func NewGetFileListLogic(ctx context.Context, svcCtx *svc.ServiceContext) *GetFi
 	}
 }
 
-// 获取文件列表
+// GetFileList 获取当前用户所有文件列表
 func (l *GetFileListLogic) GetFileList(in *service.FileListRequest) (*service.Response, error) {
-	userId, err := jwt.GetUserIdFromCtx(l.ctx)
+	if err := in.Validate(); err != nil {
+		return response.Err(errors.New("参数校验失败"))
+	}
+
+	userID, err := jwt.GetUserIdFromCtx(l.ctx)
 	if err != nil {
 		return response.Err(err)
 	}
 
 	fileRepo := repository.NewFileRepository(l.svcCtx.EntClient)
-	res, count, err := fileRepo.GetPageFileList(l.ctx, userId, in)
+	list, total, err := fileRepo.GetPageFileList(l.ctx, userID, in)
 	if err != nil {
-		return response.Err(err)
+		return response.Err(errors.New("查询文件列表失败: " + err.Error()))
 	}
 
-	files := make([]*service.FileMeta, 0, len(res))
-	for _, item := range res {
-		files = append(files, &service.FileMeta{
-			FileId:    item.ID,
-			Name:      item.Name,
-			Path:      item.Path,
-			Size:      item.Size,
-			Suffix:    item.Ext,
-			UserId:    item.UserID,
-			CreatedAt: item.CreatedAt.Format("2006-01-02 15:04:05"),
-			UpdatedAt: item.UpdatedAt.Format("2006-01-02 15:04:05"),
-		})
+	files := make([]*service.FileMeta, 0, len(list))
+	for _, f := range list {
+		files = append(files, toFileMeta(f))
 	}
 
 	return response.Success(&service.FileListResponse{
 		Files: files,
-		Total: int32(count),
+		Total: int32(total),
 	})
 }

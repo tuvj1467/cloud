@@ -1,0 +1,32 @@
+# 二进制构建产物
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+*.test
+*.out
+
+# IDE
+.idea/
+.vscode/
+*.iml
+.zcode
+
+# 本地对象存储数据（服务运行时写入：用户文件 + .tmp 分片临时目录）
+cloud_storage/
+
+# ent 代码生成器脚手架残留（entc generate 产生的临时脚本，勿提交）
+.entc/
+
+# 环境变量文件（防止未来密钥误提交）
+.env
+.env.*
+
+# 日志
+*.log
+logs/
+
+# 系统文件
+.DS_Store
+Thumbs.db

@@ -13,10 +13,11 @@ import "validate.proto";
 // 用户基础信息（脱敏版，绝不返回密码）
 message UserInfo {
   string id = 1;           // 用户唯一ID（雪花ID）
-  string name = 2;              // 用户名
-  optional string avatar = 3;   // 头像URL
-  optional string email = 4;    // 邮箱（已脱敏）
-  optional string phone = 5;    // 手机号（已脱敏，如 138****1234）
+  string username = 2;     // 登录账号（唯一且不可修改）
+  string name = 3;         // 显示名称（可修改）
+  optional string avatar = 4;   // 头像URL
+  optional string email = 5;    // 邮箱（已脱敏）
+  optional string phone = 6;    // 手机号（已脱敏，如 138****1234）
 }
 
 // 短信验证码类型枚举

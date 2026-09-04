@@ -23,7 +23,7 @@ func NewFileServer(svcCtx *svc.ServiceContext) *FileServer {
 	}
 }
 
-// 获取文件信息
+// ===== 基础操作 =====
 func (s *FileServer) GetFileInfo(ctx context.Context, in *service.FileInfoRequest) (*service.Response, error) {
 	l := filelogic.NewGetFileInfoLogic(ctx, s.svcCtx)
 	return l.GetFileInfo(in)
@@ -35,14 +35,14 @@ func (s *FileServer) UploadFile(ctx context.Context, in *service.UploadFileReque
 	return l.UploadFile(in)
 }
 
-// 获取所有桶文件列表
+// 获取用户所有文件列表
 func (s *FileServer) GetFileList(ctx context.Context, in *service.FileListRequest) (*service.Response, error) {
 	l := filelogic.NewGetFileListLogic(ctx, s.svcCtx)
 	return l.GetFileList(in)
 }
 
 // 获取用户对应桶文件列表
-func (s *FileServer) GetBucketFileList(ctx context.Context, in *service.FileListRequest) (*service.Response, error) {
+func (s *FileServer) GetBucketFileList(ctx context.Context, in *service.BucketFileListRequest) (*service.Response, error) {
 	l := filelogic.NewGetBucketFileListLogic(ctx, s.svcCtx)
 	return l.GetBucketFileList(in)
 }
@@ -63,4 +63,46 @@ func (s *FileServer) DeleteFile(ctx context.Context, in *service.DeleteFileReque
 func (s *FileServer) DownloadFile(ctx context.Context, in *service.DownloadFileRequest) (*service.Response, error) {
 	l := filelogic.NewDownloadFileLogic(ctx, s.svcCtx)
 	return l.DownloadFile(in)
+}
+
+// 复制文件
+func (s *FileServer) CopyFile(ctx context.Context, in *service.CopyFileRequest) (*service.Response, error) {
+	l := filelogic.NewCopyFileLogic(ctx, s.svcCtx)
+	return l.CopyFile(in)
+}
+
+// ===== 分片上传 =====
+func (s *FileServer) InitMultipartUpload(ctx context.Context, in *service.InitMultipartUploadRequest) (*service.Response, error) {
+	l := filelogic.NewInitMultipartUploadLogic(ctx, s.svcCtx)
+	return l.InitMultipartUpload(in)
+}
+
+// 上传单个分片
+func (s *FileServer) UploadPart(ctx context.Context, in *service.UploadPartRequest) (*service.Response, error) {
+	l := filelogic.NewUploadPartLogic(ctx, s.svcCtx)
+	return l.UploadPart(in)
+}
+
+// 完成分片上传（合并）
+func (s *FileServer) CompleteMultipartUpload(ctx context.Context, in *service.CompleteMultipartUploadRequest) (*service.Response, error) {
+	l := filelogic.NewCompleteMultipartUploadLogic(ctx, s.svcCtx)
+	return l.CompleteMultipartUpload(in)
+}
+
+// 取消分片上传
+func (s *FileServer) AbortMultipartUpload(ctx context.Context, in *service.AbortMultipartUploadRequest) (*service.Response, error) {
+	l := filelogic.NewAbortMultipartUploadLogic(ctx, s.svcCtx)
+	return l.AbortMultipartUpload(in)
+}
+
+// ===== 文件分享 =====
+func (s *FileServer) CreateShare(ctx context.Context, in *service.CreateShareRequest) (*service.Response, error) {
+	l := filelogic.NewCreateShareLogic(ctx, s.svcCtx)
+	return l.CreateShare(in)
+}
+
+// 访问分享（匿名）
+func (s *FileServer) AccessShare(ctx context.Context, in *service.AccessShareRequest) (*service.Response, error) {
+	l := filelogic.NewAccessShareLogic(ctx, s.svcCtx)
+	return l.AccessShare(in)
 }

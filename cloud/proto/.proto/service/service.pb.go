@@ -27,7 +27,7 @@ const file_service_proto_rawDesc = "" +
 	"\rservice.proto\x12\astorage\x1a\n" +
 	"file.proto\x1a\n" +
 	"user.proto\x1a\n" +
-	"base.proto2\xc9\x03\n" +
+	"base.proto\x1a\fbucket.proto2\xc9\x03\n" +
 	"\x04User\x123\n" +
 	"\bRegister\x12\x14.storage.RegisterReq\x1a\x11.storage.Response\x12?\n" +
 	"\x0eLoginByAccount\x12\x1a.storage.LoginByAccountReq\x1a\x11.storage.Response\x12A\n" +
@@ -35,34 +35,61 @@ const file_service_proto_rawDesc = "" +
 	"\x0fLoginByEmailSms\x12\x1b.storage.LoginByEmailSmsReq\x1a\x11.storage.Response\x12K\n" +
 	"\x14SendVerificationCode\x12 .storage.SendVerificationCodeReq\x1a\x11.storage.Response\x12=\n" +
 	"\rResetPassword\x12\x19.storage.ResetPasswordReq\x1a\x11.storage.Response\x129\n" +
-	"\vFindAccount\x12\x17.storage.FindAccountReq\x1a\x11.storage.Response2\xb8\x03\n" +
+	"\vFindAccount\x12\x17.storage.FindAccountReq\x1a\x11.storage.Response2\xcb\x02\n" +
+	"\x06Bucket\x12?\n" +
+	"\fCreateBucket\x12\x1c.storage.CreateBucketRequest\x1a\x11.storage.Response\x12>\n" +
+	"\rGetBucketList\x12\x1a.storage.BucketListRequest\x1a\x11.storage.Response\x12>\n" +
+	"\rGetBucketInfo\x12\x1a.storage.BucketInfoRequest\x1a\x11.storage.Response\x12?\n" +
+	"\fUpdateBucket\x12\x1c.storage.UpdateBucketRequest\x1a\x11.storage.Response\x12?\n" +
+	"\fDeleteBucket\x12\x1c.storage.DeleteBucketRequest\x1a\x11.storage.Response2\xa9\a\n" +
 	"\x04File\x12:\n" +
 	"\vGetFileInfo\x12\x18.storage.FileInfoRequest\x1a\x11.storage.Response\x12;\n" +
 	"\n" +
 	"UploadFile\x12\x1a.storage.UploadFileRequest\x1a\x11.storage.Response\x12:\n" +
-	"\vGetFileList\x12\x18.storage.FileListRequest\x1a\x11.storage.Response\x12@\n" +
-	"\x11GetBucketFileList\x12\x18.storage.FileListRequest\x1a\x11.storage.Response\x12;\n" +
+	"\vGetFileList\x12\x18.storage.FileListRequest\x1a\x11.storage.Response\x12F\n" +
+	"\x11GetBucketFileList\x12\x1e.storage.BucketFileListRequest\x1a\x11.storage.Response\x12;\n" +
 	"\n" +
 	"RenameFile\x12\x1a.storage.RenameFileRequest\x1a\x11.storage.Response\x12;\n" +
 	"\n" +
 	"DeleteFile\x12\x1a.storage.DeleteFileRequest\x1a\x11.storage.Response\x12?\n" +
-	"\fDownloadFile\x12\x1c.storage.DownloadFileRequest\x1a\x11.storage.ResponseB\x10Z\x0e.proto/serviceb\x06proto3"
+	"\fDownloadFile\x12\x1c.storage.DownloadFileRequest\x1a\x11.storage.Response\x127\n" +
+	"\bCopyFile\x12\x18.storage.CopyFileRequest\x1a\x11.storage.Response\x12M\n" +
+	"\x13InitMultipartUpload\x12#.storage.InitMultipartUploadRequest\x1a\x11.storage.Response\x12;\n" +
+	"\n" +
+	"UploadPart\x12\x1a.storage.UploadPartRequest\x1a\x11.storage.Response\x12U\n" +
+	"\x17CompleteMultipartUpload\x12'.storage.CompleteMultipartUploadRequest\x1a\x11.storage.Response\x12O\n" +
+	"\x14AbortMultipartUpload\x12$.storage.AbortMultipartUploadRequest\x1a\x11.storage.Response\x12=\n" +
+	"\vCreateShare\x12\x1b.storage.CreateShareRequest\x1a\x11.storage.Response\x12=\n" +
+	"\vAccessShare\x12\x1b.storage.AccessShareRequest\x1a\x11.storage.ResponseB\x10Z\x0e.proto/serviceb\x06proto3"
 
 var file_service_proto_goTypes = []any{
-	(*RegisterReq)(nil),             // 0: storage.RegisterReq
-	(*LoginByAccountReq)(nil),       // 1: storage.LoginByAccountReq
-	(*LoginByPhoneSmsReq)(nil),      // 2: storage.LoginByPhoneSmsReq
-	(*LoginByEmailSmsReq)(nil),      // 3: storage.LoginByEmailSmsReq
-	(*SendVerificationCodeReq)(nil), // 4: storage.SendVerificationCodeReq
-	(*ResetPasswordReq)(nil),        // 5: storage.ResetPasswordReq
-	(*FindAccountReq)(nil),          // 6: storage.FindAccountReq
-	(*FileInfoRequest)(nil),         // 7: storage.FileInfoRequest
-	(*UploadFileRequest)(nil),       // 8: storage.UploadFileRequest
-	(*FileListRequest)(nil),         // 9: storage.FileListRequest
-	(*RenameFileRequest)(nil),       // 10: storage.RenameFileRequest
-	(*DeleteFileRequest)(nil),       // 11: storage.DeleteFileRequest
-	(*DownloadFileRequest)(nil),     // 12: storage.DownloadFileRequest
-	(*Response)(nil),                // 13: storage.Response
+	(*RegisterReq)(nil),                    // 0: storage.RegisterReq
+	(*LoginByAccountReq)(nil),              // 1: storage.LoginByAccountReq
+	(*LoginByPhoneSmsReq)(nil),             // 2: storage.LoginByPhoneSmsReq
+	(*LoginByEmailSmsReq)(nil),             // 3: storage.LoginByEmailSmsReq
+	(*SendVerificationCodeReq)(nil),        // 4: storage.SendVerificationCodeReq
+	(*ResetPasswordReq)(nil),               // 5: storage.ResetPasswordReq
+	(*FindAccountReq)(nil),                 // 6: storage.FindAccountReq
+	(*CreateBucketRequest)(nil),            // 7: storage.CreateBucketRequest
+	(*BucketListRequest)(nil),              // 8: storage.BucketListRequest
+	(*BucketInfoRequest)(nil),              // 9: storage.BucketInfoRequest
+	(*UpdateBucketRequest)(nil),            // 10: storage.UpdateBucketRequest
+	(*DeleteBucketRequest)(nil),            // 11: storage.DeleteBucketRequest
+	(*FileInfoRequest)(nil),                // 12: storage.FileInfoRequest
+	(*UploadFileRequest)(nil),              // 13: storage.UploadFileRequest
+	(*FileListRequest)(nil),                // 14: storage.FileListRequest
+	(*BucketFileListRequest)(nil),          // 15: storage.BucketFileListRequest
+	(*RenameFileRequest)(nil),              // 16: storage.RenameFileRequest
+	(*DeleteFileRequest)(nil),              // 17: storage.DeleteFileRequest
+	(*DownloadFileRequest)(nil),            // 18: storage.DownloadFileRequest
+	(*CopyFileRequest)(nil),                // 19: storage.CopyFileRequest
+	(*InitMultipartUploadRequest)(nil),     // 20: storage.InitMultipartUploadRequest
+	(*UploadPartRequest)(nil),              // 21: storage.UploadPartRequest
+	(*CompleteMultipartUploadRequest)(nil), // 22: storage.CompleteMultipartUploadRequest
+	(*AbortMultipartUploadRequest)(nil),    // 23: storage.AbortMultipartUploadRequest
+	(*CreateShareRequest)(nil),             // 24: storage.CreateShareRequest
+	(*AccessShareRequest)(nil),             // 25: storage.AccessShareRequest
+	(*Response)(nil),                       // 26: storage.Response
 }
 var file_service_proto_depIdxs = []int32{
 	0,  // 0: storage.User.Register:input_type -> storage.RegisterReq
@@ -72,29 +99,53 @@ var file_service_proto_depIdxs = []int32{
 	4,  // 4: storage.User.SendVerificationCode:input_type -> storage.SendVerificationCodeReq
 	5,  // 5: storage.User.ResetPassword:input_type -> storage.ResetPasswordReq
 	6,  // 6: storage.User.FindAccount:input_type -> storage.FindAccountReq
-	7,  // 7: storage.File.GetFileInfo:input_type -> storage.FileInfoRequest
-	8,  // 8: storage.File.UploadFile:input_type -> storage.UploadFileRequest
-	9,  // 9: storage.File.GetFileList:input_type -> storage.FileListRequest
-	9,  // 10: storage.File.GetBucketFileList:input_type -> storage.FileListRequest
-	10, // 11: storage.File.RenameFile:input_type -> storage.RenameFileRequest
-	11, // 12: storage.File.DeleteFile:input_type -> storage.DeleteFileRequest
-	12, // 13: storage.File.DownloadFile:input_type -> storage.DownloadFileRequest
-	13, // 14: storage.User.Register:output_type -> storage.Response
-	13, // 15: storage.User.LoginByAccount:output_type -> storage.Response
-	13, // 16: storage.User.LoginByPhoneSms:output_type -> storage.Response
-	13, // 17: storage.User.LoginByEmailSms:output_type -> storage.Response
-	13, // 18: storage.User.SendVerificationCode:output_type -> storage.Response
-	13, // 19: storage.User.ResetPassword:output_type -> storage.Response
-	13, // 20: storage.User.FindAccount:output_type -> storage.Response
-	13, // 21: storage.File.GetFileInfo:output_type -> storage.Response
-	13, // 22: storage.File.UploadFile:output_type -> storage.Response
-	13, // 23: storage.File.GetFileList:output_type -> storage.Response
-	13, // 24: storage.File.GetBucketFileList:output_type -> storage.Response
-	13, // 25: storage.File.RenameFile:output_type -> storage.Response
-	13, // 26: storage.File.DeleteFile:output_type -> storage.Response
-	13, // 27: storage.File.DownloadFile:output_type -> storage.Response
-	14, // [14:28] is the sub-list for method output_type
-	0,  // [0:14] is the sub-list for method input_type
+	7,  // 7: storage.Bucket.CreateBucket:input_type -> storage.CreateBucketRequest
+	8,  // 8: storage.Bucket.GetBucketList:input_type -> storage.BucketListRequest
+	9,  // 9: storage.Bucket.GetBucketInfo:input_type -> storage.BucketInfoRequest
+	10, // 10: storage.Bucket.UpdateBucket:input_type -> storage.UpdateBucketRequest
+	11, // 11: storage.Bucket.DeleteBucket:input_type -> storage.DeleteBucketRequest
+	12, // 12: storage.File.GetFileInfo:input_type -> storage.FileInfoRequest
+	13, // 13: storage.File.UploadFile:input_type -> storage.UploadFileRequest
+	14, // 14: storage.File.GetFileList:input_type -> storage.FileListRequest
+	15, // 15: storage.File.GetBucketFileList:input_type -> storage.BucketFileListRequest
+	16, // 16: storage.File.RenameFile:input_type -> storage.RenameFileRequest
+	17, // 17: storage.File.DeleteFile:input_type -> storage.DeleteFileRequest
+	18, // 18: storage.File.DownloadFile:input_type -> storage.DownloadFileRequest
+	19, // 19: storage.File.CopyFile:input_type -> storage.CopyFileRequest
+	20, // 20: storage.File.InitMultipartUpload:input_type -> storage.InitMultipartUploadRequest
+	21, // 21: storage.File.UploadPart:input_type -> storage.UploadPartRequest
+	22, // 22: storage.File.CompleteMultipartUpload:input_type -> storage.CompleteMultipartUploadRequest
+	23, // 23: storage.File.AbortMultipartUpload:input_type -> storage.AbortMultipartUploadRequest
+	24, // 24: storage.File.CreateShare:input_type -> storage.CreateShareRequest
+	25, // 25: storage.File.AccessShare:input_type -> storage.AccessShareRequest
+	26, // 26: storage.User.Register:output_type -> storage.Response
+	26, // 27: storage.User.LoginByAccount:output_type -> storage.Response
+	26, // 28: storage.User.LoginByPhoneSms:output_type -> storage.Response
+	26, // 29: storage.User.LoginByEmailSms:output_type -> storage.Response
+	26, // 30: storage.User.SendVerificationCode:output_type -> storage.Response
+	26, // 31: storage.User.ResetPassword:output_type -> storage.Response
+	26, // 32: storage.User.FindAccount:output_type -> storage.Response
+	26, // 33: storage.Bucket.CreateBucket:output_type -> storage.Response
+	26, // 34: storage.Bucket.GetBucketList:output_type -> storage.Response
+	26, // 35: storage.Bucket.GetBucketInfo:output_type -> storage.Response
+	26, // 36: storage.Bucket.UpdateBucket:output_type -> storage.Response
+	26, // 37: storage.Bucket.DeleteBucket:output_type -> storage.Response
+	26, // 38: storage.File.GetFileInfo:output_type -> storage.Response
+	26, // 39: storage.File.UploadFile:output_type -> storage.Response
+	26, // 40: storage.File.GetFileList:output_type -> storage.Response
+	26, // 41: storage.File.GetBucketFileList:output_type -> storage.Response
+	26, // 42: storage.File.RenameFile:output_type -> storage.Response
+	26, // 43: storage.File.DeleteFile:output_type -> storage.Response
+	26, // 44: storage.File.DownloadFile:output_type -> storage.Response
+	26, // 45: storage.File.CopyFile:output_type -> storage.Response
+	26, // 46: storage.File.InitMultipartUpload:output_type -> storage.Response
+	26, // 47: storage.File.UploadPart:output_type -> storage.Response
+	26, // 48: storage.File.CompleteMultipartUpload:output_type -> storage.Response
+	26, // 49: storage.File.AbortMultipartUpload:output_type -> storage.Response
+	26, // 50: storage.File.CreateShare:output_type -> storage.Response
+	26, // 51: storage.File.AccessShare:output_type -> storage.Response
+	26, // [26:52] is the sub-list for method output_type
+	0,  // [0:26] is the sub-list for method input_type
 	0,  // [0:0] is the sub-list for extension type_name
 	0,  // [0:0] is the sub-list for extension extendee
 	0,  // [0:0] is the sub-list for field type_name
@@ -108,6 +159,7 @@ func file_service_proto_init() {
 	file_file_proto_init()
 	file_user_proto_init()
 	file_base_proto_init()
+	file_bucket_proto_init()
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
@@ -116,7 +168,7 @@ func file_service_proto_init() {
 			NumEnums:      0,
 			NumMessages:   0,
 			NumExtensions: 0,
-			NumServices:   2,
+			NumServices:   3,
 		},
 		GoTypes:           file_service_proto_goTypes,
 		DependencyIndexes: file_service_proto_depIdxs,

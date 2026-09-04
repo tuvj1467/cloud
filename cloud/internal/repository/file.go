@@ -3,37 +3,55 @@ package repository
 import (
 	"context"
 	"database/sql"
-	"onecloud/ent/ent"
-	"onecloud/ent/ent/file"
+	"strings"
+
+	"onecloud/ent"
+	"onecloud/ent/file"
+	"onecloud/ent/predicate"
 	"onecloud/proto/.proto/service"
+
+	entsql "entgo.io/ent/dialect/sql"
 )
 
+// FileRepository 文件数据访问层
 type FileRepository struct {
 	client *ent.Client
 	db     *sql.DB
 }
 
+// NewFileRepository 创建文件仓库实例
 func NewFileRepository(client *ent.Client) *FileRepository {
 	return &FileRepository{client: client}
 }
 
-func (l *FileRepository) Creat(ctx context.Context, in *service.UploadFileRequest, id, path, fileType, md5 string) (*ent.File, error) {
+// Create 创建文件记录（写入 user_id 与 bucket_id，保证桶归属）
+func (l *FileRepository) Create(ctx context.Context, in *service.UploadFileRequest, id, userID, bucketID, path, contentType, md5 string) (*ent.File, error) {
 	return l.client.File.Create().
 		SetID(id).
 		SetName(in.GetName()).
 		SetPath(path).
 		SetMd5(md5).
 		SetExt(in.GetSuffix()).
-		SetContentType(fileType).
+		SetContentType(contentType).
 		SetSize(in.GetSize()).
+		SetUserID(userID).
+		SetBucketID(bucketID).
 		Save(ctx)
 }
 
+// GetInfo 根据 id 获取文件元信息
 func (l *FileRepository) GetInfo(ctx context.Context, id string) (*ent.File, error) {
 	return l.client.File.Get(ctx, id)
 }
 
-// 获取 userId 下所有文件元信息
+// GetByMD5 根据 user_id 与 md5 查询文件（秒传检查）
+func (l *FileRepository) GetByMD5(ctx context.Context, userID, md5 string) (*ent.File, error) {
+	return l.client.File.Query().
+		Where(file.UserIDEQ(userID), file.Md5EQ(md5)).
+		First(ctx)
+}
+
+// GetAllFileList 获取 userId 下所有文件元信息
 func (l *FileRepository) GetAllFileList(ctx context.Context, userId string) ([]*ent.File, error) {
 	res, err := l.client.File.Query().Where(file.UserIDEQ(userId)).All(ctx)
 	if err != nil {
@@ -41,11 +59,10 @@ func (l *FileRepository) GetAllFileList(ctx context.Context, userId string) ([]*
 	}
 
 	return res, nil
-
 }
 
-// 分页获取 userId 下文件元信息
-func (l *FileRepository) GetPageFileList(ctx context.Context, userId string, in *service.FileListRequest) ([]*ent.File, error) {
+// GetPageFileList 分页获取 userId 下文件元信息，返回列表与总数
+func (l *FileRepository) GetPageFileList(ctx context.Context, userId string, in *service.FileListRequest) ([]*ent.File, int, error) {
 	page := in.Page
 	if page <= 0 {
 		page = 1
@@ -55,7 +72,18 @@ func (l *FileRepository) GetPageFileList(ctx context.Context, userId string, in 
 		pageSize = 10
 	}
 	offset := (page - 1) * pageSize
-	query := l.client.File.Query().Where(file.UserIDEQ(userId))
+
+	// 基础查询条件：按用户隔离
+	basePredicates := []predicate.File{file.UserIDEQ(userId)}
+
+	// 计算总数
+	count, err := l.client.File.Query().Where(basePredicates...).Count(ctx)
+	if err != nil {
+		return nil, 0, err
+	}
+
+	// 构造分页查询
+	query := l.client.File.Query().Where(basePredicates...)
 
 	sortBy := strings.ToLower(in.SortBy)
 	sortOrder := strings.ToLower(in.SortOrder)
@@ -84,21 +112,122 @@ func (l *FileRepository) GetPageFileList(ctx context.Context, userId string, in 
 		// 默认按更新时间倒序，保证列表稳定
 		query = query.Order(file.ByUpdatedAt(entsql.OrderDesc()))
 	}
+
 	res, err := query.Offset(int(offset)).Limit(int(pageSize)).All(ctx)
 	if err != nil {
-		return nil, err
+		return nil, 0, err
 	}
-	return res, nil
-
+	return res, count, nil
 }
 
-// 获取 bucket 文件元信息
-func (l *FileRepository) GetBucketFileList(ctx context.Context, userId, bucketId string) ([]*ent.File, error) {
-	res, err := l.client.File.Query().Where(file.UserIDEQ(userId), file.BucketIDEQ(bucketId)).All(ctx)
-	if err != nil {
-		return nil, err
+// GetBucketFileList 分页获取指定桶下文件元信息，返回列表与总数
+func (l *FileRepository) GetBucketFileList(ctx context.Context, userId, bucketId string, in *service.BucketFileListRequest) ([]*ent.File, int, error) {
+	page := in.Page
+	if page <= 0 {
+		page = 1
+	}
+	pageSize := in.PageSize
+	if pageSize <= 0 {
+		pageSize = 10
+	}
+	offset := (page - 1) * pageSize
+
+	basePredicates := []predicate.File{
+		file.UserIDEQ(userId),
+		file.BucketIDEQ(bucketId),
 	}
 
-	return res, nil
+	count, err := l.client.File.Query().Where(basePredicates...).Count(ctx)
+	if err != nil {
+		return nil, 0, err
+	}
 
+	query := l.client.File.Query().Where(basePredicates...)
+
+	sortBy := strings.ToLower(in.SortBy)
+	sortOrder := strings.ToLower(in.SortOrder)
+	isAsc := sortOrder == "asc"
+
+	switch sortBy {
+	case "name":
+		if isAsc {
+			query = query.Order(file.ByName(entsql.OrderAsc()))
+		} else {
+			query = query.Order(file.ByName(entsql.OrderDesc()))
+		}
+	case "size":
+		if isAsc {
+			query = query.Order(file.BySize(entsql.OrderAsc()))
+		} else {
+			query = query.Order(file.BySize(entsql.OrderDesc()))
+		}
+	case "create_time":
+		if isAsc {
+			query = query.Order(file.ByCreatedAt(entsql.OrderAsc()))
+		} else {
+			query = query.Order(file.ByCreatedAt(entsql.OrderDesc()))
+		}
+	default:
+		query = query.Order(file.ByUpdatedAt(entsql.OrderDesc()))
+	}
+
+	res, err := query.Offset(int(offset)).Limit(int(pageSize)).All(ctx)
+	if err != nil {
+		return nil, 0, err
+	}
+	return res, count, nil
+}
+
+// Rename 重命名文件（仅修改 name 字段）
+func (l *FileRepository) Rename(ctx context.Context, id, newName string) (*ent.File, error) {
+	return l.client.File.UpdateOneID(id).
+		SetName(newName).
+		Save(ctx)
+}
+
+// Delete 删除文件记录
+func (l *FileRepository) Delete(ctx context.Context, id string) error {
+	return l.client.File.DeleteOneID(id).Exec(ctx)
+}
+
+// UpdateSize 更新文件大小（分片合并后使用）
+func (l *FileRepository) UpdateSize(ctx context.Context, id string, size int64) error {
+	return l.client.File.UpdateOneID(id).
+		SetSize(size).
+		Exec(ctx)
+}
+
+// CreateCopy 复制文件元数据（用于文件复制操作，复用源文件的 md5/content_type/ext）
+func (l *FileRepository) CreateCopy(ctx context.Context, id, userID, bucketID, name, path string, src *ent.File) (*ent.File, error) {
+	return l.client.File.Create().
+		SetID(id).
+		SetName(name).
+		SetPath(path).
+		SetMd5(src.Md5).
+		SetExt(src.Ext).
+		SetContentType(src.ContentType).
+		SetSize(src.Size).
+		SetUserID(userID).
+		SetBucketID(bucketID).
+		Save(ctx)
+}
+
+// CreateMultipart 创建分片上传合并后的文件元数据
+// 与 Create 的区别：入参是分片合并后的零散字段，而非 UploadFileRequest
+func (l *FileRepository) CreateMultipart(
+	ctx context.Context,
+	id, userID, bucketID, name, path, suffix, contentType, md5 string,
+	size int64,
+) (*ent.File, error) {
+	return l.client.File.Create().
+		SetID(id).
+		SetName(name).
+		SetPath(path).
+		SetMd5(md5).
+		SetExt(suffix).
+		SetContentType(contentType).
+		SetSize(size).
+		SetUserID(userID).
+		SetBucketID(bucketID).
+		Save(ctx)
 }
