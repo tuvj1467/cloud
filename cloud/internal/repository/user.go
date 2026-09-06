@@ -2,7 +2,6 @@ package repository
 
 import (
 	"context"
-	"database/sql"
 	"errors"
 	"fmt"
 	"onecloud/ent"
@@ -14,7 +13,6 @@ import (
 
 type UserRepository struct {
 	client *ent.Client
-	db     *sql.DB
 }
 
 func NewUserRepository(client *ent.Client) *UserRepository {
@@ -42,13 +40,17 @@ func (r *UserRepository) CreateByAccount(ctx context.Context, snowflake *snowId.
 // CreateByPhone 手机号注册（密码使用 bcrypt 加密）
 func (r *UserRepository) CreateByPhone(ctx context.Context, snowflake *snowId.Snowflake, phone, name, password string) (string, error) {
 	id := snowflake.MustIdS()
+	// oneof 注册时 name 恒为空，昵称兜底为注册联系方式（NotEmpty 校验必需）
+	if name == "" {
+		name = phone
+	}
 	hashed, err := passwd.Hash(password)
 	if err != nil {
 		return id, fmt.Errorf("密码加密失败: %w", err)
 	}
 	return id, r.client.User.Create().
 		SetID(id). // 雪花ID
-		SetUsername(phone).
+		// 不设置 username（Optional 字段）→ DB 写 NULL（username 唯一，仅用户名注册占用）
 		SetNickname(name).
 		SetPassword(hashed).
 		SetAvatar("1").
@@ -60,13 +62,17 @@ func (r *UserRepository) CreateByPhone(ctx context.Context, snowflake *snowId.Sn
 // CreateByEmail 邮箱注册（密码使用 bcrypt 加密）
 func (r *UserRepository) CreateByEmail(ctx context.Context, snowflake *snowId.Snowflake, email, name, password string) (string, error) {
 	id := snowflake.MustIdS()
+	// oneof 注册时 name 恒为空，昵称兜底为注册联系方式（NotEmpty 校验必需）
+	if name == "" {
+		name = email
+	}
 	hashed, err := passwd.Hash(password)
 	if err != nil {
 		return id, fmt.Errorf("密码加密失败: %w", err)
 	}
 	return id, r.client.User.Create().
 		SetID(id). // 雪花ID
-		SetUsername(email).
+		// 不设置 username（Optional 字段）→ DB 写 NULL（username 唯一，仅用户名注册占用）
 		SetNickname(name).
 		SetPassword(hashed).
 		SetAvatar("1").
@@ -75,13 +81,16 @@ func (r *UserRepository) CreateByEmail(ctx context.Context, snowflake *snowId.Sn
 		Exec(ctx)
 }
 
-// GetById 根据ID获取用户
-func (r *UserRepository) GetById(ctx context.Context, id string) *ent.User {
-	res, err := r.client.User.Get(ctx, id)
-	if err != nil {
-		return nil
-	}
-	return res
+// GetById 根据 id 查询用户
+func (r *UserRepository) GetById(ctx context.Context, id string) (*ent.User, error) {
+	return r.client.User.Get(ctx, id)
+}
+
+// ExistsByUsername 判断用户名是否已被占用（注册预检，避免唯一索引冲突的裸 DB 错误）
+func (r *UserRepository) ExistsByUsername(ctx context.Context, name string) (bool, error) {
+	return r.client.User.Query().
+		Where(user.UsernameEQ(name)).
+		Exist(ctx)
 }
 
 // LoginByName 用户名登录

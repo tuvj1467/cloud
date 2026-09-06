@@ -29,13 +29,13 @@ func NewLoginByEmailSmsLogic(ctx context.Context, svcCtx *svc.ServiceContext) *L
 
 func (l *LoginByEmailSmsLogic) validate(in *service.LoginByEmailSmsReq) error {
 	if err := in.Validate(); err != nil {
-		var vErr service.LoginByAccountReqValidationError
+		var vErr service.LoginByEmailSmsReqValidationError
 		if errors.As(err, &vErr) {
 			switch vErr.Field() {
-			case "EMAIL":
+			case "Email":
 				return errors.New("邮箱格式错误")
-			case "smscode":
-				return errors.New("验证码6位")
+			case "SmsCode":
+				return errors.New("验证码必须为 6 位")
 			}
 		}
 		return errors.New("参数校验失败")
@@ -49,12 +49,10 @@ func (l *LoginByEmailSmsLogic) LoginByEmailSms(in *service.LoginByEmailSmsReq) (
 		return response.Err(err)
 	}
 
-	if in.GetEmail() == "" || in.GetSmsCode() == "" {
-		return response.Err(errors.New("请输入手机号和验证码"))
-
+	// 校验验证码（组件内含一次性消费与失败计数）
+	if err := l.svcCtx.Verifier.Verify(l.ctx, in.GetEmail(), int(service.SmsType_SMS_TYPE_LOGIN), in.GetSmsCode()); err != nil {
+		return mapVerifyErr(err)
 	}
-
-	//对比redis中的验证码
 
 	//验证成功 通过phone获取ID
 	userRepository := repository.NewUserRepository(l.svcCtx.EntClient)
@@ -64,7 +62,10 @@ func (l *LoginByEmailSmsLogic) LoginByEmailSms(in *service.LoginByEmailSmsReq) (
 		return response.Err(err)
 	}
 	//分发token
-	token, _ := jwt.GenerateToken(res.ID)
+	token, err := jwt.GenerateToken(res.ID)
+	if err != nil {
+		return response.Err(errors.New("生成 token 失败: " + err.Error()))
+	}
 
 	return response.Success(&service.LoginRes{User: &service.UserInfo{
 		Id: res.ID, Username: res.Username, Name: res.Nickname, Avatar: &res.Avatar, Phone: &res.Phone, Email: &res.Email,

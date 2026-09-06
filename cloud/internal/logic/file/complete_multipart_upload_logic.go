@@ -13,6 +13,7 @@ import (
 	"onecloud/internal/pkg/cache"
 	"onecloud/internal/pkg/jwt"
 	"onecloud/internal/pkg/response"
+	"onecloud/internal/pkg/storage"
 	"onecloud/internal/repository"
 	"onecloud/internal/svc"
 	"onecloud/proto/.proto/service"
@@ -49,6 +50,11 @@ func (l *CompleteMultipartUploadLogic) CompleteMultipartUpload(in *service.Compl
 	userID, err := jwt.GetUserIdFromCtx(l.ctx)
 	if err != nil {
 		return response.Err(err)
+	}
+
+	// upload_id 形态白名单（它直接作为存储目录名）
+	if !storage.ValidStorageID(in.GetUploadId()) {
+		return response.ErrWithCode(response.CodeStoragePathInvalid, "upload_id 非法")
 	}
 
 	bucketRepo := repository.NewBucketRepository(l.svcCtx.EntClient)
@@ -94,13 +100,23 @@ func (l *CompleteMultipartUploadLogic) CompleteMultipartUpload(in *service.Compl
 		return response.Err(fmt.Errorf("分片不完整：已上传 %d / 共 %d", uploadedCount, meta.TotalParts))
 	}
 
+	// 目标后缀白名单（meta.FileSuffix 来自 init 请求）
+	if !storage.ValidSuffix(meta.FileSuffix) {
+		return response.ErrWithCode(response.CodeStoragePathInvalid, "文件后缀非法")
+	}
+
 	// 6. 生成目标路径
 	fileID := l.svcCtx.Snowflake.MustIdS()
 	date := time.Now().Format("20060102")
 	targetPath := fmt.Sprintf("%s/%s/%s.%s", userID, date, fileID, meta.FileSuffix)
 
-	// 7. 调用驱动合并分片
-	if err := l.svcCtx.Storage.CompletePart(l.ctx, meta.StorageID, targetPath); err != nil {
+	// 7. 调用驱动合并分片（数量 + 逐片 MD5 校验，成功后驱动清理临时目录）
+	expectedMD5, err := multipartCache.ListParts(l.ctx, in.GetUploadId())
+	if err != nil {
+		l.Errorf("读取分片 MD5 状态失败（跳过逐片校验）upload_id=%s: %v", in.GetUploadId(), err)
+		expectedMD5 = nil
+	}
+	if err := l.svcCtx.Storage.CompletePart(l.ctx, meta.StorageID, targetPath, meta.TotalParts, expectedMD5); err != nil {
 		return response.Err(errors.New("合并分片失败: " + err.Error()))
 	}
 
@@ -109,6 +125,17 @@ func (l *CompleteMultipartUploadLogic) CompleteMultipartUpload(in *service.Compl
 	if err != nil {
 		l.Errorf("计算合并后文件 MD5 失败 path=%s: %v", targetPath, err)
 		fileMD5 = ""
+	}
+
+	// 大小治理：以驱动 Stat 实测值为记账基准（客户端声明的 FileSize 不可信）
+	statInfo, err := l.svcCtx.Storage.Stat(l.ctx, targetPath)
+	if err != nil {
+		_ = l.svcCtx.Storage.Delete(l.ctx, targetPath)
+		return response.Err(errors.New("校验合并文件大小失败: " + err.Error()))
+	}
+	if meta.FileSize > 0 && statInfo.Size != meta.FileSize {
+		_ = l.svcCtx.Storage.Delete(l.ctx, targetPath)
+		return response.Err(errors.New(fmt.Sprintf("合并文件大小不符：实测 %d / 声明 %d", statInfo.Size, meta.FileSize)))
 	}
 
 	// 9. 秒传检查：若 MD5 命中已有文件，删除刚合并的物理文件，复用旧记录
@@ -139,11 +166,13 @@ func (l *CompleteMultipartUploadLogic) CompleteMultipartUpload(in *service.Compl
 	// 11. 创建文件元数据
 	newFile, err := fileRepo.CreateMultipart(
 		l.ctx, fileID, userID, meta.BucketID, meta.FileName, targetPath,
-		meta.FileSuffix, contentType, fileMD5, meta.FileSize,
+		meta.FileSuffix, contentType, fileMD5, statInfo.Size,
 	)
 	if err != nil {
 		// 入库失败，删除已合并的物理文件
-		_ = l.svcCtx.Storage.Delete(l.ctx, targetPath)
+		if delErr := l.svcCtx.Storage.Delete(l.ctx, targetPath); delErr != nil {
+			l.Errorf("回滚物理文件失败: %v", delErr)
+		}
 		return response.Err(errors.New("文件入库失败: " + err.Error()))
 	}
 
@@ -152,9 +181,35 @@ func (l *CompleteMultipartUploadLogic) CompleteMultipartUpload(in *service.Compl
 		_ = md5Cache.Set(l.ctx, userID, fileMD5, newFile.ID)
 	}
 
-	// 13. 扣减桶容量
-	if err := bucketRepo.IncUsedSize(l.ctx, meta.BucketID, meta.FileSize); err != nil {
-		l.Errorf("桶容量更新失败（文件已入库）bucket=%s: %v", meta.BucketID, err)
+	// 13. 扣减桶容量（原子 UPDATE，失败回滚本次合并产物）
+	ok, err := bucketRepo.TryIncUsedSize(l.ctx, meta.BucketID, statInfo.Size)
+	if err != nil {
+		// 扣减失败：同样回滚本次合并产物（物理文件 + DB 记录 + Redis 清理）
+		// 分片状态保留 uploaded（merged 是成功语义，失败时标记会留脏状态并卡死重试）
+		if delErr := l.svcCtx.Storage.Delete(l.ctx, targetPath); delErr != nil {
+			l.Errorf("回滚物理文件失败: %v", delErr)
+		}
+		if delErr := fileRepo.Delete(l.ctx, newFile.ID); delErr != nil {
+			l.Errorf("回滚文件记录失败: %v", delErr)
+		}
+		if delErr := multipartCache.Clear(l.ctx, in.GetUploadId()); delErr != nil {
+			l.Errorf("回滚上传缓存失败: %v", delErr)
+		}
+		return response.Err(errors.New("桶容量更新失败: " + err.Error()))
+	}
+	if !ok {
+		// 并发下配额被占满：回滚本次合并产物（物理文件 + DB 记录 + Redis 清理）
+		// 分片状态保留 uploaded（merged 是成功语义，失败时标记会留脏状态并卡死重试）
+		if delErr := l.svcCtx.Storage.Delete(l.ctx, targetPath); delErr != nil {
+			l.Errorf("回滚物理文件失败: %v", delErr)
+		}
+		if delErr := fileRepo.Delete(l.ctx, newFile.ID); delErr != nil {
+			l.Errorf("回滚文件记录失败: %v", delErr)
+		}
+		if delErr := multipartCache.Clear(l.ctx, in.GetUploadId()); delErr != nil {
+			l.Errorf("回滚上传缓存失败: %v", delErr)
+		}
+		return response.ErrWithCode(response.CodeBucketCapacity, "桶容量不足")
 	}
 
 	// 14. 更新分片状态为 merged
@@ -166,7 +221,7 @@ func (l *CompleteMultipartUploadLogic) CompleteMultipartUpload(in *service.Compl
 	_ = multipartCache.Clear(l.ctx, in.GetUploadId())
 
 	l.Infof("multipart complete success user=%s upload_id=%s file=%s size=%d md5=%s",
-		userID, in.GetUploadId(), newFile.ID, meta.FileSize, fileMD5)
+		userID, in.GetUploadId(), newFile.ID, statInfo.Size, fileMD5)
 
 	return response.Success(&service.CompleteMultipartUploadResponse{
 		File:    toFileMeta(newFile),

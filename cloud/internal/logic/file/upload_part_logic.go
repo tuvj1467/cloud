@@ -8,6 +8,7 @@ import (
 	"onecloud/internal/pkg/cache"
 	"onecloud/internal/pkg/jwt"
 	"onecloud/internal/pkg/response"
+	"onecloud/internal/pkg/storage"
 	"onecloud/internal/repository"
 	"onecloud/internal/svc"
 	"onecloud/proto/.proto/service"
@@ -46,6 +47,11 @@ func (l *UploadPartLogic) UploadPart(in *service.UploadPartRequest) (*service.Re
 		return response.Err(err)
 	}
 
+	// upload_id 形态白名单（DB 兜底时它直接作为存储目录名）
+	if !storage.ValidStorageID(in.GetUploadId()) {
+		return response.ErrWithCode(response.CodeStoragePathInvalid, "upload_id 非法")
+	}
+
 	partRepo := repository.NewFilePartRepository(l.svcCtx.EntClient)
 	multipartCache := cache.NewMultipartCache(l.svcCtx.Redis)
 
@@ -79,6 +85,18 @@ func (l *UploadPartLogic) UploadPart(in *service.UploadPartRequest) (*service.Re
 		return response.Err(errors.New("无权操作该上传任务"))
 	}
 
+	// 大小治理：分片以服务端 len(content) 为准，且不得超过单分片上限（与简单上传同一配置）
+	partSize := int64(len(in.GetContent()))
+	if partSize == 0 {
+		return response.Err(errors.New("分片内容为空"))
+	}
+	if partSize != in.GetSize() {
+		return response.Err(errors.New("分片大小与内容不一致，请重新上传"))
+	}
+	if limit := l.svcCtx.Config.Storage.MaxUploadSize; limit > 0 && partSize > limit {
+		return response.ErrWithCode(response.CodeFileTooLarge, "分片超过大小上限")
+	}
+
 	// 5. 校验 part_number 范围
 	if int(in.GetPartNumber()) < 1 || int(in.GetPartNumber()) > meta.TotalParts {
 		return response.Err(errors.New("分片序号超出范围"))
@@ -93,7 +111,7 @@ func (l *UploadPartLogic) UploadPart(in *service.UploadPartRequest) (*service.Re
 		})
 	}
 
-	// 7. 调用存储驱动上传分片（用 storage_id 而非业务 upload_id）
+	// 7. 调用存储驱动上传分片（upload_id 即存储目录名，ID 已统一）
 	partMD5, err := l.svcCtx.Storage.UploadPart(
 		l.ctx,
 		meta.StorageID,

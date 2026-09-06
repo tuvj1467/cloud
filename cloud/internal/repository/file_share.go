@@ -80,3 +80,8 @@ func (r *FileShareRepository) IncUsedCount(ctx context.Context, id string, versi
 func (r *FileShareRepository) DeleteByID(ctx context.Context, id string) error {
 	return r.client.FileShare.DeleteOneID(id).Exec(ctx)
 }
+
+// ListByFileIDs 查询一组文件的分享记录（事务删除前查出，供事务后清理 Redis）
+func (r *FileShareRepository) ListByFileIDs(ctx context.Context, fileIDs []string) ([]*ent.FileShare, error) {
+	return r.client.FileShare.Query().Where(fileshare.FileIDIn(fileIDs...)).All(ctx)
+}

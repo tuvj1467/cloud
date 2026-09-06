@@ -205,3 +205,15 @@ message AccessShareResponse {
   FileMeta file = 1;
   string permission = 2;  // read / download
 }
+
+// ==========================================
+// 14. 分享下载（匿名，校验提取码/有效期/次数）
+// ==========================================
+message DownloadByShareRequest {
+  string share_code = 1 [(validate.rules).string = {min_len: 1}];
+}
+
+message DownloadByShareResponse {
+  bytes content = 1; // 文件二进制（JSON 下为 base64）
+  FileMeta file = 2; // 文件信息
+}

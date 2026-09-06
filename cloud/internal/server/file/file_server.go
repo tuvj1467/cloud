@@ -106,3 +106,9 @@ func (s *FileServer) AccessShare(ctx context.Context, in *service.AccessShareReq
 	l := filelogic.NewAccessShareLogic(ctx, s.svcCtx)
 	return l.AccessShare(in)
 }
+
+// 分享下载（匿名）
+func (s *FileServer) DownloadByShare(ctx context.Context, in *service.DownloadByShareRequest) (*service.Response, error) {
+	l := filelogic.NewDownloadByShareLogic(ctx, s.svcCtx)
+	return l.DownloadByShare(in)
+}

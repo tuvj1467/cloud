@@ -5,6 +5,7 @@ Name: storage-gateway
 Host: 0.0.0.0
 Port: 8888
 Timeout: 3000
+MaxBytes: 115343360         # 110MB（> 后端 MaxUploadSize 100MB；go-zero 默认 1MB 会挡住 5MB 直传）
 
 Header: Authorization
 
@@ -62,6 +63,9 @@ upstreams:
       - Method: GET
         Path: /file/share/access
         RpcPath: storage.File/AccessShare
+      - Method: GET
+        Path: /file/share/download
+        RpcPath: storage.File/DownloadByShare
       # ===== 桶服务 =====
       - Method: POST
         Path: /bucket/create

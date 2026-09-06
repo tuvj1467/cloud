@@ -6,6 +6,7 @@ import (
 
 	"onecloud/ent"
 	"onecloud/ent/filepart"
+	"onecloud/internal/pkg/snowId"
 	"onecloud/proto/.proto/service"
 )
 
@@ -23,7 +24,13 @@ func NewFilePartRepository(client *ent.Client) *FilePartRepository {
 func (r *FilePartRepository) CreateBatch(ctx context.Context, uploadID, userID, bucketID string, in *service.InitMultipartUploadRequest) error {
 	bulk := make([]*ent.FilePartCreate, 0, int(in.GetTotalParts()))
 	for i := 1; i <= int(in.GetTotalParts()); i++ {
+		// file_parts.id 为无默认值的字符串主键，必须显式生成雪花 ID
+		partID, err := snowId.Generate()
+		if err != nil {
+			return fmt.Errorf("生成分片记录 ID 失败: %w", err)
+		}
 		bulk = append(bulk, r.client.FilePart.Create().
+			SetID(fmt.Sprintf("%d", partID)).
 			SetUploadID(uploadID).
 			SetUserID(userID).
 			SetBucketID(bucketID).

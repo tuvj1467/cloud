@@ -1646,6 +1646,105 @@ func (x *AccessShareResponse) GetPermission() string {
 	return ""
 }
 
+// ==========================================
+// 14. 分享下载（匿名，校验提取码/有效期/次数）
+// ==========================================
+type DownloadByShareRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	ShareCode     string                 `protobuf:"bytes,1,opt,name=share_code,json=shareCode,proto3" json:"share_code,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *DownloadByShareRequest) Reset() {
+	*x = DownloadByShareRequest{}
+	mi := &file_file_proto_msgTypes[28]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *DownloadByShareRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*DownloadByShareRequest) ProtoMessage() {}
+
+func (x *DownloadByShareRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_file_proto_msgTypes[28]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use DownloadByShareRequest.ProtoReflect.Descriptor instead.
+func (*DownloadByShareRequest) Descriptor() ([]byte, []int) {
+	return file_file_proto_rawDescGZIP(), []int{28}
+}
+
+func (x *DownloadByShareRequest) GetShareCode() string {
+	if x != nil {
+		return x.ShareCode
+	}
+	return ""
+}
+
+type DownloadByShareResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Content       []byte                 `protobuf:"bytes,1,opt,name=content,proto3" json:"content,omitempty"` // 文件二进制（JSON 下为 base64）
+	File          *FileMeta              `protobuf:"bytes,2,opt,name=file,proto3" json:"file,omitempty"`       // 文件信息
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *DownloadByShareResponse) Reset() {
+	*x = DownloadByShareResponse{}
+	mi := &file_file_proto_msgTypes[29]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *DownloadByShareResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*DownloadByShareResponse) ProtoMessage() {}
+
+func (x *DownloadByShareResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_file_proto_msgTypes[29]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use DownloadByShareResponse.ProtoReflect.Descriptor instead.
+func (*DownloadByShareResponse) Descriptor() ([]byte, []int) {
+	return file_file_proto_rawDescGZIP(), []int{29}
+}
+
+func (x *DownloadByShareResponse) GetContent() []byte {
+	if x != nil {
+		return x.Content
+	}
+	return nil
+}
+
+func (x *DownloadByShareResponse) GetFile() *FileMeta {
+	if x != nil {
+		return x.File
+	}
+	return nil
+}
+
 var File_file_proto protoreflect.FileDescriptor
 
 const file_file_proto_rawDesc = "" +
@@ -1770,7 +1869,13 @@ const file_file_proto_rawDesc = "" +
 	"\x04file\x18\x01 \x01(\v2\x11.storage.FileMetaR\x04file\x12\x1e\n" +
 	"\n" +
 	"permission\x18\x02 \x01(\tR\n" +
-	"permissionB\x10Z\x0e.proto/serviceb\x06proto3"
+	"permission\"@\n" +
+	"\x16DownloadByShareRequest\x12&\n" +
+	"\n" +
+	"share_code\x18\x01 \x01(\tB\a\xfaB\x04r\x02\x10\x01R\tshareCode\"Z\n" +
+	"\x17DownloadByShareResponse\x12\x18\n" +
+	"\acontent\x18\x01 \x01(\fR\acontent\x12%\n" +
+	"\x04file\x18\x02 \x01(\v2\x11.storage.FileMetaR\x04fileB\x10Z\x0e.proto/serviceb\x06proto3"
 
 var (
 	file_file_proto_rawDescOnce sync.Once
@@ -1784,7 +1889,7 @@ func file_file_proto_rawDescGZIP() []byte {
 	return file_file_proto_rawDescData
 }
 
-var file_file_proto_msgTypes = make([]protoimpl.MessageInfo, 28)
+var file_file_proto_msgTypes = make([]protoimpl.MessageInfo, 30)
 var file_file_proto_goTypes = []any{
 	(*FileMeta)(nil),                        // 0: storage.FileMeta
 	(*FileInfoRequest)(nil),                 // 1: storage.FileInfoRequest
@@ -1814,6 +1919,8 @@ var file_file_proto_goTypes = []any{
 	(*CreateShareResponse)(nil),             // 25: storage.CreateShareResponse
 	(*AccessShareRequest)(nil),              // 26: storage.AccessShareRequest
 	(*AccessShareResponse)(nil),             // 27: storage.AccessShareResponse
+	(*DownloadByShareRequest)(nil),          // 28: storage.DownloadByShareRequest
+	(*DownloadByShareResponse)(nil),         // 29: storage.DownloadByShareResponse
 }
 var file_file_proto_depIdxs = []int32{
 	0, // 0: storage.FileInfoResponse.file:type_name -> storage.FileMeta
@@ -1823,11 +1930,12 @@ var file_file_proto_depIdxs = []int32{
 	0, // 4: storage.CopyFileResponse.file:type_name -> storage.FileMeta
 	0, // 5: storage.CompleteMultipartUploadResponse.file:type_name -> storage.FileMeta
 	0, // 6: storage.AccessShareResponse.file:type_name -> storage.FileMeta
-	7, // [7:7] is the sub-list for method output_type
-	7, // [7:7] is the sub-list for method input_type
-	7, // [7:7] is the sub-list for extension type_name
-	7, // [7:7] is the sub-list for extension extendee
-	0, // [0:7] is the sub-list for field type_name
+	0, // 7: storage.DownloadByShareResponse.file:type_name -> storage.FileMeta
+	8, // [8:8] is the sub-list for method output_type
+	8, // [8:8] is the sub-list for method input_type
+	8, // [8:8] is the sub-list for extension type_name
+	8, // [8:8] is the sub-list for extension extendee
+	0, // [0:8] is the sub-list for field type_name
 }
 
 func init() { file_file_proto_init() }
@@ -1844,7 +1952,7 @@ func file_file_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_file_proto_rawDesc), len(file_file_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   28,
+			NumMessages:   30,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

@@ -12,6 +12,7 @@ import (
 	"onecloud/internal/pkg/jwt"
 	"onecloud/internal/pkg/snowId"
 	"onecloud/internal/pkg/storage"
+	"onecloud/internal/pkg/verification"
 	"time"
 
 	"github.com/redis/go-redis/v9"
@@ -23,13 +24,19 @@ type ServiceContext struct {
 	Db        *sql.DB
 	EntClient *ent.Client
 	Redis     *redis.Client
-	Snowflake *snowId.Snowflake // 雪花id生成器
-	Storage   storage.Driver    // 存储驱动
+	Snowflake *snowId.Snowflake     // 雪花id生成器
+	Storage   storage.Driver        // 存储驱动
+	Verifier  *verification.Service // 验证码服务
 }
 
 // NewServiceContext 创建服务上下文，初始化所有依赖
 func NewServiceContext(c config.Config) *ServiceContext {
 	ctx := &ServiceContext{Config: c}
+
+	// 生产模式禁止使用演示默认密钥（空值或演示值直接拒绝启动）
+	if c.Mode == "prod" && (c.JWT.Secret == "" || c.JWT.Secret == "www.topgoer.com") {
+		panic("JWT Secret 未配置或仍为演示默认值，拒绝在生产模式启动")
+	}
 
 	// 初始化 JWT 配置（密钥、过期时间、签发者）
 	jwt.Init(c.JWT.Secret, c.JWT.Expire, c.JWT.Issuer)
@@ -55,6 +62,9 @@ func NewServiceContext(c config.Config) *ServiceContext {
 	} else {
 		fmt.Println("Redis 连接成功!")
 	}
+
+	// 初始化验证码服务（Redis 未配置时由组件降级为明确报错，不再空指针）
+	ctx.Verifier = verification.NewService(cache.NewRedisKV(ctx.Redis), verification.LogSender{})
 
 	return ctx
 }

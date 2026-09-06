@@ -34,6 +34,8 @@ RedisConf:
 # 存储驱动配置
 Storage:
   Driver: local
+  # 单文件/单分片上传上限（字节），默认 104857600 = 100MB
+  # MaxUploadSize: 104857600
   Local:
     # 挂载卷路径（docker-compose 中由 storage-data 卷持久化）
     RootDir: /data/cloud_storage

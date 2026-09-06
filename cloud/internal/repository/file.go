@@ -2,21 +2,24 @@ package repository
 
 import (
 	"context"
-	"database/sql"
+	"fmt"
 	"strings"
 
 	"onecloud/ent"
+	"onecloud/ent/bucket"
 	"onecloud/ent/file"
+	"onecloud/ent/fileshare"
 	"onecloud/ent/predicate"
 	"onecloud/proto/.proto/service"
 
 	entsql "entgo.io/ent/dialect/sql"
+
+	"github.com/zeromicro/go-zero/core/logx"
 )
 
 // FileRepository 文件数据访问层
 type FileRepository struct {
 	client *ent.Client
-	db     *sql.DB
 }
 
 // NewFileRepository 创建文件仓库实例
@@ -230,4 +233,45 @@ func (l *FileRepository) CreateMultipart(
 		SetUserID(userID).
 		SetBucketID(bucketID).
 		Save(ctx)
+}
+
+// DeleteFull 事务删除文件：文件记录 + 关联分享 + 桶容量原子归还
+// 事务提交后由调用方清理 Redis 索引与物理文件（物理孤儿可容忍，DB 必须一致）
+func (l *FileRepository) DeleteFull(ctx context.Context, f *ent.File) error {
+	tx, err := l.client.Tx(ctx)
+	if err != nil {
+		return err
+	}
+	// 1. 级联删除关联分享记录
+	if _, err := tx.FileShare.Delete().Where(fileshare.FileIDEQ(f.ID)).Exec(ctx); err != nil {
+		_ = tx.Rollback()
+		return fmt.Errorf("删除关联分享失败: %w", err)
+	}
+	// 2. 删除文件记录
+	if err := tx.File.DeleteOneID(f.ID).Exec(ctx); err != nil {
+		_ = tx.Rollback()
+		return err
+	}
+	// 3. 事务内原子归还桶容量（保证 used_size 不为负）
+	if f.BucketID != "" && f.Size > 0 {
+		affected, err := tx.Bucket.Update().
+			Where(
+				bucket.IDEQ(f.BucketID),
+				func(s *entsql.Selector) {
+					s.Where(entsql.ExprP("used_size >= ?", f.Size))
+				},
+			).
+			AddUsedSize(-f.Size).
+			AddVersion(1).
+			Save(ctx)
+		if err != nil {
+			_ = tx.Rollback()
+			return fmt.Errorf("归还桶容量失败: %w", err)
+		}
+		if affected == 0 {
+			// 账目漂移（used_size < f.Size）时归还 0 行：不阻塞删除，留痕供对账
+			logx.Errorf("归还桶容量 0 行（账目漂移?）bucket=%s file=%s size=%d", f.BucketID, f.ID, f.Size)
+		}
+	}
+	return tx.Commit()
 }

@@ -10,9 +10,10 @@ import (
 
 // Config 存储驱动配置（由 config.Config 引用）
 type Config struct {
-	Driver string `json:",default=local"` // local | minio | s3
-	Local  LocalConfig
-	Minio  MinioConfig
+	Driver        string `json:",default=local"`     // local | minio | s3
+	MaxUploadSize int64  `json:",default=104857600"` // 单文件/单分片上传上限（字节），默认 100MB
+	Local         LocalConfig
+	Minio         MinioConfig
 }
 
 // LocalConfig 本地磁盘存储配置
@@ -60,14 +61,16 @@ type Driver interface {
 	// Exists 判断文件是否存在
 	Exists(ctx context.Context, path string) (bool, error)
 
-	// InitPart 初始化分片上传，返回 upload_id
-	InitPart(ctx context.Context, path string, totalParts int) (uploadID string, err error)
+	// InitPart 初始化分片上传，创建临时分片目录
+	// uploadID 由业务层生成并保证唯一（雪花 ID），本地驱动以其命名临时目录
+	InitPart(ctx context.Context, uploadID string, totalParts int) error
 
 	// UploadPart 上传单个分片
 	UploadPart(ctx context.Context, uploadID string, partNumber int, reader io.Reader, size int64) (partMD5 string, err error)
 
-	// CompletePart 合并所有分片为完整文件
-	CompletePart(ctx context.Context, uploadID string, targetPath string) error
+	// CompletePart 合并所有分片为完整文件，成功后清理临时分片目录
+	// expectedParts > 0 时校验磁盘分片数量；expectedMD5 非 nil 时逐片校验 MD5
+	CompletePart(ctx context.Context, uploadID string, targetPath string, expectedParts int, expectedMD5 map[int]string) error
 
 	// AbortPart 取消分片上传，清理临时分片
 	AbortPart(ctx context.Context, uploadID string) error

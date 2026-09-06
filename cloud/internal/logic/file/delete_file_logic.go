@@ -41,7 +41,6 @@ func (l *DeleteFileLogic) DeleteFile(in *service.DeleteFileRequest) (*service.Re
 	}
 
 	fileRepo := repository.NewFileRepository(l.svcCtx.EntClient)
-	bucketRepo := repository.NewBucketRepository(l.svcCtx.EntClient)
 
 	f, err := fileRepo.GetInfo(l.ctx, in.GetFileId())
 	if err != nil {
@@ -56,17 +55,25 @@ func (l *DeleteFileLogic) DeleteFile(in *service.DeleteFileRequest) (*service.Re
 		return response.ErrWithCode(response.CodeFileNoPermission, "无权删除该文件")
 	}
 
-	// 1. 删除 DB 记录
-	if err := fileRepo.Delete(l.ctx, in.GetFileId()); err != nil {
-		return response.Err(errors.New("删除文件记录失败: " + err.Error()))
+	// 0. 事务前查出关联分享（提交后清理 Redis 用）
+	shareRepo := repository.NewFileShareRepository(l.svcCtx.EntClient)
+	shares, err := shareRepo.ListByFileIDs(l.ctx, []string{f.ID})
+	if err != nil {
+		l.Errorf("查询关联分享失败（继续删除）file=%s: %v", f.ID, err)
 	}
 
-	// 2. 删除物理文件（失败仅记录日志，不阻塞主流程，避免孤儿记录阻塞删除）
-	if err := l.svcCtx.Storage.Delete(l.ctx, f.Path); err != nil {
-		l.Errorf("物理文件删除失败（DB已删除）path=%s: %v", f.Path, err)
+	// 1. 事务删除：文件记录 + 关联分享 + 桶容量原子归还
+	if err := fileRepo.DeleteFull(l.ctx, f); err != nil {
+		return response.Err(errors.New("删除文件失败: " + err.Error()))
 	}
 
-	// 2.1 清理 Redis MD5 索引（仅当 value 等于被删 file_id 时删，防误删）
+	// 2. 清理 Redis：分享缓存、秒传索引
+	shareCache := cache.NewShareCache(l.svcCtx.Redis)
+	for _, s := range shares {
+		if err := shareCache.Del(l.ctx, s.ShareCode); err != nil {
+			l.Errorf("清理分享缓存失败 code=%s: %v", s.ShareCode, err)
+		}
+	}
 	if f.Md5 != "" {
 		md5Cache := cache.NewMD5Cache(l.svcCtx.Redis)
 		if err := md5Cache.Del(l.ctx, userID, f.Md5, f.ID); err != nil {
@@ -74,11 +81,9 @@ func (l *DeleteFileLogic) DeleteFile(in *service.DeleteFileRequest) (*service.Re
 		}
 	}
 
-	// 3. 回收桶容量（乐观锁，失败仅告警）
-	if f.BucketID != "" {
-		if err := bucketRepo.IncUsedSize(l.ctx, f.BucketID, -f.Size); err != nil {
-			l.Errorf("桶容量回收失败 bucket=%s: %v", f.BucketID, err)
-		}
+	// 3. 删除物理文件（失败仅告警，孤儿文件可被后续 GC 回收）
+	if err := l.svcCtx.Storage.Delete(l.ctx, f.Path); err != nil {
+		l.Errorf("物理文件删除失败（DB已删除）path=%s: %v", f.Path, err)
 	}
 
 	l.Infof("delete file success user=%s file=%s size=%d", userID, f.ID, f.Size)

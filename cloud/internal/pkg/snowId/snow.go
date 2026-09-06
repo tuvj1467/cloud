@@ -96,9 +96,14 @@ func (s *Snowflake) NextID() (int64, error) {
 	return id, nil
 }
 
+// MustId 生成 ID，失败（含时钟回拨）直接 panic
+// 雪花 ID 用作全局主键，静默返回错误值比崩溃更危险
 func (s *Snowflake) MustId() int64 {
-	res, _ := s.NextID()
-	return res
+	id, err := s.NextID()
+	if err != nil {
+		panic(fmt.Errorf("雪花 ID 生成失败: %w", err))
+	}
+	return id
 }
 
 func (s *Snowflake) MustIdS() string {

@@ -78,4 +78,6 @@ service File {
   rpc CreateShare(CreateShareRequest) returns (Response);
   // 访问分享（匿名）
   rpc AccessShare(AccessShareRequest) returns (Response);
+  // 分享下载（匿名）
+  rpc DownloadByShare(DownloadByShareRequest) returns (Response);
 }

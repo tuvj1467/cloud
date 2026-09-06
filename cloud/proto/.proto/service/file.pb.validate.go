@@ -3561,3 +3561,249 @@ var _ interface {
 	Cause() error
 	ErrorName() string
 } = AccessShareResponseValidationError{}
+
+// Validate checks the field values on DownloadByShareRequest with the rules
+// defined in the proto definition for this message. If any rules are
+// violated, the first error encountered is returned, or nil if there are no violations.
+func (m *DownloadByShareRequest) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on DownloadByShareRequest with the rules
+// defined in the proto definition for this message. If any rules are
+// violated, the result is a list of violation errors wrapped in
+// DownloadByShareRequestMultiError, or nil if none found.
+func (m *DownloadByShareRequest) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *DownloadByShareRequest) validate(all bool) error {
+	if m == nil {
+		return nil
+	}
+
+	var errors []error
+
+	if utf8.RuneCountInString(m.GetShareCode()) < 1 {
+		err := DownloadByShareRequestValidationError{
+			field:  "ShareCode",
+			reason: "value length must be at least 1 runes",
+		}
+		if !all {
+			return err
+		}
+		errors = append(errors, err)
+	}
+
+	if len(errors) > 0 {
+		return DownloadByShareRequestMultiError(errors)
+	}
+
+	return nil
+}
+
+// DownloadByShareRequestMultiError is an error wrapping multiple validation
+// errors returned by DownloadByShareRequest.ValidateAll() if the designated
+// constraints aren't met.
+type DownloadByShareRequestMultiError []error
+
+// Error returns a concatenation of all the error messages it wraps.
+func (m DownloadByShareRequestMultiError) Error() string {
+	msgs := make([]string, 0, len(m))
+	for _, err := range m {
+		msgs = append(msgs, err.Error())
+	}
+	return strings.Join(msgs, "; ")
+}
+
+// AllErrors returns a list of validation violation errors.
+func (m DownloadByShareRequestMultiError) AllErrors() []error { return m }
+
+// DownloadByShareRequestValidationError is the validation error returned by
+// DownloadByShareRequest.Validate if the designated constraints aren't met.
+type DownloadByShareRequestValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e DownloadByShareRequestValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e DownloadByShareRequestValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e DownloadByShareRequestValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e DownloadByShareRequestValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e DownloadByShareRequestValidationError) ErrorName() string {
+	return "DownloadByShareRequestValidationError"
+}
+
+// Error satisfies the builtin error interface
+func (e DownloadByShareRequestValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sDownloadByShareRequest.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = DownloadByShareRequestValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = DownloadByShareRequestValidationError{}
+
+// Validate checks the field values on DownloadByShareResponse with the rules
+// defined in the proto definition for this message. If any rules are
+// violated, the first error encountered is returned, or nil if there are no violations.
+func (m *DownloadByShareResponse) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on DownloadByShareResponse with the
+// rules defined in the proto definition for this message. If any rules are
+// violated, the result is a list of violation errors wrapped in
+// DownloadByShareResponseMultiError, or nil if none found.
+func (m *DownloadByShareResponse) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *DownloadByShareResponse) validate(all bool) error {
+	if m == nil {
+		return nil
+	}
+
+	var errors []error
+
+	// no validation rules for Content
+
+	if all {
+		switch v := interface{}(m.GetFile()).(type) {
+		case interface{ ValidateAll() error }:
+			if err := v.ValidateAll(); err != nil {
+				errors = append(errors, DownloadByShareResponseValidationError{
+					field:  "File",
+					reason: "embedded message failed validation",
+					cause:  err,
+				})
+			}
+		case interface{ Validate() error }:
+			if err := v.Validate(); err != nil {
+				errors = append(errors, DownloadByShareResponseValidationError{
+					field:  "File",
+					reason: "embedded message failed validation",
+					cause:  err,
+				})
+			}
+		}
+	} else if v, ok := interface{}(m.GetFile()).(interface{ Validate() error }); ok {
+		if err := v.Validate(); err != nil {
+			return DownloadByShareResponseValidationError{
+				field:  "File",
+				reason: "embedded message failed validation",
+				cause:  err,
+			}
+		}
+	}
+
+	if len(errors) > 0 {
+		return DownloadByShareResponseMultiError(errors)
+	}
+
+	return nil
+}
+
+// DownloadByShareResponseMultiError is an error wrapping multiple validation
+// errors returned by DownloadByShareResponse.ValidateAll() if the designated
+// constraints aren't met.
+type DownloadByShareResponseMultiError []error
+
+// Error returns a concatenation of all the error messages it wraps.
+func (m DownloadByShareResponseMultiError) Error() string {
+	msgs := make([]string, 0, len(m))
+	for _, err := range m {
+		msgs = append(msgs, err.Error())
+	}
+	return strings.Join(msgs, "; ")
+}
+
+// AllErrors returns a list of validation violation errors.
+func (m DownloadByShareResponseMultiError) AllErrors() []error { return m }
+
+// DownloadByShareResponseValidationError is the validation error returned by
+// DownloadByShareResponse.Validate if the designated constraints aren't met.
+type DownloadByShareResponseValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e DownloadByShareResponseValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e DownloadByShareResponseValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e DownloadByShareResponseValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e DownloadByShareResponseValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e DownloadByShareResponseValidationError) ErrorName() string {
+	return "DownloadByShareResponseValidationError"
+}
+
+// Error satisfies the builtin error interface
+func (e DownloadByShareResponseValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sDownloadByShareResponse.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = DownloadByShareResponseValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = DownloadByShareResponseValidationError{}

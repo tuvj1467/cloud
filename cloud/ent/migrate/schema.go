@@ -47,6 +47,18 @@ var (
 		Name:       "files",
 		Columns:    FilesColumns,
 		PrimaryKey: []*schema.Column{FilesColumns[0]},
+		Indexes: []*schema.Index{
+			{
+				Name:    "file_md5",
+				Unique:  false,
+				Columns: []*schema.Column{FilesColumns[8]},
+			},
+			{
+				Name:    "file_bucket_id",
+				Unique:  false,
+				Columns: []*schema.Column{FilesColumns[10]},
+			},
+		},
 	}
 	// FilePartsColumns holds the columns for the "file_parts" table.
 	FilePartsColumns = []*schema.Column{
@@ -72,6 +84,13 @@ var (
 		Name:       "file_parts",
 		Columns:    FilePartsColumns,
 		PrimaryKey: []*schema.Column{FilePartsColumns[0]},
+		Indexes: []*schema.Index{
+			{
+				Name:    "filepart_upload_id",
+				Unique:  false,
+				Columns: []*schema.Column{FilePartsColumns[4]},
+			},
+		},
 	}
 	// FileSharesColumns holds the columns for the "file_shares" table.
 	FileSharesColumns = []*schema.Column{
@@ -114,8 +133,13 @@ var (
 		Indexes: []*schema.Index{
 			{
 				Name:    "user_nickname",
-				Unique:  true,
+				Unique:  false,
 				Columns: []*schema.Column{UsersColumns[5]},
+			},
+			{
+				Name:    "user_username",
+				Unique:  true,
+				Columns: []*schema.Column{UsersColumns[4]},
 			},
 		},
 	}

@@ -8,6 +8,7 @@ import (
 	"onecloud/internal/pkg/cache"
 	"onecloud/internal/pkg/jwt"
 	"onecloud/internal/pkg/response"
+	"onecloud/internal/pkg/storage"
 	"onecloud/internal/repository"
 	"onecloud/internal/svc"
 	"onecloud/proto/.proto/service"
@@ -77,12 +78,16 @@ func (l *InitMultipartUploadLogic) InitMultipartUpload(in *service.InitMultipart
 		}
 	}
 
-	// 6. 生成 upload_id（雪花ID，便于 DB 索引）
+	// 后缀白名单（防路径穿越）
+	if !storage.ValidSuffix(in.GetSuffix()) {
+		return response.ErrWithCode(response.CodeStoragePathInvalid, "文件后缀非法")
+	}
+
+	// 6. 生成 upload_id（雪花ID，同时作为驱动临时目录名，两边天然一致）
 	uploadID := l.svcCtx.Snowflake.MustIdS()
 
-	// 7. 调用存储驱动初始化分片上传
-	storageUploadID, err := l.svcCtx.Storage.InitPart(l.ctx, "", int(in.GetTotalParts()))
-	if err != nil {
+	// 7. 调用存储驱动创建分片临时目录
+	if err := l.svcCtx.Storage.InitPart(l.ctx, uploadID, int(in.GetTotalParts())); err != nil {
 		return response.Err(errors.New("初始化分片上传失败: " + err.Error()))
 	}
 
@@ -96,7 +101,7 @@ func (l *InitMultipartUploadLogic) InitMultipartUpload(in *service.InitMultipart
 		FileSuffix: in.GetSuffix(),
 		FileSize:   in.GetSize(),
 		TotalParts: int(in.GetTotalParts()),
-		StorageID:  storageUploadID,
+		StorageID:  uploadID,
 	}
 	if err := multipartCache.SetMeta(l.ctx, meta); err != nil {
 		l.Errorf("写入分片上传元信息到 Redis 失败（继续走 DB 兜底）: %v", err)
@@ -105,7 +110,7 @@ func (l *InitMultipartUploadLogic) InitMultipartUpload(in *service.InitMultipart
 	// 9. 批量创建 FilePart 记录（status=pending）
 	if err := partRepo.CreateBatch(l.ctx, uploadID, userID, in.GetBucketId(), in); err != nil {
 		// 写库失败，回滚物理初始化
-		_ = l.svcCtx.Storage.AbortPart(l.ctx, storageUploadID)
+		_ = l.svcCtx.Storage.AbortPart(l.ctx, uploadID)
 		_ = multipartCache.Clear(l.ctx, uploadID)
 		return response.Err(errors.New("创建分片记录失败: " + err.Error()))
 	}

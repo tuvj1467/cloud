@@ -4,6 +4,7 @@ import (
 	"entgo.io/ent"
 	"entgo.io/ent/dialect/entsql"
 	"entgo.io/ent/schema/field"
+	"entgo.io/ent/schema/index"
 )
 
 type FilePart struct {
@@ -73,6 +74,14 @@ func (FilePart) Fields() []ent.Field {
 func (FilePart) Mixin() []ent.Mixin {
 	return []ent.Mixin{
 		TimeVersion{},
+	}
+}
+
+// 索引
+func (FilePart) Indexes() []ent.Index {
+	return []ent.Index{
+		// 按 upload_id 查分片/元信息
+		index.Fields("upload_id"),
 	}
 }
 

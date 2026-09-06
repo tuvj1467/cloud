@@ -7,6 +7,7 @@ import (
 	"onecloud/internal/pkg/cache"
 	"onecloud/internal/pkg/jwt"
 	"onecloud/internal/pkg/response"
+	"onecloud/internal/pkg/storage"
 	"onecloud/internal/repository"
 	"onecloud/internal/svc"
 	"onecloud/proto/.proto/service"
@@ -42,6 +43,11 @@ func (l *AbortMultipartUploadLogic) AbortMultipartUpload(in *service.AbortMultip
 	userID, err := jwt.GetUserIdFromCtx(l.ctx)
 	if err != nil {
 		return response.Err(err)
+	}
+
+	// upload_id 形态白名单（它直接作为存储目录名）
+	if !storage.ValidStorageID(in.GetUploadId()) {
+		return response.ErrWithCode(response.CodeStoragePathInvalid, "upload_id 非法")
 	}
 
 	partRepo := repository.NewFilePartRepository(l.svcCtx.EntClient)

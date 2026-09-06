@@ -46,7 +46,7 @@ func JwtInterceptor() grpc.UnaryServerInterceptor {
 		}
 
 		// 验证 token 并获取 user_id
-		newCtx, err := jwt.VerifyToken(tokenString)
+		newCtx, err := jwt.VerifyToken(ctx, tokenString)
 		if err != nil {
 			return nil, status.Error(codes.Unauthenticated, "token 无效或已过期")
 		}
@@ -70,6 +70,8 @@ func isPublicMethod(fullMethod string) bool {
 		"/storage.User/FindAccount",
 		// 文件分享访问（匿名可访问）
 		"/storage.File/AccessShare",
+		// 分享下载（匿名可访问）
+		"/storage.File/DownloadByShare",
 	}
 
 	for _, method := range publicMethods {

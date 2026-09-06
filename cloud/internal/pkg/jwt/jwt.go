@@ -103,8 +103,8 @@ func GetUserIdFromCtx(ctx context.Context) (string, error) {
 	return userId, nil
 }
 
-// VerifyToken 验证 token 并返回包含 user_id 的新 context
-func VerifyToken(tokenString string) (context.Context, error) {
+// VerifyToken 验证 token，基于传入 ctx（保留超时/元数据）注入 user_id
+func VerifyToken(ctx context.Context, tokenString string) (context.Context, error) {
 	if tokenString == "" {
 		return nil, errors.New("token 不能为空")
 	}
@@ -114,7 +114,5 @@ func VerifyToken(tokenString string) (context.Context, error) {
 		return nil, errors.New("token 无效")
 	}
 
-	// 将 user_id 注入到 context 中
-	ctx := NewContext(context.Background(), claims.UserId)
-	return ctx, nil
+	return NewContext(ctx, claims.UserId), nil
 }

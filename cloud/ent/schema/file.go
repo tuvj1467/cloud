@@ -5,6 +5,7 @@ import (
 	"entgo.io/ent"
 	"entgo.io/ent/dialect/entsql"
 	"entgo.io/ent/schema/field"
+	"entgo.io/ent/schema/index"
 )
 
 type File struct {
@@ -56,12 +57,14 @@ func (File) Mixin() []ent.Mixin {
 }
 
 // 索引
-//func (File) Indexes() []ent.Index {
-//	return []ent.Index{
-//		// 同一桶下文件名唯一
-//		index.Fields("name").Edges("bucket").Unique(),
-//	}
-//}
+func (File) Indexes() []ent.Index {
+	return []ent.Index{
+		// 秒传兜底查询：user_id + md5（原无索引全表扫描）
+		index.Fields("md5"),
+		// 桶维度列表与桶清空删除
+		index.Fields("bucket_id"),
+	}
+}
 
 func (File) Edges() []ent.Edge {
 	return []ent.Edge{}

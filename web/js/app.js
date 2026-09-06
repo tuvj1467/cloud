@@ -1,443 +1,76 @@
-const API_BASE = '/api';
+// P8 渐进迁移：根组件 —— Task 7 已接入 BucketPanel / ShareDialog / SharePage，P8 前端闭环
+const { createApp } = Vue;
+import { store } from './store.js';
+import { AuthPanel } from './components/AuthPanel.js';
+import { FileList } from './components/FileList.js';
+import { UploadPanel } from './components/UploadPanel.js';
+import { BucketPanel } from './components/BucketPanel.js';
+import { ShareDialog } from './components/ShareDialog.js';
+import { SharePage } from './components/SharePage.js';
 
-function getToken() {
-    return localStorage.getItem('token');
-}
+const NAVS = [
+  { key: 'files', label: '我的文件' },
+  { key: 'upload', label: '上传' },
+  { key: 'bucket', label: '桶管理' },
+];
 
-function setToken(token) {
-    localStorage.setItem('token', token);
-}
+const app = createApp({
+  components: { AuthPanel, FileList, UploadPanel, BucketPanel, ShareDialog, SharePage },
+  setup() {
+    window.addEventListener('hashchange', () => store.navigate(location.hash));
+    store.navigate(location.hash || '#/login');
+    const userName = () => (store.user ? (store.user.name || store.user.username || store.user.nickname || '用户') : '未登录');
+    // 分享创建成功后刷新文件列表（FileList 的「分享次数」无展示列，刷新仅保序列/状态一致，可选通知点）
+    const onShareCreated = () => { if (store.refreshFiles) store.refreshFiles(); };
+    return { store, NAVS, userName, onShareCreated };
+  },
+  template: `
+    <auth-panel v-if="store.route==='login'"></auth-panel>
 
-function clearToken() {
-    localStorage.removeItem('token');
-}
+    <!-- 分享页：独立路由组件，无站点导航（store.shareCode 由 store.navigate 从 #/share/:code 解析） -->
+    <share-page v-else-if="store.route==='share'"></share-page>
 
-function getHeaders() {
-    const token = getToken();
-    const headers = {
-        'Content-Type': 'application/json'
-    };
-    if (token) {
-        headers['Authorization'] = `Bearer ${token}`;
-    }
-    return headers;
-}
+    <!-- ==================== 主界面：header + sidebar + 三 panel ==================== -->
+    <div v-else class="page">
+      <header class="header">
+        <div class="logo">☁ 云存储</div>
+        <div class="user-info">
+          <span>{{ userName() }}</span>
+          <button class="btn btn-secondary" style="padding:8px 18px" @click="store.logout()">退出</button>
+        </div>
+      </header>
 
-async function apiRequest(url, method, data) {
-    try {
-        const response = await fetch(API_BASE + url, {
-            method: method,
-            headers: getHeaders(),
-            body: data ? JSON.stringify(data) : null
-        });
-        const result = await response.json();
-        return result;
-    } catch (error) {
-        console.error('API request failed:', error);
-        return { code: -1, message: '网络错误' };
-    }
-}
+      <div class="main-content">
+        <aside class="sidebar">
+          <div v-for="n in NAVS" :key="n.key" class="nav-item"
+            :class="{active: store.activeNav===n.key}" @click="store.activeNav=n.key">{{ n.label }}</div>
+        </aside>
 
-function isSuccess(result) {
-    return result.code === 200;
-}
+        <div class="content">
+          <!-- 文件面板：Task 5 真组件 -->
+          <file-list v-show="store.activeNav==='files'"></file-list>
 
-function getMessage(result) {
-    return result.message || '操作失败';
-}
+          <!-- 上传面板：Task 6 真组件 -->
+          <upload-panel v-show="store.activeNav==='upload'"></upload-panel>
 
-function getData(result) {
-    if (result.data && typeof result.data === 'object') {
-        const { '@type': type, ...actualData } = result.data;
-        return actualData;
-    }
-    return result.data || {};
-}
+          <!-- 桶面板：Task 7 真组件 -->
+          <bucket-panel v-show="store.activeNav==='bucket'"></bucket-panel>
+        </div>
+      </div>
+    </div>
 
-function switchTab(tab) {
-    document.getElementById('login-form').classList.toggle('hidden', tab !== 'login');
-    document.getElementById('register-form').classList.toggle('hidden', tab !== 'register');
-    document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t.textContent === (tab === 'login' ? '登录' : '注册')));
-}
+    <!-- 分享弹层：FileList「分享」按钮置 store.shareFile 后由根组件渲染（emits: close / created） -->
+    <!-- :key 按 fileId 强制重挂载：切换分享文件时重置弹层内部状态（否则停留在上一次的成功视图） -->
+    <share-dialog v-if="store.route==='app' && store.shareFile" :key="store.shareFile.fileId" :file="store.shareFile"
+      @close="store.shareFile = null" @created="onShareCreated"></share-dialog>
 
-function showResetPassword() {
-    document.getElementById('reset-password-modal').classList.remove('hidden');
-}
-
-function closeModal() {
-    document.querySelectorAll('.modal').forEach(m => m.classList.add('hidden'));
-}
-
-async function sendCode(type) {
-    let contact, smsType;
-    if (type === 'register') {
-        const registerType = document.querySelector('input[name="register-type"]:checked').value;
-        if (registerType === 'phone') {
-            contact = document.getElementById('register-account').value;
-            smsType = 2;
-        } else if (registerType === 'email') {
-            contact = document.getElementById('register-account').value;
-            smsType = 2;
-        }
-    } else {
-        contact = document.getElementById('reset-contact').value;
-        smsType = 3;
-    }
-
-    if (!contact) {
-        alert('请输入手机号或邮箱');
-        return;
-    }
-
-    const payload = smsType === 3 ? { contact: { phone: contact } } : { contact: { phone: contact }, type: smsType };
-    
-    const result = await apiRequest('/user/sendVerificationCode', 'POST', payload);
-    if (isSuccess(result)) {
-        alert('验证码已发送');
-    } else {
-        alert(getMessage(result));
-    }
-}
-
-async function login() {
-    const account = document.getElementById('login-account').value;
-    const password = document.getElementById('login-password').value;
-
-    if (!account || !password) {
-        alert('请输入账号和密码');
-        return;
-    }
-
-    const result = await apiRequest('/user/loginByAccount', 'POST', {
-        account: account,
-        password: password
-    });
-
-    if (isSuccess(result)) {
-        const data = getData(result);
-        setToken(data.token);
-        if (data.user) {
-            document.getElementById('user-name').textContent = data.user.nickname || data.user.username || '用户';
-        }
-        document.getElementById('auth-page').classList.add('hidden');
-        document.getElementById('main-page').classList.remove('hidden');
-        loadFiles();
-        loadBuckets();
-    } else {
-        alert(getMessage(result));
-    }
-}
-
-async function register() {
-    const registerType = document.querySelector('input[name="register-type"]:checked').value;
-    const account = document.getElementById('register-account').value;
-    const name = document.getElementById('register-name').value;
-    const password = document.getElementById('register-password').value;
-    const code = document.getElementById('register-code').value;
-
-    if (!account || !password) {
-        alert('请输入账号和密码');
-        return;
-    }
-
-    const payload = { password: password };
-    
-    if (registerType === 'name') {
-        payload.name = account;
-    } else if (registerType === 'phone') {
-        payload.phone = account;
-        payload.name = name || account;
-        if (code) payload.smsCode = code;
-    } else if (registerType === 'email') {
-        payload.email = account;
-        payload.name = name || account;
-        if (code) payload.smsCode = code;
-    }
-
-    const result = await apiRequest('/user/register', 'POST', payload);
-
-    if (isSuccess(result)) {
-        const data = getData(result);
-        setToken(data.token);
-        if (data.user) {
-            document.getElementById('user-name').textContent = data.user.nickname || data.user.username || '用户';
-        }
-        document.getElementById('auth-page').classList.add('hidden');
-        document.getElementById('main-page').classList.remove('hidden');
-        loadFiles();
-        loadBuckets();
-    } else {
-        alert(getMessage(result));
-    }
-}
-
-async function logout() {
-    clearToken();
-    document.getElementById('main-page').classList.add('hidden');
-    document.getElementById('auth-page').classList.remove('hidden');
-}
-
-async function resetPassword() {
-    const contact = document.getElementById('reset-contact').value;
-    const code = document.getElementById('reset-code').value;
-    const password = document.getElementById('reset-password').value;
-
-    if (!contact || !code || !password) {
-        alert('请填写完整信息');
-        return;
-    }
-
-    const payload = {
-        verificationCode: code,
-        newPassword: password
-    };
-
-    if (/^1[3-9]\d{9}$/.test(contact)) {
-        payload.phone = contact;
-    } else {
-        payload.email = contact;
-    }
-
-    const result = await apiRequest('/user/resetPassword', 'POST', payload);
-
-    if (isSuccess(result)) {
-        alert('密码重置成功');
-        closeModal();
-    } else {
-        alert(getMessage(result));
-    }
-}
-
-function showFiles() {
-    document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-    document.querySelector('.nav-item:first-child').classList.add('active');
-    document.querySelectorAll('.panel').forEach(p => p.classList.add('hidden'));
-    document.getElementById('files-panel').classList.remove('hidden');
-    loadFiles();
-}
-
-function showUpload() {
-    document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-    document.querySelectorAll('.nav-item')[1].classList.add('active');
-    document.querySelectorAll('.panel').forEach(p => p.classList.add('hidden'));
-    document.getElementById('upload-panel').classList.remove('hidden');
-}
-
-function showBucket() {
-    document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-    document.querySelectorAll('.nav-item')[2].classList.add('active');
-    document.querySelectorAll('.panel').forEach(p => p.classList.add('hidden'));
-    document.getElementById('bucket-panel').classList.remove('hidden');
-    loadBuckets();
-}
-
-async function loadFiles() {
-    // FileListRequest 必填参数：page、page_size、sort_by、sort_order
-    const result = await apiRequest('/file/list?page=1&page_size=50&sort_by=name&sort_order=asc', 'GET');
-    const fileList = document.getElementById('file-list');
-
-    if (isSuccess(result)) {
-        const data = getData(result);
-        // protobuf JSON 默认 camelCase，兼容两种命名
-        const files = data.files || [];
-        if (files.length === 0) {
-            fileList.innerHTML = '<div class="empty-state">暂无文件</div>';
-            return;
-        }
-
-        fileList.innerHTML = files.map(file => {
-            const fileId = file.fileId || file.file_id;
-            return `
-            <div class="file-item">
-                <div>
-                    <strong>${file.name}</strong>
-                    <span style="color:#999; margin-left:10px">${formatSize(file.size)}</span>
-                </div>
-                <div>
-                    <button class="btn btn-secondary" onclick="downloadFile('${fileId}')">下载</button>
-                    <button class="btn btn-secondary" onclick="deleteFile('${fileId}')">删除</button>
-                </div>
-            </div>
-            `;
-        }).join('');
-    } else {
-        fileList.innerHTML = '<div class="empty-state">加载失败</div>';
-    }
-}
-
-async function loadBuckets() {
-    // BucketListRequest 必填参数：page、page_size
-    const result = await apiRequest('/bucket/list?page=1&page_size=50', 'GET');
-    const bucketList = document.getElementById('bucket-list');
-
-    if (isSuccess(result)) {
-        const data = getData(result);
-        const buckets = data.buckets || [];
-        if (buckets.length === 0) {
-            bucketList.innerHTML = '<div class="empty-state">暂无桶</div>';
-            return;
-        }
-
-        bucketList.innerHTML = buckets.map(bucket => {
-            const bucketId = bucket.bucketId || bucket.bucket_id;
-            return `
-            <div class="bucket-item">
-                <div>
-                    <strong>${bucket.name}</strong>
-                </div>
-                <div>
-                    <button class="btn btn-secondary" onclick="deleteBucket('${bucketId}')">删除</button>
-                </div>
-            </div>
-            `;
-        }).join('');
-    } else {
-        bucketList.innerHTML = '<div class="empty-state">加载失败</div>';
-    }
-}
-
-function formatSize(bytes) {
-    if (!bytes) return '0 B';
-    if (bytes < 1024) return bytes + ' B';
-    if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(2) + ' KB';
-    return (bytes / (1024 * 1024)).toFixed(2) + ' MB';
-}
-
-function handleDragOver(event) {
-    event.preventDefault();
-}
-
-function handleDrop(event) {
-    event.preventDefault();
-    const files = Array.from(event.dataTransfer.files);
-    uploadFiles(files);
-}
-
-function handleFileSelect(event) {
-    const files = Array.from(event.target.files);
-    uploadFiles(files);
-}
-
-async function uploadFiles(files) {
-    const progressContainer = document.getElementById('upload-progress');
-    const progressBar = progressContainer.querySelector('.progress-bar');
-    const progressText = progressContainer.querySelector('.progress-text');
-    
-    progressContainer.classList.remove('hidden');
-    progressBar.style.width = '0%';
-    progressText.textContent = '0%';
-
-    for (let i = 0; i < files.length; i++) {
-        const file = files[i];
-        const formData = new FormData();
-        formData.append('file', file);
-        
-        try {
-            const response = await fetch(API_BASE + '/file/upload', {
-                method: 'POST',
-                headers: {
-                    'Authorization': `Bearer ${getToken()}`
-                },
-                body: formData
-            });
-            
-            const result = await response.json();
-            if (!isSuccess(result)) {
-                alert(`上传 ${file.name} 失败: ${getMessage(result)}`);
-            }
-        } catch (error) {
-            alert(`上传 ${file.name} 失败: ${error.message}`);
-        }
-        
-        const progress = ((i + 1) / files.length) * 100;
-        progressBar.style.width = progress + '%';
-        progressText.textContent = Math.round(progress) + '%';
-    }
-    
-    setTimeout(() => {
-        progressContainer.classList.add('hidden');
-        loadFiles();
-    }, 500);
-}
-
-async function downloadFile(fileId) {
-    const response = await fetch(`${API_BASE}/file/download?file_id=${fileId}`, {
-        headers: {
-            'Authorization': `Bearer ${getToken()}`
-        }
-    });
-    
-    if (response.ok) {
-        const blob = await response.blob();
-        const url = window.URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = fileId;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        window.URL.revokeObjectURL(url);
-    } else {
-        alert('下载失败');
-    }
-}
-
-async function deleteFile(fileId) {
-    if (!confirm('确定删除该文件？')) return;
-    
-    const result = await apiRequest('/file/delete', 'POST', { file_id: fileId });
-    if (isSuccess(result)) {
-        loadFiles();
-    } else {
-        alert(getMessage(result));
-    }
-}
-
-function createBucket() {
-    document.getElementById('create-bucket-modal').classList.remove('hidden');
-}
-
-async function confirmCreateBucket() {
-    const name = document.getElementById('bucket-name').value;
-    if (!name) {
-        alert('请输入桶名称');
-        return;
-    }
-    
-    const result = await apiRequest('/bucket/create', 'POST', { name: name });
-    if (isSuccess(result)) {
-        closeModal();
-        loadBuckets();
-        document.getElementById('bucket-name').value = '';
-    } else {
-        alert(getMessage(result));
-    }
-}
-
-async function deleteBucket(bucketId) {
-    if (!confirm('确定删除该桶？')) return;
-    
-    const result = await apiRequest('/bucket/delete', 'POST', { bucket_id: bucketId });
-    if (isSuccess(result)) {
-        loadBuckets();
-    } else {
-        alert(getMessage(result));
-    }
-}
-
-document.querySelectorAll('input[name="register-type"]').forEach(input => {
-    input.addEventListener('change', function() {
-        const type = this.value;
-        document.getElementById('register-name-group').style.display = type === 'name' ? 'none' : 'block';
-        document.getElementById('register-code-group').style.display = type === 'name' ? 'none' : 'block';
-    });
+    <!-- 全局 toast（common.js 的 toast 依赖 store.toast 展示） -->
+    <div v-if="store.toast.show" :style="{position:'fixed',top:'24px',right:'24px',
+      zIndex:2000,padding:'10px 24px',borderRadius:'8px',color:'#fff',fontSize:'14px',maxWidth:'40%',
+      boxShadow:'0 4px 16px rgba(0,0,0,.25)',whiteSpace:'pre-line',
+      background: store.toast.type==='error' ? '#f56c6c' : (store.toast.type==='success' ? '#67c23a' : '#909399')}">
+      {{ store.toast.msg }}
+    </div>
+  `
 });
-
-document.addEventListener('DOMContentLoaded', function() {
-    if (getToken()) {
-        document.getElementById('auth-page').classList.add('hidden');
-        document.getElementById('main-page').classList.remove('hidden');
-        loadFiles();
-        loadBuckets();
-    }
-});
+app.mount('#app');

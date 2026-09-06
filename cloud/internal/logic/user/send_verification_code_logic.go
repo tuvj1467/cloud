@@ -3,11 +3,9 @@ package userlogic
 import (
 	"context"
 	"errors"
-	"fmt"
-	"math/rand"
-	"onecloud/internal/pkg/response"
-	"time"
 
+	"onecloud/internal/pkg/response"
+	"onecloud/internal/pkg/verification"
 	"onecloud/internal/svc"
 	"onecloud/proto/.proto/service"
 
@@ -28,35 +26,34 @@ func NewSendVerificationCodeLogic(ctx context.Context, svcCtx *svc.ServiceContex
 	}
 }
 
-// 发送验证码
+// SendVerificationCode 发送验证码（组件内含 60 秒频率限制与 5 分钟有效期）
 func (l *SendVerificationCodeLogic) SendVerificationCode(in *service.SendVerificationCodeReq) (*service.Response, error) {
-	// 1. 生成 6 位随机验证码
-	code := fmt.Sprintf("%06d", rand.New(rand.NewSource(time.Now().UnixNano())).Intn(1000000))
-
-	// 2. 确定联系方式（手机号或邮箱）
-	var contact string
-	if in.GetPhone() != "" {
-		contact = in.GetPhone()
-	} else if in.GetEmail() != "" {
+	// 1. 确定联系方式（oneof：手机号或邮箱二选一）
+	contact := in.GetPhone()
+	if contact == "" {
 		contact = in.GetEmail()
-	} else {
-		return nil, errors.New("手机号或邮箱不能为空")
+	}
+	if contact == "" {
+		return response.Err(errors.New("手机号或邮箱不能为空"))
 	}
 
-	// 3. 存储验证码到 Redis（5 分钟有效期）
-	cacheKey := fmt.Sprintf("sms_code:%s:%d", contact, in.Type)
-	err := l.svcCtx.Redis.Set(l.ctx, cacheKey, code, 5*time.Minute)
-	if err != nil {
-		l.Logger.Errorf("存储验证码失败：%v", err)
-		return nil, errors.New("验证码发送失败")
+	// 2. 校验验证码类型（0 为未知类型，拒绝发送）
+	if in.Type == service.SmsType_SMS_TYPE_UNKNOWN {
+		return response.Err(errors.New("无效的验证码类型"))
 	}
 
-	// 4. TODO: 调用短信/邮件服务发送验证码
-	// 这里需要接入实际的短信服务商（如阿里云、腾讯云）或邮件服务
-	l.Logger.Infof("验证码已生成：%s (联系方式：%s, 类型：%d)", code, contact, in.Type)
-
-	// 开发环境可以返回验证码，生产环境要删除
-	// return &service.SendVerificationCodeRes{Success: true, Code: code}, nil
+	// 3. 生成 + 存储 + 发送
+	if err := l.svcCtx.Verifier.Send(l.ctx, contact, int(in.Type)); err != nil {
+		switch {
+		case errors.Is(err, verification.ErrTooFrequent):
+			return response.ErrWithCode(response.CodeUserSmsCodeFrequent, err.Error())
+		case errors.Is(err, verification.ErrUnavailable):
+			return response.ErrWithCode(response.CodeUserSmsCodeService, "验证码服务不可用")
+		default:
+			l.Logger.Errorf("发送验证码失败 contact=%s type=%d: %v", contact, in.Type, err)
+			return response.ErrWithCode(response.CodeUserSmsCodeService, "验证码发送失败")
+		}
+	}
 
 	return response.Success(&service.SendVerificationCodeRes{Success: true})
 }

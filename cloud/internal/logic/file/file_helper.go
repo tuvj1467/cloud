@@ -21,3 +21,12 @@ func toFileMeta(f *ent.File) *service.FileMeta {
 		UpdatedAt:   f.UpdatedAt.Format("2006-01-02 15:04:05"),
 	}
 }
+
+// anonymizeFileMeta 匿名端点脱敏：不下发存储路径、归属用户/桶 ID 与 MD5
+func anonymizeFileMeta(meta *service.FileMeta) *service.FileMeta {
+	meta.Path = ""
+	meta.UserId = ""
+	meta.BucketId = ""
+	meta.Md5 = ""
+	return meta
+}

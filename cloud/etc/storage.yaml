@@ -42,6 +42,8 @@ RedisConf:
 Storage:
   # 驱动类型：local（本地磁盘） | minio（P2 暂未实现）
   Driver: local
+  # 单文件/单分片上传上限（字节），默认 104857600 = 100MB
+  # MaxUploadSize: 104857600
   Local:
     # 本地存储根目录
     RootDir: ./cloud_storage

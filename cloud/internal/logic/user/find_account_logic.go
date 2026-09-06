@@ -28,18 +28,15 @@ func NewFindAccountLogic(ctx context.Context, svcCtx *svc.ServiceContext) *FindA
 
 func (l *FindAccountLogic) validate(in *service.FindAccountReq) error {
 	if err := in.Validate(); err != nil {
-		var vErr service.LoginByAccountReqValidationError
+		var vErr service.FindAccountReqValidationError
 		if errors.As(err, &vErr) {
 			switch vErr.Field() {
-			case "contact":
-				return errors.New("contact")
-			case "phone":
+			case "Phone":
 				return errors.New("手机号码格式错误")
-			case "email":
+			case "Email":
 				return errors.New("邮箱格式错误")
-			case "verification_code":
+			case "VerificationCode":
 				return errors.New("验证码长度错误")
-
 			}
 		}
 		return errors.New("参数校验失败")
@@ -54,12 +51,19 @@ func (l *FindAccountLogic) FindAccount(in *service.FindAccountReq) (*service.Res
 		return response.Err(err)
 	}
 
-	if in.GetPhone() == "" || in.GetEmail() == "" {
-		return response.Err(errors.New("请输入手机号或邮箱")) //密码已经在validate校验过
+	// oneof 守卫：取实际设置的联系字段（原 || 写法在 oneof 下恒为真，接口永久失败）
+	contact := in.GetPhone()
+	if contact == "" {
+		contact = in.GetEmail()
+	}
+	if contact == "" {
+		return response.Err(errors.New("请输入手机号或邮箱"))
 	}
 
-	//对比redis中的验证码
-	//只检查对应类型的验证码
+	// 校验验证码（找回账号与重置密码同用类型 3 的验证码）
+	if err := l.svcCtx.Verifier.Verify(l.ctx, contact, int(service.SmsType_SMS_TYPE_RESET_PASSWORD), in.GetVerificationCode()); err != nil {
+		return mapVerifyErr(err)
+	}
 
 	userRepository := repository.NewUserRepository(l.svcCtx.EntClient)
 	//验证成功 获取对应数据

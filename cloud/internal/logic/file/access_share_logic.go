@@ -30,9 +30,10 @@ func NewAccessShareLogic(ctx context.Context, svcCtx *svc.ServiceContext) *Acces
 }
 
 // AccessShare 访问文件分享（匿名）
-// 步骤：查 Redis 缓存 → 未命中查 DB → 校验过期 → 校验次数
+// 步骤：查 Redis 缓存 → 未命中查 DB → 校验过期 → 查询文件元信息
 //
-//	→ 递增 used_count → 返回 FileMeta + permission
+//	→ 返回 FileMeta + permission
+//	（次数上限仅约束下载 DownloadByShare，访问页不计次）
 func (l *AccessShareLogic) AccessShare(in *service.AccessShareRequest) (*service.Response, error) {
 	// 1. 校验入参
 	if err := in.Validate(); err != nil {
@@ -84,29 +85,7 @@ func (l *AccessShareLogic) AccessShare(in *service.AccessShareRequest) (*service
 		return response.ErrWithCode(response.CodeFileShareExpired, "分享已过期")
 	}
 
-	// 5. 校验次数
-	usedCount, _ := shareCache.GetUsedCount(l.ctx, in.GetShareCode())
-	if data.MaxCount != nil && usedCount >= *data.MaxCount {
-		return response.ErrWithCode(response.CodeFileShareExhausted, "分享访问次数已用尽")
-	}
-
-	// 6. 递增 used_count（Redis 原子计数）
-	newCount, err := shareCache.IncrUsedCount(l.ctx, in.GetShareCode())
-	if err != nil {
-		l.Errorf("递增访问次数失败: %v", err)
-	}
-
-	// 7. 同步到 DB（每次访问都同步，保证持久化；version 冲突时重试一次）
-	if newCount > 0 {
-		share, err := shareRepo.GetByCode(l.ctx, in.GetShareCode())
-		if err == nil {
-			if _, err := shareRepo.IncUsedCount(l.ctx, share.ID, share.Version); err != nil {
-				l.Errorf("同步访问次数到 DB 失败 share_id=%s: %v", share.ID, err)
-			}
-		}
-	}
-
-	// 8. 查询文件元信息
+	// 5. 查询文件元信息
 	f, err := fileRepo.GetInfo(l.ctx, data.FileID)
 	if err != nil {
 		if ent.IsNotFound(err) {
@@ -115,11 +94,11 @@ func (l *AccessShareLogic) AccessShare(in *service.AccessShareRequest) (*service
 		return response.Err(errors.New("查询文件失败: " + err.Error()))
 	}
 
-	l.Infof("access share code=%s file=%s permission=%s used=%d",
-		in.GetShareCode(), data.FileID, data.Permission, newCount)
+	l.Infof("access share code=%s file=%s permission=%s",
+		in.GetShareCode(), data.FileID, data.Permission)
 
 	return response.Success(&service.AccessShareResponse{
-		File:       toFileMeta(f),
+		File:       anonymizeFileMeta(toFileMeta(f)),
 		Permission: data.Permission,
 	})
 }

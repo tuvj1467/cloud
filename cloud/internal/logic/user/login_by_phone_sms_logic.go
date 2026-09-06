@@ -29,13 +29,13 @@ func NewLoginByPhoneSmsLogic(ctx context.Context, svcCtx *svc.ServiceContext) *L
 
 func (l *LoginByPhoneSmsLogic) validate(in *service.LoginByPhoneSmsReq) error {
 	if err := in.Validate(); err != nil {
-		var vErr service.LoginByAccountReqValidationError
+		var vErr service.LoginByPhoneSmsReqValidationError
 		if errors.As(err, &vErr) {
 			switch vErr.Field() {
-			case "phone":
-				return errors.New("手机号码格式错误")
-			case "smscode":
-				return errors.New("验证码6位")
+			case "Phone":
+				return errors.New("手机号格式不正确")
+			case "SmsCode":
+				return errors.New("验证码必须为 6 位")
 			}
 		}
 		return errors.New("参数校验失败")
@@ -49,12 +49,10 @@ func (l *LoginByPhoneSmsLogic) LoginByPhoneSms(in *service.LoginByPhoneSmsReq) (
 		return response.Err(err)
 	}
 
-	if in.GetPhone() == "" || in.GetSmsCode() == "" {
-		return response.Err(errors.New("请输入手机号和验证码"))
-
+	// 校验验证码（组件内含一次性消费与失败计数）
+	if err := l.svcCtx.Verifier.Verify(l.ctx, in.GetPhone(), int(service.SmsType_SMS_TYPE_LOGIN), in.GetSmsCode()); err != nil {
+		return mapVerifyErr(err)
 	}
-
-	//对比redis中的验证码
 
 	//验证成功 通过phone获取ID
 	userRepository := repository.NewUserRepository(l.svcCtx.EntClient)
@@ -64,7 +62,10 @@ func (l *LoginByPhoneSmsLogic) LoginByPhoneSms(in *service.LoginByPhoneSmsReq) (
 		return response.Err(err)
 	}
 	//分发token
-	token, _ := jwt.GenerateToken(res.ID)
+	token, err := jwt.GenerateToken(res.ID)
+	if err != nil {
+		return response.Err(errors.New("生成 token 失败: " + err.Error()))
+	}
 
 	return response.Success(&service.LoginRes{User: &service.UserInfo{
 		Id: res.ID, Username: res.Username, Name: res.Nickname, Avatar: &res.Avatar, Phone: &res.Phone, Email: &res.Email,

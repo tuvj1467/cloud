@@ -90,7 +90,10 @@ func (l *LoginByAccountLogic) LoginByAccount(in *service.LoginByAccountReq) (*se
 	}
 
 	//分发token
-	token, _ := jwt.GenerateToken(query.ID)
+	token, err := jwt.GenerateToken(query.ID)
+	if err != nil {
+		return response.Err(errors.New("生成 token 失败: " + err.Error()))
+	}
 
 	return response.Success(&service.LoginRes{User: &service.UserInfo{
 		Id: query.ID, Username: query.Username, Name: query.Nickname, Avatar: &query.Avatar, Phone: &query.Phone, Email: &query.Email,

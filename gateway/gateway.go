@@ -3,6 +3,7 @@ package main
 import (
 	"flag"
 	"fmt"
+	"net/http"
 
 	"github.com/zeromicro/go-zero/core/conf"
 	"github.com/zeromicro/go-zero/gateway"
@@ -32,7 +33,17 @@ func main() {
 		}
 	}
 
-	server := gateway.MustNewServer(c.GatewayConf)
+	// go-zero gateway 的 ProcessHeaders 仅转发 Grpc-Metadata-* 前缀 header（映射为 gateway-* metadata），
+	// 浏览器 fetch 无法设置该前缀（fetch 规范禁止以 Grpc- 开头的 header），
+	// 这里把标准 Authorization header 桥接为 gateway-authorization，与 cloud jwt_middleware 的 fallback 匹配，
+	// 使前端 Authorization: Bearer <token> 正常鉴权；Grpc-Metadata-Authorization 透传路径不受影响。
+	server := gateway.MustNewServer(c.GatewayConf, gateway.WithHeaderProcessor(func(header http.Header) []string {
+		var vals []string
+		for _, v := range header.Values("Authorization") {
+			vals = append(vals, "gateway-authorization:"+v) // 原样转发，Bearer 前缀由 jwt_middleware 统一剥离
+		}
+		return vals
+	}))
 
 	fmt.Printf("Gateway started at %s:%d\n", c.Host, c.Port)
 	server.Start()

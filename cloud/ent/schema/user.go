@@ -63,7 +63,9 @@ func (User) Edges() []ent.Edge {
 
 func (User) Indexes() []ent.Index {
 	return []ent.Index{
-		index.Fields("nickname").
-			Unique(),
+		// 昵称仅做查询索引，允许重名（原唯一索引导致重名注册裸 DB 错误）
+		index.Fields("nickname"),
+		// 用户名全局唯一（登录账号；手机/邮箱注册用户该列为 NULL，可多行 NULL 不冲突）
+		index.Fields("username").Unique(),
 	}
 }

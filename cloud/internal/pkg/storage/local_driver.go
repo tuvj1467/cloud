@@ -10,7 +10,6 @@ import (
 	"os"
 	"path/filepath"
 	"sort"
-	"strconv"
 )
 
 // LocalDriver 本地磁盘存储驱动实现
@@ -23,14 +22,17 @@ func NewLocalDriver(rootDir string) *LocalDriver {
 	return &LocalDriver{rootDir: rootDir}
 }
 
-// absPath 将相对路径转为绝对路径，防止路径穿越
-func (d *LocalDriver) absPath(path string) string {
-	return filepath.Join(d.rootDir, path)
+// absPath 将相对路径转为绝对路径，越界（穿越）返回 ErrPathInvalid
+func (d *LocalDriver) absPath(path string) (string, error) {
+	return SafeJoin(d.rootDir, filepath.FromSlash(path))
 }
 
 // Put 写入本地文件
 func (d *LocalDriver) Put(ctx context.Context, path string, reader io.Reader, size int64) error {
-	fullPath := d.absPath(path)
+	fullPath, err := d.absPath(path)
+	if err != nil {
+		return err
+	}
 	// 确保父目录存在
 	if err := os.MkdirAll(filepath.Dir(fullPath), 0755); err != nil {
 		return fmt.Errorf("创建目录失败: %w", err)
@@ -49,7 +51,10 @@ func (d *LocalDriver) Put(ctx context.Context, path string, reader io.Reader, si
 
 // Get 读取本地文件，返回可读流
 func (d *LocalDriver) Get(ctx context.Context, path string) (io.ReadCloser, error) {
-	fullPath := d.absPath(path)
+	fullPath, err := d.absPath(path)
+	if err != nil {
+		return nil, err
+	}
 	f, err := os.Open(fullPath)
 	if err != nil {
 		if os.IsNotExist(err) {
@@ -62,8 +67,11 @@ func (d *LocalDriver) Get(ctx context.Context, path string) (io.ReadCloser, erro
 
 // Delete 删除本地文件
 func (d *LocalDriver) Delete(ctx context.Context, path string) error {
-	fullPath := d.absPath(path)
-	err := os.Remove(fullPath)
+	fullPath, err := d.absPath(path)
+	if err != nil {
+		return err
+	}
+	err = os.Remove(fullPath)
 	if err != nil {
 		if os.IsNotExist(err) {
 			return ErrFileNotFound
@@ -75,7 +83,10 @@ func (d *LocalDriver) Delete(ctx context.Context, path string) error {
 
 // Stat 获取文件信息
 func (d *LocalDriver) Stat(ctx context.Context, path string) (*FileInfo, error) {
-	fullPath := d.absPath(path)
+	fullPath, err := d.absPath(path)
+	if err != nil {
+		return nil, err
+	}
 	info, err := os.Stat(fullPath)
 	if err != nil {
 		if os.IsNotExist(err) {
@@ -91,8 +102,11 @@ func (d *LocalDriver) Stat(ctx context.Context, path string) (*FileInfo, error) 
 
 // Exists 判断文件是否存在
 func (d *LocalDriver) Exists(ctx context.Context, path string) (bool, error) {
-	fullPath := d.absPath(path)
-	_, err := os.Stat(fullPath)
+	fullPath, err := d.absPath(path)
+	if err != nil {
+		return false, err
+	}
+	_, err = os.Stat(fullPath)
 	if err == nil {
 		return true, nil
 	}
@@ -102,15 +116,19 @@ func (d *LocalDriver) Exists(ctx context.Context, path string) (bool, error) {
 	return false, fmt.Errorf("检查文件存在失败: %w", err)
 }
 
-// InitPart 初始化分片上传：创建临时目录，返回 upload_id
-// 本地实现用时间戳+随机后缀作为 upload_id，临时分片存于 {root}/.tmp/{upload_id}/
-func (d *LocalDriver) InitPart(ctx context.Context, path string, totalParts int) (string, error) {
-	uploadID := strconv.FormatInt(generateUploadID(), 10)
-	tmpDir := filepath.Join(d.rootDir, ".tmp", uploadID)
-	if err := os.MkdirAll(tmpDir, 0755); err != nil {
-		return "", fmt.Errorf("创建分片临时目录失败: %w", err)
+// InitPart 初始化分片上传：以业务 uploadID 命名创建临时目录 {root}/.tmp/{uploadID}/
+func (d *LocalDriver) InitPart(ctx context.Context, uploadID string, totalParts int) error {
+	if !ValidStorageID(uploadID) {
+		return ErrPathInvalid
 	}
-	return uploadID, nil
+	tmpDir, err := SafeJoin(d.rootDir, ".tmp", uploadID)
+	if err != nil {
+		return err
+	}
+	if err := os.MkdirAll(tmpDir, 0755); err != nil {
+		return fmt.Errorf("创建分片临时目录失败: %w", err)
+	}
+	return nil
 }
 
 // UploadPart 上传单个分片，写入 {root}/.tmp/{upload_id}/part_{N}
@@ -118,7 +136,14 @@ func (d *LocalDriver) UploadPart(ctx context.Context, uploadID string, partNumbe
 	if partNumber < 1 {
 		return "", errors.New("分片序号必须大于 0")
 	}
-	partPath := filepath.Join(d.rootDir, ".tmp", uploadID, fmt.Sprintf("part_%d", partNumber))
+	if !ValidStorageID(uploadID) {
+		return "", ErrPathInvalid
+	}
+	tmpDir, err := SafeJoin(d.rootDir, ".tmp", uploadID)
+	if err != nil {
+		return "", err
+	}
+	partPath := filepath.Join(tmpDir, fmt.Sprintf("part_%d", partNumber))
 	f, err := os.Create(partPath)
 	if err != nil {
 		return "", fmt.Errorf("创建分片文件失败: %w", err)
@@ -133,15 +158,21 @@ func (d *LocalDriver) UploadPart(ctx context.Context, uploadID string, partNumbe
 	return hex.EncodeToString(hash.Sum(nil)), nil
 }
 
-// CompletePart 合并所有分片为目标文件
-func (d *LocalDriver) CompletePart(ctx context.Context, uploadID string, targetPath string) error {
-	tmpDir := filepath.Join(d.rootDir, ".tmp", uploadID)
+// CompletePart 合并所有分片为目标文件，校验数量与逐片 MD5，成功后清理临时目录
+func (d *LocalDriver) CompletePart(ctx context.Context, uploadID string, targetPath string, expectedParts int, expectedMD5 map[int]string) error {
+	if !ValidStorageID(uploadID) {
+		return ErrPathInvalid
+	}
+	tmpDir, err := SafeJoin(d.rootDir, ".tmp", uploadID)
+	if err != nil {
+		return err
+	}
 	entries, err := os.ReadDir(tmpDir)
 	if err != nil {
 		return fmt.Errorf("读取分片目录失败: %w", err)
 	}
 
-	// 按分片序号排序
+	// 收集磁盘上的分片并按序号排序
 	type partEntry struct {
 		number int
 		name   string
@@ -155,15 +186,34 @@ func (d *LocalDriver) CompletePart(ctx context.Context, uploadID string, targetP
 		}
 		parts = append(parts, partEntry{number: num, name: e.Name()})
 	}
-	sort.Slice(parts, func(i, j int) bool {
-		return parts[i].number < parts[j].number
-	})
+	sort.Slice(parts, func(i, j int) bool { return parts[i].number < parts[j].number })
 	if len(parts) == 0 {
 		return errors.New("未找到任何分片")
 	}
+	// 分片数量校验
+	if expectedParts > 0 && len(parts) != expectedParts {
+		return fmt.Errorf("分片数量不符：磁盘 %d / 期望 %d", len(parts), expectedParts)
+	}
+	// 逐片 MD5 校验（磁盘内容 vs 上传时记录）
+	for _, p := range parts {
+		want, ok := expectedMD5[p.number]
+		if !ok {
+			continue
+		}
+		got, err := md5File(filepath.Join(tmpDir, p.name))
+		if err != nil {
+			return fmt.Errorf("计算分片 %d MD5 失败: %w", p.number, err)
+		}
+		if got != want {
+			return fmt.Errorf("分片 %d MD5 校验失败", p.number)
+		}
+	}
 
 	// 创建目标文件
-	fullTarget := d.absPath(targetPath)
+	fullTarget, err := d.absPath(targetPath)
+	if err != nil {
+		return err
+	}
 	if err := os.MkdirAll(filepath.Dir(fullTarget), 0755); err != nil {
 		return fmt.Errorf("创建目标目录失败: %w", err)
 	}
@@ -179,18 +229,43 @@ func (d *LocalDriver) CompletePart(ctx context.Context, uploadID string, targetP
 		if err != nil {
 			return fmt.Errorf("打开分片 %d 失败: %w", p.number, err)
 		}
-		if _, err := io.Copy(target, partFile); err != nil {
-			partFile.Close()
+		_, err = io.Copy(target, partFile)
+		partFile.Close()
+		if err != nil {
 			return fmt.Errorf("合并分片 %d 失败: %w", p.number, err)
 		}
-		partFile.Close()
+	}
+
+	// 合并成功，清理临时目录（原实现永久残留 .tmp/{uploadID}）
+	if err := os.RemoveAll(tmpDir); err != nil {
+		return fmt.Errorf("清理分片临时目录失败: %w", err)
 	}
 	return nil
 }
 
+// md5File 计算文件 MD5
+func md5File(path string) (string, error) {
+	f, err := os.Open(path)
+	if err != nil {
+		return "", err
+	}
+	defer f.Close()
+	h := md5.New()
+	if _, err := io.Copy(h, f); err != nil {
+		return "", err
+	}
+	return hex.EncodeToString(h.Sum(nil)), nil
+}
+
 // AbortPart 取消分片上传，清理临时目录
 func (d *LocalDriver) AbortPart(ctx context.Context, uploadID string) error {
-	tmpDir := filepath.Join(d.rootDir, ".tmp", uploadID)
+	if !ValidStorageID(uploadID) {
+		return ErrPathInvalid
+	}
+	tmpDir, err := SafeJoin(d.rootDir, ".tmp", uploadID)
+	if err != nil {
+		return err
+	}
 	if err := os.RemoveAll(tmpDir); err != nil {
 		return fmt.Errorf("清理分片临时目录失败: %w", err)
 	}

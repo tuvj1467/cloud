@@ -71,6 +71,11 @@ func main() {
 	// 添加 JWT 拦截器
 	s.AddUnaryInterceptors(middleware.JwtInterceptor())
 
+	// 放宽 gRPC 单消息接收上限至 110MB：上传/分片（含 JSON base64 膨胀）与大文件下载
+	// 需要超过默认 4MB；与网关 MaxBytes、业务 MaxUploadSize（100MB）对齐
+	s.AddOptions(grpc.MaxRecvMsgSize(110*1024*1024))
+	s.AddOptions(grpc.MaxSendMsgSize(110*1024*1024))
+
 	fmt.Printf("Starting rpc server at %s...\n", c.ListenOn)
 	s.Start()
 }

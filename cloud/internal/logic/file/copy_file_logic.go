@@ -9,6 +9,7 @@ import (
 	"onecloud/ent"
 	"onecloud/internal/pkg/jwt"
 	"onecloud/internal/pkg/response"
+	"onecloud/internal/pkg/storage"
 	"onecloud/internal/repository"
 	"onecloud/internal/svc"
 	"onecloud/proto/.proto/service"
@@ -56,7 +57,7 @@ func (l *CopyFileLogic) CopyFile(in *service.CopyFileRequest) (*service.Response
 		return response.Err(errors.New("无权复制该文件"))
 	}
 
-	// 2. 校验目标桶归属与容量
+	// 2. 校验目标桶归属与容量（快速失败，最终以原子扣减为准）
 	targetBucket, err := bucketRepo.GetByID(l.ctx, in.GetTargetBucketId())
 	if err != nil {
 		if ent.IsNotFound(err) {
@@ -72,6 +73,10 @@ func (l *CopyFileLogic) CopyFile(in *service.CopyFileRequest) (*service.Response
 	}
 
 	// 3. 生成新文件ID与存储路径
+	// 源文件后缀白名单（存量数据可能含非法 ext）
+	if !storage.ValidSuffix(src.Ext) {
+		return response.Err(errors.New("源文件后缀非法，无法复制"))
+	}
 	newFileID := l.svcCtx.Snowflake.MustIdS()
 	date := time.Now().Format("20060102")
 	newPath := fmt.Sprintf("%s/%s/%s.%s", userID, date, newFileID, src.Ext)
@@ -89,13 +94,32 @@ func (l *CopyFileLogic) CopyFile(in *service.CopyFileRequest) (*service.Response
 	// 5. 创建新文件元数据
 	newFile, err := fileRepo.CreateCopy(l.ctx, newFileID, userID, in.GetTargetBucketId(), in.GetNewName(), newPath, src)
 	if err != nil {
-		_ = l.svcCtx.Storage.Delete(l.ctx, newPath)
+		if delErr := l.svcCtx.Storage.Delete(l.ctx, newPath); delErr != nil {
+			l.Errorf("回滚物理文件失败: %v", delErr)
+		}
 		return response.Err(errors.New("文件入库失败: " + err.Error()))
 	}
 
-	// 6. 扣减目标桶容量
-	if err := bucketRepo.IncUsedSize(l.ctx, in.GetTargetBucketId(), src.Size); err != nil {
-		l.Errorf("目标桶容量更新失败: %v", err)
+	// 6. 扣减目标桶容量（原子 UPDATE，失败回滚本次复制）
+	ok, err := bucketRepo.TryIncUsedSize(l.ctx, in.GetTargetBucketId(), src.Size)
+	if err != nil {
+		// 扣减失败：同样回滚本次复制（DB 记录 + 物理文件）
+		if delErr := fileRepo.Delete(l.ctx, newFile.ID); delErr != nil {
+			l.Errorf("回滚文件记录失败: %v", delErr)
+		}
+		if delErr := l.svcCtx.Storage.Delete(l.ctx, newPath); delErr != nil {
+			l.Errorf("回滚物理文件失败: %v", delErr)
+		}
+		return response.Err(errors.New("目标桶容量更新失败: " + err.Error()))
+	}
+	if !ok {
+		if delErr := fileRepo.Delete(l.ctx, newFile.ID); delErr != nil {
+			l.Errorf("回滚文件记录失败: %v", delErr)
+		}
+		if delErr := l.svcCtx.Storage.Delete(l.ctx, newPath); delErr != nil {
+			l.Errorf("回滚物理文件失败: %v", delErr)
+		}
+		return response.Err(errors.New("目标桶容量不足"))
 	}
 
 	return response.Success(&service.CopyFileResponse{

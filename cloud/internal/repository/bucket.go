@@ -2,12 +2,12 @@ package repository
 
 import (
 	"context"
-	"database/sql"
 	"fmt"
 
 	"onecloud/ent"
 	"onecloud/ent/bucket"
 	"onecloud/ent/file"
+	"onecloud/ent/fileshare"
 	"onecloud/proto/.proto/service"
 
 	entsql "entgo.io/ent/dialect/sql"
@@ -16,7 +16,6 @@ import (
 // BucketRepository 桶数据访问层
 type BucketRepository struct {
 	client *ent.Client
-	db     *sql.DB
 }
 
 // NewBucketRepository 创建桶仓库实例
@@ -129,32 +128,103 @@ func (r *BucketRepository) CountFiles(ctx context.Context, bucketID string) (int
 	return r.client.File.Query().Where(file.BucketIDEQ(bucketID)).Count(ctx)
 }
 
-// IncUsedSize 增减桶已用容量（乐观锁：版本号不匹配则失败）
-// delta 为正表示增加，为负表示减少
-func (r *BucketRepository) IncUsedSize(ctx context.Context, bucketID string, delta int64) error {
-	// 先查询当前版本
-	b, err := r.client.Bucket.Get(ctx, bucketID)
-	if err != nil {
-		return fmt.Errorf("查询桶失败: %w", err)
+// TryIncUsedSize 原子增加桶已用容量：单条 UPDATE 内联配额条件，杜绝并发超卖
+// delta 必须为正；返回 false 表示配额不足或桶不存在
+func (r *BucketRepository) TryIncUsedSize(ctx context.Context, bucketID string, delta int64) (bool, error) {
+	if delta <= 0 {
+		return false, fmt.Errorf("配额增量必须为正: %d", delta)
 	}
-	newUsed := b.UsedSize + delta
-	if newUsed < 0 {
-		newUsed = 0
-	}
-	// 带版本号条件更新（乐观锁）
 	affected, err := r.client.Bucket.Update().
 		Where(
 			bucket.IDEQ(bucketID),
-			bucket.VersionEQ(b.Version),
+			func(s *entsql.Selector) {
+				s.Where(entsql.ExprP("size_limit - used_size >= ?", delta))
+			},
 		).
-		SetUsedSize(newUsed).
-		SetVersion(b.Version + 1).
+		AddUsedSize(delta).
+		AddVersion(1).
 		Save(ctx)
 	if err != nil {
-		return fmt.Errorf("更新桶容量失败: %w", err)
+		return false, fmt.Errorf("更新桶容量失败: %w", err)
 	}
-	if affected == 0 {
-		return fmt.Errorf("桶容量更新冲突（版本号不匹配），请重试")
+	return affected > 0, nil
+}
+
+// TryDecUsedSize 原子归还桶容量：保证 used_size 永不为负
+// delta 必须为正（方法内部取 -delta 扣减）；返回 false 表示桶不存在或当前用量小于 delta（账目漂移时不强行扣减）
+// 当前删除路径在事务内联归还（DeleteFull/DeleteWithFiles），本方法保留为事务外归还配额的公共 API。
+func (r *BucketRepository) TryDecUsedSize(ctx context.Context, bucketID string, delta int64) (bool, error) {
+	if delta <= 0 {
+		return false, fmt.Errorf("配额增量必须为正: %d", delta)
 	}
-	return nil
+	affected, err := r.client.Bucket.Update().
+		Where(
+			bucket.IDEQ(bucketID),
+			func(s *entsql.Selector) {
+				s.Where(entsql.ExprP("used_size >= ?", delta))
+			},
+		).
+		AddUsedSize(-delta).
+		AddVersion(1).
+		Save(ctx)
+	if err != nil {
+		return false, fmt.Errorf("归还桶容量失败: %w", err)
+	}
+	return affected > 0, nil
+}
+
+// DeleteIfEmpty 事务内校验桶为空后删除（收缩 count 与 delete 的竞态窗口）
+// 返回 false 表示桶非空
+func (r *BucketRepository) DeleteIfEmpty(ctx context.Context, bucketID string) (bool, error) {
+	tx, err := r.client.Tx(ctx)
+	if err != nil {
+		return false, err
+	}
+	count, err := tx.File.Query().Where(file.BucketIDEQ(bucketID)).Count(ctx)
+	if err != nil {
+		_ = tx.Rollback()
+		return false, err
+	}
+	if count > 0 {
+		_ = tx.Rollback()
+		return false, nil
+	}
+	if err := tx.Bucket.DeleteOneID(bucketID).Exec(ctx); err != nil {
+		_ = tx.Rollback()
+		return false, err
+	}
+	return true, tx.Commit()
+}
+
+// DeleteWithFiles 事务删除桶 + 桶内全部文件 + 关联分享，返回文件列表供事务后清理
+func (r *BucketRepository) DeleteWithFiles(ctx context.Context, bucketID string) ([]*ent.File, error) {
+	tx, err := r.client.Tx(ctx)
+	if err != nil {
+		return nil, err
+	}
+	// 先查出文件（事务提交后逐个清理物理文件与 Redis）
+	files, err := tx.File.Query().Where(file.BucketIDEQ(bucketID)).All(ctx)
+	if err != nil {
+		_ = tx.Rollback()
+		return nil, err
+	}
+	if len(files) > 0 {
+		fileIDs := make([]string, 0, len(files))
+		for _, f := range files {
+			fileIDs = append(fileIDs, f.ID)
+		}
+		if _, err := tx.FileShare.Delete().Where(fileshare.FileIDIn(fileIDs...)).Exec(ctx); err != nil {
+			_ = tx.Rollback()
+			return nil, fmt.Errorf("删除关联分享失败: %w", err)
+		}
+		if _, err := tx.File.Delete().Where(file.BucketIDEQ(bucketID)).Exec(ctx); err != nil {
+			_ = tx.Rollback()
+			return nil, err
+		}
+	}
+	if err := tx.Bucket.DeleteOneID(bucketID).Exec(ctx); err != nil {
+		_ = tx.Rollback()
+		return nil, err
+	}
+	return files, tx.Commit()
 }

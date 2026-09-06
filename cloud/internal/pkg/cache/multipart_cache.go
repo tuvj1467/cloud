@@ -123,6 +123,26 @@ func (c *MultipartCache) CountParts(ctx context.Context, uploadID string) (int, 
 	return int(cnt), err
 }
 
+// ListParts 返回全部已上传分片的 MD5（part_number → md5）
+func (c *MultipartCache) ListParts(ctx context.Context, uploadID string) (map[int]string, error) {
+	if c.client == nil {
+		return nil, nil
+	}
+	vals, err := c.client.HGetAll(ctx, c.partsKey(uploadID)).Result()
+	if err != nil {
+		return nil, err
+	}
+	res := make(map[int]string, len(vals))
+	for field, md5 := range vals {
+		var num int
+		if _, err := fmt.Sscanf(field, "%d", &num); err != nil {
+			continue
+		}
+		res[num] = md5
+	}
+	return res, nil
+}
+
 // Clear 清除某次上传的所有 Redis 状态
 func (c *MultipartCache) Clear(ctx context.Context, uploadID string) error {
 	if c.client == nil {
