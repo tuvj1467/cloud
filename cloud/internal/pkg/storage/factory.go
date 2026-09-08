@@ -14,8 +14,8 @@ func NewDriver(cfg Config) (Driver, error) {
 		}
 		return NewLocalDriver(rootDir), nil
 	case "minio":
-		// P2 阶段暂不实现 MinIO，预留接口
-		return nil, fmt.Errorf("MinIO 驱动暂未实现，请使用 local 驱动")
+		// MinIO / S3 兼容驱动（P10 实现；运行验证需接真实 MinIO 服务）
+		return NewMinioDriver(cfg.Minio)
 	default:
 		return nil, fmt.Errorf("不支持的存储驱动: %s", cfg.Driver)
 	}
