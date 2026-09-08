@@ -66,6 +66,9 @@ upstreams:
       - Method: GET
         Path: /file/share/download
         RpcPath: storage.File/DownloadByShare
+      - Method: GET
+        Path: /file/stats
+        RpcPath: storage.File/GetStorageStats
       # ===== 桶服务 =====
       - Method: POST
         Path: /bucket/create

@@ -4,7 +4,7 @@
 const { ref, reactive, onUnmounted } = Vue;
 import {
   register, loginByAccount, loginByPhoneSms, loginByEmailSms,
-  sendVerificationCode, resetPassword,
+  sendVerificationCode, resetPassword, findAccount,
 } from '../api.js';
 import { store } from '../store.js';
 import { toast } from '../common.js';
@@ -87,6 +87,11 @@ export const AuthPanel = {
         const ok = regMode.value === 'phone' ? PHONE_RE.test(reg.contact) : EMAIL_RE.test(reg.contact);
         if (!ok) return toast(regMode.value === 'phone' ? '请输入正确的手机号' : '请输入正确的邮箱地址', 'error');
         body = { ...contactField(reg.contact), type: 2 }; // 注册验证码 type=2
+      } else if (scene === 'find') {
+        const f = contactField(find.contact);
+        if (!f) return toast('请输入正确的手机号或邮箱', 'error');
+        body = { ...f, type: 3 }; // 找回账号与重置密码同用 type=3
+        isModal = true;
       } else {
         const f = contactField(reset.contact);
         if (!f) return toast('请输入正确的手机号或邮箱', 'error');
@@ -190,10 +195,35 @@ export const AuthPanel = {
       showReset.value = true;
     }
 
+    // ===== 找回账号（验证码与重置密码同用 type=3；验证码仅校验不消费由后端 P7 语义决定）=====
+    const showFind = ref(false);
+    const find = reactive({ contact: '', code: '', result: null });
+    const findLoading = ref(false);
+
+    function doFind() {
+      const f = contactField(find.contact);
+      if (!f) return toast('请输入正确的手机号或邮箱', 'error');
+      if (!/^\d{6}$/.test(find.code)) return toast('请输入 6 位验证码', 'error');
+      findLoading.value = true;
+      findAccount({ ...f, verificationCode: find.code })
+        .then((data) => {
+          find.result = data.user || null;
+          toast('账号找回成功', 'success');
+        })
+        .catch((e) => toast(e.message, 'error'))
+        .finally(() => { findLoading.value = false; });
+    }
+
+    function openFind() {
+      find.contact = ''; find.code = ''; find.result = null;
+      showFind.value = true;
+    }
+
     return {
       mainTab, loginMode, login, loginLoading,
       regMode, reg, regLoading,
       showReset, reset, resetLoading, openReset, doReset,
+      showFind, find, findLoading, openFind, doFind,
       countdown, modalCountdown, sendLoading, modalSendLoading, sendCode,
       doLogin, doRegister,
     };
@@ -269,6 +299,7 @@ export const AuthPanel = {
           </button>
           <div class="form-links">
             <a href="javascript:;" @click="openReset">忘记密码？</a>
+            <a href="javascript:;" @click="openFind" style="margin-left:12px">找回账号</a>
           </div>
         </template>
 
@@ -351,6 +382,47 @@ export const AuthPanel = {
               {{ resetLoading ? '处理中…' : '确认重置' }}
             </button>
           </div>
+        </div>
+      </div>
+
+      <!-- 找回账号弹层 -->
+      <div v-if="showFind" class="modal" @click.self="showFind=false">
+        <div class="modal-content">
+          <h3>找回账号</h3>
+          <template v-if="!find.result">
+            <div class="form-group">
+              <label>手机号 / 邮箱</label>
+              <input v-model="find.contact" type="text" placeholder="注册时绑定的手机号或邮箱">
+            </div>
+            <div class="form-group">
+              <label>验证码</label>
+              <div class="code-input">
+                <input v-model="find.code" type="text" maxlength="6" placeholder="6 位验证码">
+                <button class="btn btn-secondary p8-code-btn" :disabled="modalCountdown>0 || modalSendLoading"
+                  @click="sendCode('find')">
+                  {{ modalSendLoading ? '发送中…' : (modalCountdown>0 ? modalCountdown+'s 后重发' : '获取验证码') }}
+                </button>
+              </div>
+            </div>
+            <div class="modal-actions">
+              <button class="btn btn-secondary" @click="showFind=false">取消</button>
+              <button class="btn btn-primary p8-btn-loading" :disabled="findLoading" @click="doFind">
+                {{ findLoading ? '查询中…' : '找回' }}
+              </button>
+            </div>
+          </template>
+          <template v-else>
+            <div class="form-group">
+              <label>你的账号</label>
+              <div style="font-size:18px;font-weight:600;user-select:all">{{ find.result.username || find.result.name }}</div>
+            </div>
+            <div class="form-group" style="color:#999;font-size:13px">
+              昵称：{{ find.result.name || '-' }} · 手机：{{ find.result.phone || '未绑定' }} · 邮箱：{{ find.result.email || '未绑定' }}
+            </div>
+            <div class="modal-actions">
+              <button class="btn btn-primary" @click="showFind=false">好的</button>
+            </div>
+          </template>
         </div>
       </div>
     </div>

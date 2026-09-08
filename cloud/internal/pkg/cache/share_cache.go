@@ -131,3 +131,32 @@ func (c *ShareCache) Del(ctx context.Context, code string) error {
 	_, err := pipe.Exec(ctx)
 	return err
 }
+
+// allowDownloadScript 原子的「校验并递增」下载计数：
+// max<=0 表示不限次；已达上限返回 0（不递增），否则递增并返回新值
+// 消除「先查后增」的 TOCTOU 竞态（并发下载可小幅突破 max_count 的问题）
+var allowDownloadScript = redis.NewScript(`
+local cur = tonumber(redis.call('GET', KEYS[1]) or '0')
+local max = tonumber(ARGV[1])
+if max > 0 and cur >= max then
+  return 0
+end
+return redis.call('INCR', KEYS[1])
+`)
+
+// AllowDownload 原子校验并递增下载次数
+// maxCount<=0 不限次；返回 allowed=false 表示已达上限（此时 newCount 无意义）
+func (c *ShareCache) AllowDownload(ctx context.Context, code string, maxCount int) (allowed bool, newCount int, err error) {
+	if c.client == nil {
+		return true, 0, nil
+	}
+	res, err := allowDownloadScript.Run(ctx, c.client, []string{c.counterKey(code)}, maxCount).Int()
+	if err != nil {
+		// Redis 故障时放行（可用性优先），由 DB 侧 used_count 兜底对账
+		return true, 0, err
+	}
+	if res == 0 {
+		return false, 0, nil
+	}
+	return true, res, nil
+}

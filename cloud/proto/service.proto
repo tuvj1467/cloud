@@ -80,4 +80,7 @@ service File {
   rpc AccessShare(AccessShareRequest) returns (Response);
   // 分享下载（匿名）
   rpc DownloadByShare(DownloadByShareRequest) returns (Response);
+
+  // 用量统计（需登录）
+  rpc GetStorageStats(GetStorageStatsRequest) returns (Response);
 }

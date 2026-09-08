@@ -59,8 +59,8 @@ func (File) Mixin() []ent.Mixin {
 // 索引
 func (File) Indexes() []ent.Index {
 	return []ent.Index{
-		// 秒传兜底查询：user_id + md5（原无索引全表扫描）
-		index.Fields("md5"),
+		// 秒传兜底查询：user_id + md5 复合索引（覆盖去重查询完整 WHERE）
+		index.Fields("user_id", "md5"),
 		// 桶维度列表与桶清空删除
 		index.Fields("bucket_id"),
 	}

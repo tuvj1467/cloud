@@ -4,7 +4,7 @@
 // Vue 为全量版全局变量（index.html 先以非 module 方式加载），模块内直接解构
 const { ref, computed, watch, onMounted, onUnmounted } = Vue;
 import {
-  getFileList, getBucketFileList, renameFile, deleteFile, copyFile, downloadBlob,
+  getFileList, getBucketFileList, renameFile, deleteFile, copyFile, downloadBlob, getStorageStats,
 } from '../api.js';
 import { store } from '../store.js';
 import { formatSize, formatTime, fileIcon, toast, confirmBox } from '../common.js';
@@ -44,6 +44,18 @@ if (!document.getElementById('p8-filelist-style')) {
   document.head.appendChild(s);
 }
 
+// P10：用量统计卡样式，同样以 p10- 前缀注入防冲突
+if (!document.getElementById('p10-filelist-style')) {
+  const s = document.createElement('style');
+  s.id = 'p10-filelist-style';
+  s.textContent = `
+    .p10-stats-card { display:flex; align-items:center; gap:8px; padding:12px 16px; margin-bottom:16px;
+      background:linear-gradient(135deg,#f5f7ff,#eef1ff); border:1px solid #e3e8ff; border-radius:10px;
+      color:#555; font-size:14px; }
+  `;
+  document.head.appendChild(s);
+}
+
 export const FileList = {
   name: 'FileList',
   setup() {
@@ -77,6 +89,7 @@ export const FileList = {
     // ===== 列表加载（loadSeq 竞态防护：快速翻页时旧慢响应不得覆盖新数据）=====
     let loadSeq = 0;
     async function loadFiles() {
+      loadStats(); // P10：统计卡随列表加载/refreshFiles 一并刷新（fire-and-forget，失败静默）
       if (F.scope === 'bucket' && !F.bucketId) { F.list = []; F.total = 0; return; }
       const seq = ++loadSeq;
       F.loading = true;
@@ -105,6 +118,23 @@ export const FileList = {
     watch(() => F.page, () => loadFiles());
     watch(() => [F.sortBy, F.sortOrder, F.scope, F.bucketId], resetAndLoad);
 
+    // ===== 用量统计卡（P10）：挂载与每次列表刷新后拉取；失败静默仅 console，卡片显示占位「—」 =====
+    const stats = ref({ ready: false, fileCount: '—', totalSize: '—', bucketCount: '—' });
+    async function loadStats() {
+      try {
+        const data = await getStorageStats();
+        // 桶字段兼容（gateway 序列化名以实际响应为准）
+        stats.value = {
+          ready: true,
+          fileCount: data.file_count ?? data.fileCount ?? 0,
+          totalSize: data.total_size ?? data.totalSize ?? 0,
+          bucketCount: data.bucket_count ?? data.bucketCount ?? 0,
+        };
+      } catch (e) {
+        console.warn('用量统计加载失败', e); // 静默：不打扰用户，保留占位
+      }
+    }
+
     // 行操作：删除后若当前页已空则回退一页
     function shrinkPageIfEmpty() {
       if (F.list.length <= 1 && F.page > 1) F.page -= 1;
@@ -126,6 +156,7 @@ export const FileList = {
       if (v === null) return;
       const newName = v.trim();
       if (!newName) return toast('文件名不能为空', 'error');
+      if (newName.length > 100) return toast('文件名最长 100 个字符', 'error');
       if (newName === f.name) return;
       try {
         await renameFile({ fileId: f.fileId || f.file_id, newName });
@@ -185,7 +216,7 @@ export const FileList = {
     });
 
     return {
-      store, keyword, displayList, totalPages, hasBuckets,
+      store, keyword, displayList, totalPages, hasBuckets, stats,
       formatSize, formatTime, fileIcon, extOf,
       doDownload, doRename, openCopy, copyModal, targetBuckets, doCopy, doDelete,
       bucketIdOf,
@@ -194,6 +225,14 @@ export const FileList = {
   template: `
     <div class="panel">
       <div class="panel-header"><h2>我的文件</h2></div>
+
+      <!-- 统计卡（P10）：用量概览，加载失败显示占位 -->
+      <div class="p10-stats-card">
+        <template v-if="stats.ready">
+          📁 {{ stats.fileCount }} 个文件 · 共 {{ formatSize(stats.totalSize) }} · {{ stats.bucketCount }} 个桶
+        </template>
+        <template v-else>📁 — 个文件 · 共 — · — 个桶</template>
+      </div>
 
       <!-- 工具条：scope / 桶 / 排序 / 搜索 -->
       <div class="p8-toolbar">

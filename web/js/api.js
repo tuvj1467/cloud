@@ -46,6 +46,7 @@ export const loginByPhoneSms = (body) => request('/user/loginByPhoneSms', { body
 export const loginByEmailSms = (body) => request('/user/loginByEmailSms', { body });
 export const sendVerificationCode = (body) => request('/user/sendVerificationCode', { body });
 export const resetPassword = (body) => request('/user/resetPassword', { body });
+export const findAccount = (body) => request('/user/findAccount', { body });
 // ===== 桶 =====
 export const createBucket = (body) => request('/bucket/create', { body });
 export const getBucketList = (params) => request('/bucket/list', { method: 'GET', params });
@@ -67,6 +68,7 @@ export const abortMultipartUpload = (body) => request('/file/multipart/abort', {
 export const createShare = (body) => request('/file/share/create', { body });
 export const accessShare = (params) => request('/file/share/access', { method: 'GET', params });
 export const downloadByShare = (params) => request('/file/share/download', { method: 'GET', params });
+export const getStorageStats = (params) => request('/file/stats', { method: 'GET', params });
 
 // 下载：bytes 在 JSON 中为 base64，需解码
 export async function downloadBlob(url, params, filename) {

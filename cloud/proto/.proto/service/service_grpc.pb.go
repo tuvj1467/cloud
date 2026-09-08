@@ -642,6 +642,7 @@ const (
 	File_CreateShare_FullMethodName             = "/storage.File/CreateShare"
 	File_AccessShare_FullMethodName             = "/storage.File/AccessShare"
 	File_DownloadByShare_FullMethodName         = "/storage.File/DownloadByShare"
+	File_GetStorageStats_FullMethodName         = "/storage.File/GetStorageStats"
 )
 
 // FileClient is the client API for File service.
@@ -683,6 +684,8 @@ type FileClient interface {
 	AccessShare(ctx context.Context, in *AccessShareRequest, opts ...grpc.CallOption) (*Response, error)
 	// 分享下载（匿名）
 	DownloadByShare(ctx context.Context, in *DownloadByShareRequest, opts ...grpc.CallOption) (*Response, error)
+	// 用量统计（需登录）
+	GetStorageStats(ctx context.Context, in *GetStorageStatsRequest, opts ...grpc.CallOption) (*Response, error)
 }
 
 type fileClient struct {
@@ -843,6 +846,16 @@ func (c *fileClient) DownloadByShare(ctx context.Context, in *DownloadByShareReq
 	return out, nil
 }
 
+func (c *fileClient) GetStorageStats(ctx context.Context, in *GetStorageStatsRequest, opts ...grpc.CallOption) (*Response, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(Response)
+	err := c.cc.Invoke(ctx, File_GetStorageStats_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // FileServer is the server API for File service.
 // All implementations must embed UnimplementedFileServer
 // for forward compatibility.
@@ -882,6 +895,8 @@ type FileServer interface {
 	AccessShare(context.Context, *AccessShareRequest) (*Response, error)
 	// 分享下载（匿名）
 	DownloadByShare(context.Context, *DownloadByShareRequest) (*Response, error)
+	// 用量统计（需登录）
+	GetStorageStats(context.Context, *GetStorageStatsRequest) (*Response, error)
 	mustEmbedUnimplementedFileServer()
 }
 
@@ -936,6 +951,9 @@ func (UnimplementedFileServer) AccessShare(context.Context, *AccessShareRequest)
 }
 func (UnimplementedFileServer) DownloadByShare(context.Context, *DownloadByShareRequest) (*Response, error) {
 	return nil, status.Error(codes.Unimplemented, "method DownloadByShare not implemented")
+}
+func (UnimplementedFileServer) GetStorageStats(context.Context, *GetStorageStatsRequest) (*Response, error) {
+	return nil, status.Error(codes.Unimplemented, "method GetStorageStats not implemented")
 }
 func (UnimplementedFileServer) mustEmbedUnimplementedFileServer() {}
 func (UnimplementedFileServer) testEmbeddedByValue()              {}
@@ -1228,6 +1246,24 @@ func _File_DownloadByShare_Handler(srv interface{}, ctx context.Context, dec fun
 	return interceptor(ctx, in, info, handler)
 }
 
+func _File_GetStorageStats_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetStorageStatsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(FileServer).GetStorageStats(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: File_GetStorageStats_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(FileServer).GetStorageStats(ctx, req.(*GetStorageStatsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // File_ServiceDesc is the grpc.ServiceDesc for File service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -1294,6 +1330,10 @@ var File_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "DownloadByShare",
 			Handler:    _File_DownloadByShare_Handler,
+		},
+		{
+			MethodName: "GetStorageStats",
+			Handler:    _File_GetStorageStats_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

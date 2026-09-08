@@ -1745,6 +1745,197 @@ func (x *DownloadByShareResponse) GetFile() *FileMeta {
 	return nil
 }
 
+// ==========================================
+// 15. 用量统计
+// ==========================================
+type GetStorageStatsRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetStorageStatsRequest) Reset() {
+	*x = GetStorageStatsRequest{}
+	mi := &file_file_proto_msgTypes[30]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetStorageStatsRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetStorageStatsRequest) ProtoMessage() {}
+
+func (x *GetStorageStatsRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_file_proto_msgTypes[30]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetStorageStatsRequest.ProtoReflect.Descriptor instead.
+func (*GetStorageStatsRequest) Descriptor() ([]byte, []int) {
+	return file_file_proto_rawDescGZIP(), []int{30}
+}
+
+type BucketStats struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	BucketId      string                 `protobuf:"bytes,1,opt,name=bucket_id,json=bucketId,proto3" json:"bucket_id,omitempty"`     // 桶 ID
+	Name          string                 `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`                             // 桶名
+	FileCount     int64                  `protobuf:"varint,3,opt,name=file_count,json=fileCount,proto3" json:"file_count,omitempty"` // 桶内文件数
+	TotalSize     int64                  `protobuf:"varint,4,opt,name=total_size,json=totalSize,proto3" json:"total_size,omitempty"` // 桶内文件实际总大小（字节）
+	UsedSize      int64                  `protobuf:"varint,5,opt,name=used_size,json=usedSize,proto3" json:"used_size,omitempty"`    // 桶记账已用容量
+	SizeLimit     int64                  `protobuf:"varint,6,opt,name=size_limit,json=sizeLimit,proto3" json:"size_limit,omitempty"` // 桶容量上限
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *BucketStats) Reset() {
+	*x = BucketStats{}
+	mi := &file_file_proto_msgTypes[31]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *BucketStats) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*BucketStats) ProtoMessage() {}
+
+func (x *BucketStats) ProtoReflect() protoreflect.Message {
+	mi := &file_file_proto_msgTypes[31]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use BucketStats.ProtoReflect.Descriptor instead.
+func (*BucketStats) Descriptor() ([]byte, []int) {
+	return file_file_proto_rawDescGZIP(), []int{31}
+}
+
+func (x *BucketStats) GetBucketId() string {
+	if x != nil {
+		return x.BucketId
+	}
+	return ""
+}
+
+func (x *BucketStats) GetName() string {
+	if x != nil {
+		return x.Name
+	}
+	return ""
+}
+
+func (x *BucketStats) GetFileCount() int64 {
+	if x != nil {
+		return x.FileCount
+	}
+	return 0
+}
+
+func (x *BucketStats) GetTotalSize() int64 {
+	if x != nil {
+		return x.TotalSize
+	}
+	return 0
+}
+
+func (x *BucketStats) GetUsedSize() int64 {
+	if x != nil {
+		return x.UsedSize
+	}
+	return 0
+}
+
+func (x *BucketStats) GetSizeLimit() int64 {
+	if x != nil {
+		return x.SizeLimit
+	}
+	return 0
+}
+
+type StorageStatsResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	FileCount     int64                  `protobuf:"varint,1,opt,name=file_count,json=fileCount,proto3" json:"file_count,omitempty"`       // 用户文件总数
+	TotalSize     int64                  `protobuf:"varint,2,opt,name=total_size,json=totalSize,proto3" json:"total_size,omitempty"`       // 用户文件实际总大小（字节）
+	BucketCount   int64                  `protobuf:"varint,3,opt,name=bucket_count,json=bucketCount,proto3" json:"bucket_count,omitempty"` // 桶数量
+	Buckets       []*BucketStats         `protobuf:"bytes,4,rep,name=buckets,proto3" json:"buckets,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *StorageStatsResponse) Reset() {
+	*x = StorageStatsResponse{}
+	mi := &file_file_proto_msgTypes[32]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *StorageStatsResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*StorageStatsResponse) ProtoMessage() {}
+
+func (x *StorageStatsResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_file_proto_msgTypes[32]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use StorageStatsResponse.ProtoReflect.Descriptor instead.
+func (*StorageStatsResponse) Descriptor() ([]byte, []int) {
+	return file_file_proto_rawDescGZIP(), []int{32}
+}
+
+func (x *StorageStatsResponse) GetFileCount() int64 {
+	if x != nil {
+		return x.FileCount
+	}
+	return 0
+}
+
+func (x *StorageStatsResponse) GetTotalSize() int64 {
+	if x != nil {
+		return x.TotalSize
+	}
+	return 0
+}
+
+func (x *StorageStatsResponse) GetBucketCount() int64 {
+	if x != nil {
+		return x.BucketCount
+	}
+	return 0
+}
+
+func (x *StorageStatsResponse) GetBuckets() []*BucketStats {
+	if x != nil {
+		return x.Buckets
+	}
+	return nil
+}
+
 var File_file_proto protoreflect.FileDescriptor
 
 const file_file_proto_rawDesc = "" +
@@ -1875,7 +2066,25 @@ const file_file_proto_rawDesc = "" +
 	"share_code\x18\x01 \x01(\tB\a\xfaB\x04r\x02\x10\x01R\tshareCode\"Z\n" +
 	"\x17DownloadByShareResponse\x12\x18\n" +
 	"\acontent\x18\x01 \x01(\fR\acontent\x12%\n" +
-	"\x04file\x18\x02 \x01(\v2\x11.storage.FileMetaR\x04fileB\x10Z\x0e.proto/serviceb\x06proto3"
+	"\x04file\x18\x02 \x01(\v2\x11.storage.FileMetaR\x04file\"\x18\n" +
+	"\x16GetStorageStatsRequest\"\xb8\x01\n" +
+	"\vBucketStats\x12\x1b\n" +
+	"\tbucket_id\x18\x01 \x01(\tR\bbucketId\x12\x12\n" +
+	"\x04name\x18\x02 \x01(\tR\x04name\x12\x1d\n" +
+	"\n" +
+	"file_count\x18\x03 \x01(\x03R\tfileCount\x12\x1d\n" +
+	"\n" +
+	"total_size\x18\x04 \x01(\x03R\ttotalSize\x12\x1b\n" +
+	"\tused_size\x18\x05 \x01(\x03R\busedSize\x12\x1d\n" +
+	"\n" +
+	"size_limit\x18\x06 \x01(\x03R\tsizeLimit\"\xa7\x01\n" +
+	"\x14StorageStatsResponse\x12\x1d\n" +
+	"\n" +
+	"file_count\x18\x01 \x01(\x03R\tfileCount\x12\x1d\n" +
+	"\n" +
+	"total_size\x18\x02 \x01(\x03R\ttotalSize\x12!\n" +
+	"\fbucket_count\x18\x03 \x01(\x03R\vbucketCount\x12.\n" +
+	"\abuckets\x18\x04 \x03(\v2\x14.storage.BucketStatsR\abucketsB\x10Z\x0e.proto/serviceb\x06proto3"
 
 var (
 	file_file_proto_rawDescOnce sync.Once
@@ -1889,7 +2098,7 @@ func file_file_proto_rawDescGZIP() []byte {
 	return file_file_proto_rawDescData
 }
 
-var file_file_proto_msgTypes = make([]protoimpl.MessageInfo, 30)
+var file_file_proto_msgTypes = make([]protoimpl.MessageInfo, 33)
 var file_file_proto_goTypes = []any{
 	(*FileMeta)(nil),                        // 0: storage.FileMeta
 	(*FileInfoRequest)(nil),                 // 1: storage.FileInfoRequest
@@ -1921,21 +2130,25 @@ var file_file_proto_goTypes = []any{
 	(*AccessShareResponse)(nil),             // 27: storage.AccessShareResponse
 	(*DownloadByShareRequest)(nil),          // 28: storage.DownloadByShareRequest
 	(*DownloadByShareResponse)(nil),         // 29: storage.DownloadByShareResponse
+	(*GetStorageStatsRequest)(nil),          // 30: storage.GetStorageStatsRequest
+	(*BucketStats)(nil),                     // 31: storage.BucketStats
+	(*StorageStatsResponse)(nil),            // 32: storage.StorageStatsResponse
 }
 var file_file_proto_depIdxs = []int32{
-	0, // 0: storage.FileInfoResponse.file:type_name -> storage.FileMeta
-	0, // 1: storage.UploadFileResponse.file:type_name -> storage.FileMeta
-	0, // 2: storage.FileListResponse.files:type_name -> storage.FileMeta
-	0, // 3: storage.DownloadFileResponse.file:type_name -> storage.FileMeta
-	0, // 4: storage.CopyFileResponse.file:type_name -> storage.FileMeta
-	0, // 5: storage.CompleteMultipartUploadResponse.file:type_name -> storage.FileMeta
-	0, // 6: storage.AccessShareResponse.file:type_name -> storage.FileMeta
-	0, // 7: storage.DownloadByShareResponse.file:type_name -> storage.FileMeta
-	8, // [8:8] is the sub-list for method output_type
-	8, // [8:8] is the sub-list for method input_type
-	8, // [8:8] is the sub-list for extension type_name
-	8, // [8:8] is the sub-list for extension extendee
-	0, // [0:8] is the sub-list for field type_name
+	0,  // 0: storage.FileInfoResponse.file:type_name -> storage.FileMeta
+	0,  // 1: storage.UploadFileResponse.file:type_name -> storage.FileMeta
+	0,  // 2: storage.FileListResponse.files:type_name -> storage.FileMeta
+	0,  // 3: storage.DownloadFileResponse.file:type_name -> storage.FileMeta
+	0,  // 4: storage.CopyFileResponse.file:type_name -> storage.FileMeta
+	0,  // 5: storage.CompleteMultipartUploadResponse.file:type_name -> storage.FileMeta
+	0,  // 6: storage.AccessShareResponse.file:type_name -> storage.FileMeta
+	0,  // 7: storage.DownloadByShareResponse.file:type_name -> storage.FileMeta
+	31, // 8: storage.StorageStatsResponse.buckets:type_name -> storage.BucketStats
+	9,  // [9:9] is the sub-list for method output_type
+	9,  // [9:9] is the sub-list for method input_type
+	9,  // [9:9] is the sub-list for extension type_name
+	9,  // [9:9] is the sub-list for extension extendee
+	0,  // [0:9] is the sub-list for field type_name
 }
 
 func init() { file_file_proto_init() }
@@ -1952,7 +2165,7 @@ func file_file_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_file_proto_rawDesc), len(file_file_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   30,
+			NumMessages:   33,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

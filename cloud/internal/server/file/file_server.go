@@ -112,3 +112,9 @@ func (s *FileServer) DownloadByShare(ctx context.Context, in *service.DownloadBy
 	l := filelogic.NewDownloadByShareLogic(ctx, s.svcCtx)
 	return l.DownloadByShare(in)
 }
+
+// 用量统计（需登录）
+func (s *FileServer) GetStorageStats(ctx context.Context, in *service.GetStorageStatsRequest) (*service.Response, error) {
+	l := filelogic.NewGetStorageStatsLogic(ctx, s.svcCtx)
+	return l.GetStorageStats(in)
+}

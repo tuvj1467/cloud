@@ -85,16 +85,17 @@ func (l *DownloadByShareLogic) DownloadByShare(in *service.DownloadByShareReques
 		return response.ErrWithCode(response.CodeFileShareExpired, "分享已过期")
 	}
 
-	// 5. 校验次数
-	usedCount, _ := shareCache.GetUsedCount(l.ctx, in.GetShareCode())
-	if data.MaxCount != nil && usedCount >= *data.MaxCount {
-		return response.ErrWithCode(response.CodeFileShareExhausted, "分享下载次数已用尽")
+	// 5-6. 校验并递增下载次数（Lua 原子「校验+递增」，消除先查后增的并发突破）
+	maxCount := 0
+	if data.MaxCount != nil {
+		maxCount = int(*data.MaxCount)
 	}
-
-	// 6. 递增 used_count（Redis 原子计数）
-	newCount, err := shareCache.IncrUsedCount(l.ctx, in.GetShareCode())
+	allowed, newCount, err := shareCache.AllowDownload(l.ctx, in.GetShareCode(), maxCount)
 	if err != nil {
-		l.Errorf("递增下载次数失败: %v", err)
+		l.Errorf("下载计数失败（放行，Redis 兜底对账）: %v", err)
+	}
+	if !allowed {
+		return response.ErrWithCode(response.CodeFileShareExhausted, "分享下载次数已用尽")
 	}
 
 	// 7. 同步到 DB（每次下载都同步，保证持久化；version 冲突时放弃本次扣减（仅记录日志），以 Redis 计数为准）

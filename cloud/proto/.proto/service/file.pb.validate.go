@@ -3807,3 +3807,358 @@ var _ interface {
 	Cause() error
 	ErrorName() string
 } = DownloadByShareResponseValidationError{}
+
+// Validate checks the field values on GetStorageStatsRequest with the rules
+// defined in the proto definition for this message. If any rules are
+// violated, the first error encountered is returned, or nil if there are no violations.
+func (m *GetStorageStatsRequest) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on GetStorageStatsRequest with the rules
+// defined in the proto definition for this message. If any rules are
+// violated, the result is a list of violation errors wrapped in
+// GetStorageStatsRequestMultiError, or nil if none found.
+func (m *GetStorageStatsRequest) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *GetStorageStatsRequest) validate(all bool) error {
+	if m == nil {
+		return nil
+	}
+
+	var errors []error
+
+	if len(errors) > 0 {
+		return GetStorageStatsRequestMultiError(errors)
+	}
+
+	return nil
+}
+
+// GetStorageStatsRequestMultiError is an error wrapping multiple validation
+// errors returned by GetStorageStatsRequest.ValidateAll() if the designated
+// constraints aren't met.
+type GetStorageStatsRequestMultiError []error
+
+// Error returns a concatenation of all the error messages it wraps.
+func (m GetStorageStatsRequestMultiError) Error() string {
+	msgs := make([]string, 0, len(m))
+	for _, err := range m {
+		msgs = append(msgs, err.Error())
+	}
+	return strings.Join(msgs, "; ")
+}
+
+// AllErrors returns a list of validation violation errors.
+func (m GetStorageStatsRequestMultiError) AllErrors() []error { return m }
+
+// GetStorageStatsRequestValidationError is the validation error returned by
+// GetStorageStatsRequest.Validate if the designated constraints aren't met.
+type GetStorageStatsRequestValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e GetStorageStatsRequestValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e GetStorageStatsRequestValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e GetStorageStatsRequestValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e GetStorageStatsRequestValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e GetStorageStatsRequestValidationError) ErrorName() string {
+	return "GetStorageStatsRequestValidationError"
+}
+
+// Error satisfies the builtin error interface
+func (e GetStorageStatsRequestValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sGetStorageStatsRequest.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = GetStorageStatsRequestValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = GetStorageStatsRequestValidationError{}
+
+// Validate checks the field values on BucketStats with the rules defined in
+// the proto definition for this message. If any rules are violated, the first
+// error encountered is returned, or nil if there are no violations.
+func (m *BucketStats) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on BucketStats with the rules defined in
+// the proto definition for this message. If any rules are violated, the
+// result is a list of violation errors wrapped in BucketStatsMultiError, or
+// nil if none found.
+func (m *BucketStats) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *BucketStats) validate(all bool) error {
+	if m == nil {
+		return nil
+	}
+
+	var errors []error
+
+	// no validation rules for BucketId
+
+	// no validation rules for Name
+
+	// no validation rules for FileCount
+
+	// no validation rules for TotalSize
+
+	// no validation rules for UsedSize
+
+	// no validation rules for SizeLimit
+
+	if len(errors) > 0 {
+		return BucketStatsMultiError(errors)
+	}
+
+	return nil
+}
+
+// BucketStatsMultiError is an error wrapping multiple validation errors
+// returned by BucketStats.ValidateAll() if the designated constraints aren't met.
+type BucketStatsMultiError []error
+
+// Error returns a concatenation of all the error messages it wraps.
+func (m BucketStatsMultiError) Error() string {
+	msgs := make([]string, 0, len(m))
+	for _, err := range m {
+		msgs = append(msgs, err.Error())
+	}
+	return strings.Join(msgs, "; ")
+}
+
+// AllErrors returns a list of validation violation errors.
+func (m BucketStatsMultiError) AllErrors() []error { return m }
+
+// BucketStatsValidationError is the validation error returned by
+// BucketStats.Validate if the designated constraints aren't met.
+type BucketStatsValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e BucketStatsValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e BucketStatsValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e BucketStatsValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e BucketStatsValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e BucketStatsValidationError) ErrorName() string { return "BucketStatsValidationError" }
+
+// Error satisfies the builtin error interface
+func (e BucketStatsValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sBucketStats.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = BucketStatsValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = BucketStatsValidationError{}
+
+// Validate checks the field values on StorageStatsResponse with the rules
+// defined in the proto definition for this message. If any rules are
+// violated, the first error encountered is returned, or nil if there are no violations.
+func (m *StorageStatsResponse) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on StorageStatsResponse with the rules
+// defined in the proto definition for this message. If any rules are
+// violated, the result is a list of violation errors wrapped in
+// StorageStatsResponseMultiError, or nil if none found.
+func (m *StorageStatsResponse) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *StorageStatsResponse) validate(all bool) error {
+	if m == nil {
+		return nil
+	}
+
+	var errors []error
+
+	// no validation rules for FileCount
+
+	// no validation rules for TotalSize
+
+	// no validation rules for BucketCount
+
+	for idx, item := range m.GetBuckets() {
+		_, _ = idx, item
+
+		if all {
+			switch v := interface{}(item).(type) {
+			case interface{ ValidateAll() error }:
+				if err := v.ValidateAll(); err != nil {
+					errors = append(errors, StorageStatsResponseValidationError{
+						field:  fmt.Sprintf("Buckets[%v]", idx),
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			case interface{ Validate() error }:
+				if err := v.Validate(); err != nil {
+					errors = append(errors, StorageStatsResponseValidationError{
+						field:  fmt.Sprintf("Buckets[%v]", idx),
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			}
+		} else if v, ok := interface{}(item).(interface{ Validate() error }); ok {
+			if err := v.Validate(); err != nil {
+				return StorageStatsResponseValidationError{
+					field:  fmt.Sprintf("Buckets[%v]", idx),
+					reason: "embedded message failed validation",
+					cause:  err,
+				}
+			}
+		}
+
+	}
+
+	if len(errors) > 0 {
+		return StorageStatsResponseMultiError(errors)
+	}
+
+	return nil
+}
+
+// StorageStatsResponseMultiError is an error wrapping multiple validation
+// errors returned by StorageStatsResponse.ValidateAll() if the designated
+// constraints aren't met.
+type StorageStatsResponseMultiError []error
+
+// Error returns a concatenation of all the error messages it wraps.
+func (m StorageStatsResponseMultiError) Error() string {
+	msgs := make([]string, 0, len(m))
+	for _, err := range m {
+		msgs = append(msgs, err.Error())
+	}
+	return strings.Join(msgs, "; ")
+}
+
+// AllErrors returns a list of validation violation errors.
+func (m StorageStatsResponseMultiError) AllErrors() []error { return m }
+
+// StorageStatsResponseValidationError is the validation error returned by
+// StorageStatsResponse.Validate if the designated constraints aren't met.
+type StorageStatsResponseValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e StorageStatsResponseValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e StorageStatsResponseValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e StorageStatsResponseValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e StorageStatsResponseValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e StorageStatsResponseValidationError) ErrorName() string {
+	return "StorageStatsResponseValidationError"
+}
+
+// Error satisfies the builtin error interface
+func (e StorageStatsResponseValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sStorageStatsResponse.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = StorageStatsResponseValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = StorageStatsResponseValidationError{}

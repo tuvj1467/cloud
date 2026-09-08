@@ -49,9 +49,9 @@ var (
 		PrimaryKey: []*schema.Column{FilesColumns[0]},
 		Indexes: []*schema.Index{
 			{
-				Name:    "file_md5",
+				Name:    "file_user_id_md5",
 				Unique:  false,
-				Columns: []*schema.Column{FilesColumns[8]},
+				Columns: []*schema.Column{FilesColumns[11], FilesColumns[8]},
 			},
 			{
 				Name:    "file_bucket_id",

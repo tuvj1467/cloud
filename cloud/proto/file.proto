@@ -217,3 +217,25 @@ message DownloadByShareResponse {
   bytes content = 1; // 文件二进制（JSON 下为 base64）
   FileMeta file = 2; // 文件信息
 }
+
+// ==========================================
+// 15. 用量统计
+// ==========================================
+message GetStorageStatsRequest {
+}
+
+message BucketStats {
+  string bucket_id = 1;   // 桶 ID
+  string name = 2;        // 桶名
+  int64 file_count = 3;   // 桶内文件数
+  int64 total_size = 4;   // 桶内文件实际总大小（字节）
+  int64 used_size = 5;    // 桶记账已用容量
+  int64 size_limit = 6;   // 桶容量上限
+}
+
+message StorageStatsResponse {
+  int64 file_count = 1;   // 用户文件总数
+  int64 total_size = 2;   // 用户文件实际总大小（字节）
+  int64 bucket_count = 3; // 桶数量
+  repeated BucketStats buckets = 4;
+}
