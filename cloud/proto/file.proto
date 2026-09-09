@@ -239,3 +239,16 @@ message StorageStatsResponse {
   int64 bucket_count = 3; // 桶数量
   repeated BucketStats buckets = 4;
 }
+
+// ==========================================
+// 16. 预签名下载 URL
+// ==========================================
+message GetPresignedURLRequest {
+  string file_id = 1 [(validate.rules).string = {min_len: 1}];          // 文件 ID
+  optional int64 expire_seconds = 2 [(validate.rules).int64 = {gte: 60, lte: 604800}]; // 有效期（秒），默认 3600
+}
+
+message GetPresignedURLResponse {
+  string url = 1;       // 预签名下载 URL
+  int64 expire_at = 2;  // 过期时间（unix 秒）
+}

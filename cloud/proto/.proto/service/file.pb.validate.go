@@ -4162,3 +4162,237 @@ var _ interface {
 	Cause() error
 	ErrorName() string
 } = StorageStatsResponseValidationError{}
+
+// Validate checks the field values on GetPresignedURLRequest with the rules
+// defined in the proto definition for this message. If any rules are
+// violated, the first error encountered is returned, or nil if there are no violations.
+func (m *GetPresignedURLRequest) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on GetPresignedURLRequest with the rules
+// defined in the proto definition for this message. If any rules are
+// violated, the result is a list of violation errors wrapped in
+// GetPresignedURLRequestMultiError, or nil if none found.
+func (m *GetPresignedURLRequest) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *GetPresignedURLRequest) validate(all bool) error {
+	if m == nil {
+		return nil
+	}
+
+	var errors []error
+
+	if utf8.RuneCountInString(m.GetFileId()) < 1 {
+		err := GetPresignedURLRequestValidationError{
+			field:  "FileId",
+			reason: "value length must be at least 1 runes",
+		}
+		if !all {
+			return err
+		}
+		errors = append(errors, err)
+	}
+
+	if m.ExpireSeconds != nil {
+
+		if val := m.GetExpireSeconds(); val < 60 || val > 604800 {
+			err := GetPresignedURLRequestValidationError{
+				field:  "ExpireSeconds",
+				reason: "value must be inside range [60, 604800]",
+			}
+			if !all {
+				return err
+			}
+			errors = append(errors, err)
+		}
+
+	}
+
+	if len(errors) > 0 {
+		return GetPresignedURLRequestMultiError(errors)
+	}
+
+	return nil
+}
+
+// GetPresignedURLRequestMultiError is an error wrapping multiple validation
+// errors returned by GetPresignedURLRequest.ValidateAll() if the designated
+// constraints aren't met.
+type GetPresignedURLRequestMultiError []error
+
+// Error returns a concatenation of all the error messages it wraps.
+func (m GetPresignedURLRequestMultiError) Error() string {
+	msgs := make([]string, 0, len(m))
+	for _, err := range m {
+		msgs = append(msgs, err.Error())
+	}
+	return strings.Join(msgs, "; ")
+}
+
+// AllErrors returns a list of validation violation errors.
+func (m GetPresignedURLRequestMultiError) AllErrors() []error { return m }
+
+// GetPresignedURLRequestValidationError is the validation error returned by
+// GetPresignedURLRequest.Validate if the designated constraints aren't met.
+type GetPresignedURLRequestValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e GetPresignedURLRequestValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e GetPresignedURLRequestValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e GetPresignedURLRequestValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e GetPresignedURLRequestValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e GetPresignedURLRequestValidationError) ErrorName() string {
+	return "GetPresignedURLRequestValidationError"
+}
+
+// Error satisfies the builtin error interface
+func (e GetPresignedURLRequestValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sGetPresignedURLRequest.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = GetPresignedURLRequestValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = GetPresignedURLRequestValidationError{}
+
+// Validate checks the field values on GetPresignedURLResponse with the rules
+// defined in the proto definition for this message. If any rules are
+// violated, the first error encountered is returned, or nil if there are no violations.
+func (m *GetPresignedURLResponse) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on GetPresignedURLResponse with the
+// rules defined in the proto definition for this message. If any rules are
+// violated, the result is a list of violation errors wrapped in
+// GetPresignedURLResponseMultiError, or nil if none found.
+func (m *GetPresignedURLResponse) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *GetPresignedURLResponse) validate(all bool) error {
+	if m == nil {
+		return nil
+	}
+
+	var errors []error
+
+	// no validation rules for Url
+
+	// no validation rules for ExpireAt
+
+	if len(errors) > 0 {
+		return GetPresignedURLResponseMultiError(errors)
+	}
+
+	return nil
+}
+
+// GetPresignedURLResponseMultiError is an error wrapping multiple validation
+// errors returned by GetPresignedURLResponse.ValidateAll() if the designated
+// constraints aren't met.
+type GetPresignedURLResponseMultiError []error
+
+// Error returns a concatenation of all the error messages it wraps.
+func (m GetPresignedURLResponseMultiError) Error() string {
+	msgs := make([]string, 0, len(m))
+	for _, err := range m {
+		msgs = append(msgs, err.Error())
+	}
+	return strings.Join(msgs, "; ")
+}
+
+// AllErrors returns a list of validation violation errors.
+func (m GetPresignedURLResponseMultiError) AllErrors() []error { return m }
+
+// GetPresignedURLResponseValidationError is the validation error returned by
+// GetPresignedURLResponse.Validate if the designated constraints aren't met.
+type GetPresignedURLResponseValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e GetPresignedURLResponseValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e GetPresignedURLResponseValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e GetPresignedURLResponseValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e GetPresignedURLResponseValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e GetPresignedURLResponseValidationError) ErrorName() string {
+	return "GetPresignedURLResponseValidationError"
+}
+
+// Error satisfies the builtin error interface
+func (e GetPresignedURLResponseValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sGetPresignedURLResponse.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = GetPresignedURLResponseValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = GetPresignedURLResponseValidationError{}

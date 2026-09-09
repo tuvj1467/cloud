@@ -34,7 +34,7 @@ export const errText = (code, msg) => ({
   20001: '桶不存在', 20002: '桶名已存在', 20003: '无权操作该桶', 20004: '桶容量不足', 20005: '桶非空，删除需强制模式',
   30001: '文件不存在', 30002: '无权操作该文件', 30003: '同桶内文件名重复', 30010: '分片不完整', 30012: '文件超过大小上限',
   30020: '分享已过期', 30021: '分享访问次数已用尽', 30022: '分享不存在',
-  40002: '文件写入失败', 40003: '文件读取失败', 40006: '文件名/路径非法',
+  40002: '文件写入失败', 40003: '文件读取失败', 40005: '当前存储驱动不支持该操作', 40006: '文件名/路径非法',
   [-1]: '网络错误',
   16: '登录已失效，请重新登录',
 }[code] || msg || '操作失败');
@@ -68,6 +68,7 @@ export const abortMultipartUpload = (body) => request('/file/multipart/abort', {
 export const createShare = (body) => request('/file/share/create', { body });
 export const accessShare = (params) => request('/file/share/access', { method: 'GET', params });
 export const downloadByShare = (params) => request('/file/share/download', { method: 'GET', params });
+export const getPresignedURL = (params) => request('/file/presign', { method: 'GET', params });
 export const getStorageStats = (params) => request('/file/stats', { method: 'GET', params });
 
 // 下载：bytes 在 JSON 中为 base64，需解码

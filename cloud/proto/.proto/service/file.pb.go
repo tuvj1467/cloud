@@ -1936,6 +1936,113 @@ func (x *StorageStatsResponse) GetBuckets() []*BucketStats {
 	return nil
 }
 
+// ==========================================
+// 16. 预签名下载 URL
+// ==========================================
+type GetPresignedURLRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	FileId        string                 `protobuf:"bytes,1,opt,name=file_id,json=fileId,proto3" json:"file_id,omitempty"`                             // 文件 ID
+	ExpireSeconds *int64                 `protobuf:"varint,2,opt,name=expire_seconds,json=expireSeconds,proto3,oneof" json:"expire_seconds,omitempty"` // 有效期（秒），默认 3600
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetPresignedURLRequest) Reset() {
+	*x = GetPresignedURLRequest{}
+	mi := &file_file_proto_msgTypes[33]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetPresignedURLRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetPresignedURLRequest) ProtoMessage() {}
+
+func (x *GetPresignedURLRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_file_proto_msgTypes[33]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetPresignedURLRequest.ProtoReflect.Descriptor instead.
+func (*GetPresignedURLRequest) Descriptor() ([]byte, []int) {
+	return file_file_proto_rawDescGZIP(), []int{33}
+}
+
+func (x *GetPresignedURLRequest) GetFileId() string {
+	if x != nil {
+		return x.FileId
+	}
+	return ""
+}
+
+func (x *GetPresignedURLRequest) GetExpireSeconds() int64 {
+	if x != nil && x.ExpireSeconds != nil {
+		return *x.ExpireSeconds
+	}
+	return 0
+}
+
+type GetPresignedURLResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Url           string                 `protobuf:"bytes,1,opt,name=url,proto3" json:"url,omitempty"`                            // 预签名下载 URL
+	ExpireAt      int64                  `protobuf:"varint,2,opt,name=expire_at,json=expireAt,proto3" json:"expire_at,omitempty"` // 过期时间（unix 秒）
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetPresignedURLResponse) Reset() {
+	*x = GetPresignedURLResponse{}
+	mi := &file_file_proto_msgTypes[34]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetPresignedURLResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetPresignedURLResponse) ProtoMessage() {}
+
+func (x *GetPresignedURLResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_file_proto_msgTypes[34]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetPresignedURLResponse.ProtoReflect.Descriptor instead.
+func (*GetPresignedURLResponse) Descriptor() ([]byte, []int) {
+	return file_file_proto_rawDescGZIP(), []int{34}
+}
+
+func (x *GetPresignedURLResponse) GetUrl() string {
+	if x != nil {
+		return x.Url
+	}
+	return ""
+}
+
+func (x *GetPresignedURLResponse) GetExpireAt() int64 {
+	if x != nil {
+		return x.ExpireAt
+	}
+	return 0
+}
+
 var File_file_proto protoreflect.FileDescriptor
 
 const file_file_proto_rawDesc = "" +
@@ -2084,7 +2191,14 @@ const file_file_proto_rawDesc = "" +
 	"\n" +
 	"total_size\x18\x02 \x01(\x03R\ttotalSize\x12!\n" +
 	"\fbucket_count\x18\x03 \x01(\x03R\vbucketCount\x12.\n" +
-	"\abuckets\x18\x04 \x03(\v2\x14.storage.BucketStatsR\abucketsB\x10Z\x0e.proto/serviceb\x06proto3"
+	"\abuckets\x18\x04 \x03(\v2\x14.storage.BucketStatsR\abuckets\"\x86\x01\n" +
+	"\x16GetPresignedURLRequest\x12 \n" +
+	"\afile_id\x18\x01 \x01(\tB\a\xfaB\x04r\x02\x10\x01R\x06fileId\x127\n" +
+	"\x0eexpire_seconds\x18\x02 \x01(\x03B\v\xfaB\b\"\x06\x18\x80\xf5$(<H\x00R\rexpireSeconds\x88\x01\x01B\x11\n" +
+	"\x0f_expire_seconds\"H\n" +
+	"\x17GetPresignedURLResponse\x12\x10\n" +
+	"\x03url\x18\x01 \x01(\tR\x03url\x12\x1b\n" +
+	"\texpire_at\x18\x02 \x01(\x03R\bexpireAtB\x10Z\x0e.proto/serviceb\x06proto3"
 
 var (
 	file_file_proto_rawDescOnce sync.Once
@@ -2098,7 +2212,7 @@ func file_file_proto_rawDescGZIP() []byte {
 	return file_file_proto_rawDescData
 }
 
-var file_file_proto_msgTypes = make([]protoimpl.MessageInfo, 33)
+var file_file_proto_msgTypes = make([]protoimpl.MessageInfo, 35)
 var file_file_proto_goTypes = []any{
 	(*FileMeta)(nil),                        // 0: storage.FileMeta
 	(*FileInfoRequest)(nil),                 // 1: storage.FileInfoRequest
@@ -2133,6 +2247,8 @@ var file_file_proto_goTypes = []any{
 	(*GetStorageStatsRequest)(nil),          // 30: storage.GetStorageStatsRequest
 	(*BucketStats)(nil),                     // 31: storage.BucketStats
 	(*StorageStatsResponse)(nil),            // 32: storage.StorageStatsResponse
+	(*GetPresignedURLRequest)(nil),          // 33: storage.GetPresignedURLRequest
+	(*GetPresignedURLResponse)(nil),         // 34: storage.GetPresignedURLResponse
 }
 var file_file_proto_depIdxs = []int32{
 	0,  // 0: storage.FileInfoResponse.file:type_name -> storage.FileMeta
@@ -2159,13 +2275,14 @@ func file_file_proto_init() {
 	file_file_proto_msgTypes[3].OneofWrappers = []any{}
 	file_file_proto_msgTypes[16].OneofWrappers = []any{}
 	file_file_proto_msgTypes[24].OneofWrappers = []any{}
+	file_file_proto_msgTypes[33].OneofWrappers = []any{}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_file_proto_rawDesc), len(file_file_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   33,
+			NumMessages:   35,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

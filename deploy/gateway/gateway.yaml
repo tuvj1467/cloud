@@ -43,6 +43,9 @@ upstreams:
       - Method: POST
         Path: /file/copy
         RpcPath: storage.File/CopyFile
+      - Method: GET
+        Path: /file/presign
+        RpcPath: storage.File/GetPresignedURL
       # ===== 分片上传 =====
       - Method: POST
         Path: /file/multipart/init

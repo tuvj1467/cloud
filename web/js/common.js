@@ -18,3 +18,12 @@ export function toast(msg, type = 'info') {
 }
 export const confirmBox = (msg) => Promise.resolve(window.confirm(msg));
 export const fmtExpire = (days) => days ? String(days * 86400) : '';
+
+// saveBlob 触发浏览器保存（预签名直连与普通下载共用）
+export function saveBlob(blob, filename) {
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = filename || 'download';
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+}

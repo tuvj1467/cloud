@@ -108,6 +108,11 @@ func (s *FileServer) AccessShare(ctx context.Context, in *service.AccessShareReq
 }
 
 // 分享下载（匿名）
+func (s *FileServer) GetPresignedURL(ctx context.Context, in *service.GetPresignedURLRequest) (*service.Response, error) {
+	l := filelogic.NewGetPresignedURLLogic(ctx, s.svcCtx)
+	return l.GetPresignedURL(in)
+}
+
 func (s *FileServer) DownloadByShare(ctx context.Context, in *service.DownloadByShareRequest) (*service.Response, error) {
 	l := filelogic.NewDownloadByShareLogic(ctx, s.svcCtx)
 	return l.DownloadByShare(in)

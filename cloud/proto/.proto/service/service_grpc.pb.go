@@ -643,6 +643,7 @@ const (
 	File_AccessShare_FullMethodName             = "/storage.File/AccessShare"
 	File_DownloadByShare_FullMethodName         = "/storage.File/DownloadByShare"
 	File_GetStorageStats_FullMethodName         = "/storage.File/GetStorageStats"
+	File_GetPresignedURL_FullMethodName         = "/storage.File/GetPresignedURL"
 )
 
 // FileClient is the client API for File service.
@@ -686,6 +687,8 @@ type FileClient interface {
 	DownloadByShare(ctx context.Context, in *DownloadByShareRequest, opts ...grpc.CallOption) (*Response, error)
 	// 用量统计（需登录）
 	GetStorageStats(ctx context.Context, in *GetStorageStatsRequest, opts ...grpc.CallOption) (*Response, error)
+	// 获取预签名下载 URL（需登录；本地驱动不支持返回 40005）
+	GetPresignedURL(ctx context.Context, in *GetPresignedURLRequest, opts ...grpc.CallOption) (*Response, error)
 }
 
 type fileClient struct {
@@ -856,6 +859,16 @@ func (c *fileClient) GetStorageStats(ctx context.Context, in *GetStorageStatsReq
 	return out, nil
 }
 
+func (c *fileClient) GetPresignedURL(ctx context.Context, in *GetPresignedURLRequest, opts ...grpc.CallOption) (*Response, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(Response)
+	err := c.cc.Invoke(ctx, File_GetPresignedURL_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // FileServer is the server API for File service.
 // All implementations must embed UnimplementedFileServer
 // for forward compatibility.
@@ -897,6 +910,8 @@ type FileServer interface {
 	DownloadByShare(context.Context, *DownloadByShareRequest) (*Response, error)
 	// 用量统计（需登录）
 	GetStorageStats(context.Context, *GetStorageStatsRequest) (*Response, error)
+	// 获取预签名下载 URL（需登录；本地驱动不支持返回 40005）
+	GetPresignedURL(context.Context, *GetPresignedURLRequest) (*Response, error)
 	mustEmbedUnimplementedFileServer()
 }
 
@@ -954,6 +969,9 @@ func (UnimplementedFileServer) DownloadByShare(context.Context, *DownloadByShare
 }
 func (UnimplementedFileServer) GetStorageStats(context.Context, *GetStorageStatsRequest) (*Response, error) {
 	return nil, status.Error(codes.Unimplemented, "method GetStorageStats not implemented")
+}
+func (UnimplementedFileServer) GetPresignedURL(context.Context, *GetPresignedURLRequest) (*Response, error) {
+	return nil, status.Error(codes.Unimplemented, "method GetPresignedURL not implemented")
 }
 func (UnimplementedFileServer) mustEmbedUnimplementedFileServer() {}
 func (UnimplementedFileServer) testEmbeddedByValue()              {}
@@ -1264,6 +1282,24 @@ func _File_GetStorageStats_Handler(srv interface{}, ctx context.Context, dec fun
 	return interceptor(ctx, in, info, handler)
 }
 
+func _File_GetPresignedURL_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetPresignedURLRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(FileServer).GetPresignedURL(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: File_GetPresignedURL_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(FileServer).GetPresignedURL(ctx, req.(*GetPresignedURLRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // File_ServiceDesc is the grpc.ServiceDesc for File service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -1334,6 +1370,10 @@ var File_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetStorageStats",
 			Handler:    _File_GetStorageStats_Handler,
+		},
+		{
+			MethodName: "GetPresignedURL",
+			Handler:    _File_GetPresignedURL_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

@@ -83,4 +83,7 @@ service File {
 
   // 用量统计（需登录）
   rpc GetStorageStats(GetStorageStatsRequest) returns (Response);
+
+  // 获取预签名下载 URL（需登录；本地驱动不支持返回 40005）
+  rpc GetPresignedURL(GetPresignedURLRequest) returns (Response);
 }
