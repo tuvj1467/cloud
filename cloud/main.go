@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"onecloud/internal/config"
 	"onecloud/internal/middleware"
+	"onecloud/internal/pkg/cleanup"
 	"onecloud/internal/pkg/migrate"
 	"onecloud/internal/pkg/snowId"
 	bucket "onecloud/internal/server/bucket"
@@ -61,9 +62,10 @@ func main() {
 		m_service.RegisterUserServer(grpcServer, user.NewUserServer(ctx))
 		m_service.RegisterBucketServer(grpcServer, bucket.NewBucketServer(ctx))
 
-		//if c.Mode == repository.DevMode || c.Mode == repository.TestMode {
-		reflection.Register(grpcServer)
-		//}
+		// gRPC reflection 仅 dev 模式开启（生产面收敛：不对外暴露服务描述）
+		if c.Mode == "dev" {
+			reflection.Register(grpcServer)
+		}
 
 	})
 	defer s.Stop()
@@ -71,10 +73,15 @@ func main() {
 	// 添加 JWT 拦截器
 	s.AddUnaryInterceptors(middleware.JwtInterceptor())
 
+	// 分片上传遗留清理：孤儿 .tmp 目录 + 过期 pending 分片记录（启动 30s 后首扫，每 12h 一次）
+	cleanupCtx, cleanupCancel := context.WithCancel(context.Background())
+	defer cleanupCancel()
+	cleanup.Start(cleanupCtx, ctx.EntClient, c.Storage.Local.RootDir)
+
 	// 放宽 gRPC 单消息接收上限至 110MB：上传/分片（含 JSON base64 膨胀）与大文件下载
 	// 需要超过默认 4MB；与网关 MaxBytes、业务 MaxUploadSize（100MB）对齐
-	s.AddOptions(grpc.MaxRecvMsgSize(110*1024*1024))
-	s.AddOptions(grpc.MaxSendMsgSize(110*1024*1024))
+	s.AddOptions(grpc.MaxRecvMsgSize(110 * 1024 * 1024))
+	s.AddOptions(grpc.MaxSendMsgSize(110 * 1024 * 1024))
 
 	fmt.Printf("Starting rpc server at %s...\n", c.ListenOn)
 	s.Start()

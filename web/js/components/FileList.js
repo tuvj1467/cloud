@@ -4,7 +4,7 @@
 // Vue 为全量版全局变量（index.html 先以非 module 方式加载），模块内直接解构
 const { ref, computed, watch, onMounted, onUnmounted } = Vue;
 import {
-  getFileList, getBucketFileList, renameFile, deleteFile, copyFile, downloadBlob, getStorageStats,
+  getFileList, getBucketFileList, renameFile, deleteFile, copyFile, downloadBlob, downloadData, getStorageStats,
 } from '../api.js';
 import { store } from '../store.js';
 import { formatSize, formatTime, fileIcon, toast, confirmBox } from '../common.js';
@@ -29,6 +29,11 @@ if (!document.getElementById('p8-filelist-style')) {
     .p8-actions button:hover:not(:disabled) { border-color:#667eea; color:#667eea; }
     .p8-actions button.p8-danger:hover:not(:disabled) { border-color:#f56c6c; color:#f56c6c; }
     .p8-actions button:disabled { opacity:.45; cursor:not-allowed; }
+    .p8-preview-mask { position:fixed; inset:0; background:rgba(0,0,0,.6); display:flex; align-items:center; justify-content:center; z-index:1000; }
+    .p8-preview-body { background:#fff; border-radius:12px; padding:16px; max-width:86vw; max-height:88vh; display:flex; flex-direction:column; gap:10px; }
+    .p8-preview-body img { max-width:80vw; max-height:70vh; object-fit:contain; border-radius:8px; }
+    .p8-preview-title { display:flex; justify-content:space-between; align-items:center; font-size:14px; color:#444; }
+    .p8-preview-close { border:none; background:none; font-size:18px; cursor:pointer; color:#888; }
     .p8-pagination { display:flex; justify-content:space-between; align-items:center; margin-top:20px;
       color:#666; font-size:14px; }
     .p8-page-btns { display:flex; gap:8px; }
@@ -142,6 +147,30 @@ export const FileList = {
     }
 
     // ===== 行操作 =====
+    // ===== 图片预览 =====
+    const IMAGE_EXTS = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp'];
+    const IMAGE_MIME = { jpg: 'image/jpeg', jpeg: 'image/jpeg', png: 'image/png', gif: 'image/gif', webp: 'image/webp', bmp: 'image/bmp' };
+    const preview = ref({ show: false, url: '', name: '' });
+
+    function isImage(f) {
+      return IMAGE_EXTS.includes(extOf(f).toLowerCase());
+    }
+
+    async function openPreview(f) {
+      if ((f.size || 0) > 20 * 1024 * 1024) return toast('图片超过 20MB，不支持预览', 'error');
+      try {
+        const data = await downloadData({ file_id: f.fileId || f.file_id });
+        const mime = IMAGE_MIME[extOf(f).toLowerCase()] || 'image/jpeg';
+        preview.value = { show: true, url: `data:${mime};base64,${data.content}`, name: f.name };
+      } catch (e) {
+        toast(e.message, 'error');
+      }
+    }
+
+    function closePreview() {
+      preview.value = { show: false, url: '', name: '' };
+    }
+
     async function doDownload(f) {
       try {
         await downloadBlob('/file/download', { file_id: f.fileId || f.file_id }, f.name);
@@ -218,7 +247,7 @@ export const FileList = {
     return {
       store, keyword, displayList, totalPages, hasBuckets, stats,
       formatSize, formatTime, fileIcon, extOf,
-      doDownload, doRename, openCopy, copyModal, targetBuckets, doCopy, doDelete,
+      doDownload, isImage, openPreview, closePreview, preview, doRename, openCopy, copyModal, targetBuckets, doCopy, doDelete,
       bucketIdOf,
     };
   },
@@ -276,6 +305,7 @@ export const FileList = {
             <span class="p8-item-meta">{{ formatSize(f.size) }}</span>
             <span class="p8-item-meta">{{ formatTime(f.createdAt || f.created_at) }}</span>
             <div class="p8-actions">
+              <button v-if="isImage(f)" @click="openPreview(f)">预览</button>
               <button @click="doDownload(f)">下载</button>
               <button @click="doRename(f)">重命名</button>
               <button @click="openCopy(f)">复制</button>
@@ -322,6 +352,17 @@ export const FileList = {
             <button class="btn btn-secondary" @click="copyModal.show=false">取消</button>
             <button class="btn btn-primary" style="width:auto;flex:1" @click="doCopy">确认复制</button>
           </div>
+        </div>
+      </div>
+
+      <!-- 图片预览弹层 -->
+      <div v-if="preview.show" class="p8-preview-mask" @click.self="closePreview">
+        <div class="p8-preview-body">
+          <div class="p8-preview-title">
+            <span>{{ preview.name }}</span>
+            <button class="p8-preview-close" @click="closePreview">✕</button>
+          </div>
+          <img :src="preview.url" :alt="preview.name">
         </div>
       </div>
     </div>

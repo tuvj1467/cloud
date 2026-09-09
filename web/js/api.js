@@ -71,6 +71,9 @@ export const downloadByShare = (params) => request('/file/share/download', { met
 export const getStorageStats = (params) => request('/file/stats', { method: 'GET', params });
 
 // 下载：bytes 在 JSON 中为 base64，需解码
+// 下载数据：返回原始响应 data（content 为 base64、file 元信息），供预览等场景使用
+export const downloadData = (params) => request('/file/download', { method: 'GET', params });
+
 export async function downloadBlob(url, params, filename) {
   const data = await request(url, { method: 'GET', params });
   const bin = atob(data.content);

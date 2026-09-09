@@ -33,10 +33,10 @@ func (l *LoginByAccountLogic) validate(in *service.LoginByAccountReq) error {
 		var vErr service.LoginByAccountReqValidationError
 		if errors.As(err, &vErr) {
 			switch vErr.Field() {
-			case "account":
-				return errors.New("账号长度至少为1")
-			case "password":
-				return errors.New("密码为 6 - 12 位")
+			case "Account":
+				return errors.New("账号长度至少为 1")
+			case "Password":
+				return errors.New("密码长度为 6-20 位")
 			}
 		}
 		return errors.New("参数校验失败")

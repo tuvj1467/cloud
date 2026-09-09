@@ -35,7 +35,7 @@ func NewServiceContext(c config.Config) *ServiceContext {
 
 	// 生产模式禁止使用演示默认密钥（空值或演示值直接拒绝启动）
 	if c.Mode == "prod" && (c.JWT.Secret == "" || c.JWT.Secret == "www.topgoer.com") {
-		panic("JWT Secret 未配置或仍为演示默认值，拒绝在生产模式启动")
+		panic(fmt.Errorf("JWT Secret 未配置或仍为演示默认值，拒绝在生产模式启动"))
 	}
 
 	// 初始化 JWT 配置（密钥、过期时间、签发者）
