@@ -39,7 +39,9 @@ type File struct {
 	// 文件所属桶ID
 	BucketID string `json:"bucket_id,omitempty"`
 	// 文件所属用户ID
-	UserID       string `json:"user_id,omitempty"`
+	UserID string `json:"user_id,omitempty"`
+	// 软删除时间（NULL=正常；回收站语义）
+	DeletedAt    *time.Time `json:"deleted_at,omitempty"`
 	selectValues sql.SelectValues
 }
 
@@ -52,7 +54,7 @@ func (*File) scanValues(columns []string) ([]any, error) {
 			values[i] = new(sql.NullInt64)
 		case file.FieldID, file.FieldName, file.FieldExt, file.FieldPath, file.FieldMd5, file.FieldContentType, file.FieldBucketID, file.FieldUserID:
 			values[i] = new(sql.NullString)
-		case file.FieldCreatedAt, file.FieldUpdatedAt:
+		case file.FieldCreatedAt, file.FieldUpdatedAt, file.FieldDeletedAt:
 			values[i] = new(sql.NullTime)
 		default:
 			values[i] = new(sql.UnknownType)
@@ -141,6 +143,13 @@ func (_m *File) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				_m.UserID = value.String
 			}
+		case file.FieldDeletedAt:
+			if value, ok := values[i].(*sql.NullTime); !ok {
+				return fmt.Errorf("unexpected type %T for field deleted_at", values[i])
+			} else if value.Valid {
+				_m.DeletedAt = new(time.Time)
+				*_m.DeletedAt = value.Time
+			}
 		default:
 			_m.selectValues.Set(columns[i], values[i])
 		}
@@ -209,6 +218,11 @@ func (_m *File) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("user_id=")
 	builder.WriteString(_m.UserID)
+	builder.WriteString(", ")
+	if v := _m.DeletedAt; v != nil {
+		builder.WriteString("deleted_at=")
+		builder.WriteString(v.Format(time.ANSIC))
+	}
 	builder.WriteByte(')')
 	return builder.String()
 }

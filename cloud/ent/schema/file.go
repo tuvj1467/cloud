@@ -46,6 +46,11 @@ func (File) Fields() []ent.Field {
 			NotEmpty().
 			Comment("文件所属用户ID").
 			Annotations(entsql.Annotation{WithComments: &withComments}),
+		field.Time("deleted_at").
+			Optional().
+			Nillable().
+			Comment("软删除时间（NULL=正常；回收站语义）").
+			Annotations(entsql.Annotation{WithComments: &withComments}),
 	}
 }
 

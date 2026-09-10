@@ -118,6 +118,20 @@ func (_c *FileCreate) SetUserID(v string) *FileCreate {
 	return _c
 }
 
+// SetDeletedAt sets the "deleted_at" field.
+func (_c *FileCreate) SetDeletedAt(v time.Time) *FileCreate {
+	_c.mutation.SetDeletedAt(v)
+	return _c
+}
+
+// SetNillableDeletedAt sets the "deleted_at" field if the given value is not nil.
+func (_c *FileCreate) SetNillableDeletedAt(v *time.Time) *FileCreate {
+	if v != nil {
+		_c.SetDeletedAt(*v)
+	}
+	return _c
+}
+
 // SetID sets the "id" field.
 func (_c *FileCreate) SetID(v string) *FileCreate {
 	_c.mutation.SetID(v)
@@ -288,6 +302,10 @@ func (_c *FileCreate) createSpec() (*File, *sqlgraph.CreateSpec) {
 	if value, ok := _c.mutation.UserID(); ok {
 		_spec.SetField(file.FieldUserID, field.TypeString, value)
 		_node.UserID = value
+	}
+	if value, ok := _c.mutation.DeletedAt(); ok {
+		_spec.SetField(file.FieldDeletedAt, field.TypeTime, value)
+		_node.DeletedAt = &value
 	}
 	return _node, _spec
 }

@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"strings"
+	"time"
 
 	"onecloud/ent"
 	"onecloud/ent/bucket"
@@ -49,14 +50,15 @@ func (l *FileRepository) GetInfo(ctx context.Context, id string) (*ent.File, err
 
 // GetByMD5 根据 user_id 与 md5 查询文件（秒传检查）
 func (l *FileRepository) GetByMD5(ctx context.Context, userID, md5 string) (*ent.File, error) {
+	// 秒传兜底查询不得命中回收站中的文件
 	return l.client.File.Query().
-		Where(file.UserIDEQ(userID), file.Md5EQ(md5)).
+		Where(file.UserIDEQ(userID), file.Md5EQ(md5), file.DeletedAtIsNil()).
 		First(ctx)
 }
 
 // GetAllFileList 获取 userId 下所有文件元信息
 func (l *FileRepository) GetAllFileList(ctx context.Context, userId string) ([]*ent.File, error) {
-	res, err := l.client.File.Query().Where(file.UserIDEQ(userId)).All(ctx)
+	res, err := l.client.File.Query().Where(file.UserIDEQ(userId), file.DeletedAtIsNil()).All(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -76,8 +78,8 @@ func (l *FileRepository) GetPageFileList(ctx context.Context, userId string, in 
 	}
 	offset := (page - 1) * pageSize
 
-	// 基础查询条件：按用户隔离 + 可选文件名模糊过滤
-	basePredicates := []predicate.File{file.UserIDEQ(userId)}
+	// 基础查询条件：按用户隔离 + 排除回收站 + 可选文件名模糊过滤
+	basePredicates := []predicate.File{file.UserIDEQ(userId), file.DeletedAtIsNil()}
 	if in.NameKeyword != nil && *in.NameKeyword != "" {
 		basePredicates = append(basePredicates, file.NameContains(*in.NameKeyword))
 	}
@@ -141,6 +143,7 @@ func (l *FileRepository) GetBucketFileList(ctx context.Context, userId, bucketId
 	basePredicates := []predicate.File{
 		file.UserIDEQ(userId),
 		file.BucketIDEQ(bucketId),
+		file.DeletedAtIsNil(),
 	}
 	if in.NameKeyword != nil && *in.NameKeyword != "" {
 		basePredicates = append(basePredicates, file.NameContains(*in.NameKeyword))
@@ -197,6 +200,16 @@ func (l *FileRepository) Rename(ctx context.Context, id, newName string) (*ent.F
 // Delete 删除文件记录
 func (l *FileRepository) Delete(ctx context.Context, id string) error {
 	return l.client.File.DeleteOneID(id).Exec(ctx)
+}
+
+// SoftDelete 软删除：标记 deleted_at（回收站语义）
+// 配额不归还、物理文件不删除——恢复即还原，彻底删除（Purge）时才执行归还与物理清理
+func (l *FileRepository) SoftDelete(ctx context.Context, id string) error {
+	now := time.Now()
+	return l.client.File.UpdateOneID(id).
+		SetDeletedAt(now).
+		SetUpdatedAt(now).
+		Exec(ctx)
 }
 
 // UpdateSize 更新文件大小（分片合并后使用）

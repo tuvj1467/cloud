@@ -108,7 +108,7 @@ func (l *UploadFileLogic) UploadFile(in *service.UploadFileRequest) (*service.Re
 	md5Cache := cache.NewMD5Cache(l.svcCtx.Redis)
 	if cachedFileID, _ := md5Cache.Get(l.ctx, userID, md5); cachedFileID != "" {
 		// 命中 Redis，校验文件仍存在
-		if exist, _ := fileRepo.GetInfo(l.ctx, cachedFileID); exist != nil {
+		if exist, _ := fileRepo.GetInfo(l.ctx, cachedFileID); exist != nil && exist.DeletedAt == nil {
 			l.Infof("instant hit (redis) user=%s md5=%s file=%s", userID, md5, cachedFileID)
 			return response.Success(&service.UploadFileResponse{
 				File:    toFileMeta(exist),

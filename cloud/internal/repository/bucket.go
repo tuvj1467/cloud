@@ -125,7 +125,7 @@ func (r *BucketRepository) Delete(ctx context.Context, id string) error {
 
 // CountFiles 统计桶内文件数量
 func (r *BucketRepository) CountFiles(ctx context.Context, bucketID string) (int, error) {
-	return r.client.File.Query().Where(file.BucketIDEQ(bucketID)).Count(ctx)
+	return r.client.File.Query().Where(file.BucketIDEQ(bucketID), file.DeletedAtIsNil()).Count(ctx)
 }
 
 // CountFilesGroupByBucket 单条 GROUP BY 聚合用户各桶的文件数（bucket_id → count）
@@ -135,7 +135,7 @@ func (r *BucketRepository) CountFilesGroupByBucket(ctx context.Context, userID s
 		Count    int64  `json:"count"`
 	}
 	err := r.client.File.Query().
-		Where(file.UserIDEQ(userID)).
+		Where(file.UserIDEQ(userID), file.DeletedAtIsNil()).
 		GroupBy(file.FieldBucketID).
 		Aggregate(ent.Count()).
 		Scan(ctx, &rows)

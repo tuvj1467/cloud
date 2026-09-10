@@ -194,6 +194,26 @@ func (_u *FileUpdate) SetNillableUserID(v *string) *FileUpdate {
 	return _u
 }
 
+// SetDeletedAt sets the "deleted_at" field.
+func (_u *FileUpdate) SetDeletedAt(v time.Time) *FileUpdate {
+	_u.mutation.SetDeletedAt(v)
+	return _u
+}
+
+// SetNillableDeletedAt sets the "deleted_at" field if the given value is not nil.
+func (_u *FileUpdate) SetNillableDeletedAt(v *time.Time) *FileUpdate {
+	if v != nil {
+		_u.SetDeletedAt(*v)
+	}
+	return _u
+}
+
+// ClearDeletedAt clears the value of the "deleted_at" field.
+func (_u *FileUpdate) ClearDeletedAt() *FileUpdate {
+	_u.mutation.ClearDeletedAt()
+	return _u
+}
+
 // Mutation returns the FileMutation object of the builder.
 func (_u *FileUpdate) Mutation() *FileMutation {
 	return _u.mutation
@@ -298,6 +318,12 @@ func (_u *FileUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	}
 	if value, ok := _u.mutation.UserID(); ok {
 		_spec.SetField(file.FieldUserID, field.TypeString, value)
+	}
+	if value, ok := _u.mutation.DeletedAt(); ok {
+		_spec.SetField(file.FieldDeletedAt, field.TypeTime, value)
+	}
+	if _u.mutation.DeletedAtCleared() {
+		_spec.ClearField(file.FieldDeletedAt, field.TypeTime)
 	}
 	if _node, err = sqlgraph.UpdateNodes(ctx, _u.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
@@ -485,6 +511,26 @@ func (_u *FileUpdateOne) SetNillableUserID(v *string) *FileUpdateOne {
 	return _u
 }
 
+// SetDeletedAt sets the "deleted_at" field.
+func (_u *FileUpdateOne) SetDeletedAt(v time.Time) *FileUpdateOne {
+	_u.mutation.SetDeletedAt(v)
+	return _u
+}
+
+// SetNillableDeletedAt sets the "deleted_at" field if the given value is not nil.
+func (_u *FileUpdateOne) SetNillableDeletedAt(v *time.Time) *FileUpdateOne {
+	if v != nil {
+		_u.SetDeletedAt(*v)
+	}
+	return _u
+}
+
+// ClearDeletedAt clears the value of the "deleted_at" field.
+func (_u *FileUpdateOne) ClearDeletedAt() *FileUpdateOne {
+	_u.mutation.ClearDeletedAt()
+	return _u
+}
+
 // Mutation returns the FileMutation object of the builder.
 func (_u *FileUpdateOne) Mutation() *FileMutation {
 	return _u.mutation
@@ -619,6 +665,12 @@ func (_u *FileUpdateOne) sqlSave(ctx context.Context) (_node *File, err error) {
 	}
 	if value, ok := _u.mutation.UserID(); ok {
 		_spec.SetField(file.FieldUserID, field.TypeString, value)
+	}
+	if value, ok := _u.mutation.DeletedAt(); ok {
+		_spec.SetField(file.FieldDeletedAt, field.TypeTime, value)
+	}
+	if _u.mutation.DeletedAtCleared() {
+		_spec.ClearField(file.FieldDeletedAt, field.TypeTime)
 	}
 	_node = &File{config: _u.config}
 	_spec.Assign = _node.assignValues

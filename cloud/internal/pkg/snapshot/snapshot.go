@@ -121,7 +121,7 @@ func SnapshotForDate(ctx context.Context, client *ent.Client, snowflake *snowId.
 		Sum    int64  `json:"sum"`
 	}
 	err := client.File.Query().
-		Where(file.CreatedAtLT(end)).
+		Where(file.CreatedAtLT(end), file.DeletedAtIsNil()).
 		GroupBy(file.FieldUserID).
 		Aggregate(ent.Count(), ent.Sum(file.FieldSize)).
 		Scan(ctx, &rows)
@@ -190,7 +190,7 @@ func Trend(ctx context.Context, client *ent.Client, userID string, days int) ([]
 		Sum    int64  `json:"sum"`
 	}
 	err = client.File.Query().
-		Where(file.UserIDEQ(userID)).
+		Where(file.UserIDEQ(userID), file.DeletedAtIsNil()).
 		GroupBy(file.FieldUserID).
 		Aggregate(ent.Count(), ent.Sum(file.FieldSize)).
 		Scan(ctx, &live)

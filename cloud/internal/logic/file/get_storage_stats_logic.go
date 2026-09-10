@@ -45,7 +45,7 @@ func (l *GetStorageStatsLogic) GetStorageStats(in *service.GetStorageStatsReques
 	client := l.svcCtx.EntClient
 
 	// 1. 用户级聚合：文件总数 + 实际总大小
-	fileCount, err := client.File.Query().Where(file.UserIDEQ(userID)).Count(l.ctx)
+	fileCount, err := client.File.Query().Where(file.UserIDEQ(userID), file.DeletedAtIsNil()).Count(l.ctx)
 	if err != nil {
 		return response.Err(errors.New("统计文件数失败: " + err.Error()))
 	}
@@ -53,7 +53,7 @@ func (l *GetStorageStatsLogic) GetStorageStats(in *service.GetStorageStatsReques
 	var totalSize int64
 	if fileCount > 0 { // 空用户跳过 Sum，规避 SUM()=NULL
 		var sizes []int64
-		if err := client.File.Query().Where(file.UserIDEQ(userID)).
+		if err := client.File.Query().Where(file.UserIDEQ(userID), file.DeletedAtIsNil()).
 			Aggregate(ent.Sum(file.FieldSize)).Scan(l.ctx, &sizes); err != nil {
 			return response.Err(errors.New("统计文件大小失败: " + err.Error()))
 		}
@@ -77,7 +77,7 @@ func (l *GetStorageStatsLogic) GetStorageStats(in *service.GetStorageStatsReques
 			SizeLimit: b.SizeLimit,
 		}
 
-		cnt, err := client.File.Query().Where(file.UserIDEQ(userID), file.BucketIDEQ(b.ID)).Count(l.ctx)
+		cnt, err := client.File.Query().Where(file.UserIDEQ(userID), file.BucketIDEQ(b.ID), file.DeletedAtIsNil()).Count(l.ctx)
 		if err != nil {
 			return response.Err(errors.New("统计桶内文件数失败: " + err.Error()))
 		}

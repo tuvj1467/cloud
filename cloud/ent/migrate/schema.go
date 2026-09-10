@@ -41,6 +41,7 @@ var (
 		{Name: "content_type", Type: field.TypeString, Comment: "文件类型（如 image/jpeg）"},
 		{Name: "bucket_id", Type: field.TypeString, Comment: "文件所属桶ID"},
 		{Name: "user_id", Type: field.TypeString, Comment: "文件所属用户ID"},
+		{Name: "deleted_at", Type: field.TypeTime, Nullable: true, Comment: "软删除时间（NULL=正常；回收站语义）"},
 	}
 	// FilesTable holds the schema information for the "files" table.
 	FilesTable = &schema.Table{
