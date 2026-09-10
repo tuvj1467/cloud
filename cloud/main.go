@@ -78,7 +78,7 @@ func main() {
 	// 分片上传遗留清理：孤儿 .tmp 目录 + 过期 pending 分片记录（启动 30s 后首扫，每 12h 一次）
 	cleanupCtx, cleanupCancel := context.WithCancel(context.Background())
 	defer cleanupCancel()
-	cleanup.Start(cleanupCtx, ctx.EntClient, c.Storage.Local.RootDir)
+	cleanup.Start(cleanupCtx, ctx.EntClient, c.Storage.Local.RootDir, ctx.Storage, ctx.Redis)
 
 	// 用量快照：启动 20s 后历史补齐 + 每日 00:05 聚合（趋势报表数据源）
 	snapshot.Start(cleanupCtx, ctx.EntClient, ctx.Snowflake)

@@ -4,7 +4,7 @@
 // Vue 为全量版全局变量（index.html 先以非 module 方式加载），模块内直接解构
 const { ref, computed, watch, onMounted, onUnmounted } = Vue;
 import {
-  getFileList, getBucketFileList, renameFile, deleteFile, copyFile, downloadBlob, downloadData, getStorageStats, getPresignedURL, getMyShares, revokeShare, streamDownload, getThumb, getStorageTrend,
+  getFileList, getBucketFileList, renameFile, deleteFile, copyFile, downloadBlob, downloadData, getStorageStats, getPresignedURL, getMyShares, revokeShare, streamDownload, getThumb, getStorageTrend, listDeletedFiles, restoreFiles, purgeFiles,
 } from '../api.js';
 import { store } from '../store.js';
 import { formatSize, formatTime, fileIcon, toast, confirmBox, saveBlob } from '../common.js';
@@ -44,6 +44,8 @@ if (!document.getElementById('p8-filelist-style')) {
     .p8-trend-bar { width:100%; max-width:26px; background:linear-gradient(180deg,#667eea,#764ba2); border-radius:4px 4px 0 0; min-height:2px; }
     .p8-trend-col:hover .p8-trend-bar { background:#5563d8; }
     .p8-trend-tip { font-size:11px; color:#666; margin-top:4px; transform:rotate(-45deg); white-space:nowrap; }
+    .p8-recycle-restore { border:none; background:none; color:#667eea; cursor:pointer; padding:2px 6px; }
+    .p8-recycle-purge { border:none; background:none; color:#e74c3c; cursor:pointer; padding:2px 6px; }
     .p8-pagination { display:flex; justify-content:space-between; align-items:center; margin-top:20px;
       color:#666; font-size:14px; }
     .p8-page-btns { display:flex; gap:8px; }
@@ -183,6 +185,49 @@ export const FileList = {
 
     function closePreview() {
       preview.value = { show: false, url: '', name: '' };
+    }
+
+    // ===== 回收站 =====
+    const recycle = ref({ show: false, list: [], total: 0, page: 1, pageSize: 10, loading: false });
+
+    async function loadRecycle() {
+      recycle.value.loading = true;
+      try {
+        const data = await listDeletedFiles({ page: recycle.value.page, page_size: recycle.value.pageSize });
+        recycle.value.list = data.files || [];
+        recycle.value.total = data.total || 0;
+      } catch (e) {
+        toast(e.message, 'error');
+      } finally {
+        recycle.value.loading = false;
+      }
+    }
+
+    function openRecycle() {
+      recycle.value.page = 1;
+      recycle.value.show = true;
+      loadRecycle();
+    }
+
+    async function doRestore(f) {
+      try {
+        const r = await restoreFiles({ fileIds: [f.fileId || f.file_id] });
+        toast(`已恢复 ${r.restoredCount} 个文件`, 'success');
+        loadRecycle();
+      } catch (e) {
+        toast(e.message, 'error');
+      }
+    }
+
+    async function doPurge(f) {
+      if (!window.confirm(`彻底删除「${f.name}」？此操作不可恢复，容量将归还`)) return;
+      try {
+        const r = await purgeFiles({ fileIds: [f.fileId || f.file_id] });
+        toast(`已彻底删除 ${r.purgedCount} 个文件`, 'success');
+        loadRecycle();
+      } catch (e) {
+        toast(e.message, 'error');
+      }
     }
 
     // ===== 用量趋势 =====
@@ -350,7 +395,7 @@ export const FileList = {
     return {
       store, keyword, displayList, totalPages, hasBuckets, stats,
       formatSize, formatTime, fileIcon, extOf,
-      doDownload, isImage, openPreview, closePreview, preview, myShares, openMyShares, loadMyShares, doRevoke, thumbs, loadThumbs, trend, openTrend, maxTrendSize, doRename, openCopy, copyModal, targetBuckets, doCopy, doDelete,
+      doDownload, isImage, openPreview, closePreview, preview, myShares, openMyShares, loadMyShares, doRevoke, thumbs, loadThumbs, trend, openTrend, maxTrendSize, recycle, openRecycle, loadRecycle, doRestore, doPurge, doRename, openCopy, copyModal, targetBuckets, doCopy, doDelete,
       bucketIdOf,
     };
   },
@@ -360,6 +405,7 @@ export const FileList = {
         <h2>我的文件</h2>
         <button class="btn btn-secondary" @click="openMyShares">我的分享</button>
         <button class="btn btn-secondary" style="margin-left:8px" @click="openTrend">用量趋势</button>
+        <button class="btn btn-secondary" style="margin-left:8px" @click="openRecycle">回收站</button>
       </div>
 
       <!-- 统计卡（P10）：用量概览，加载失败显示占位 -->
@@ -511,6 +557,33 @@ export const FileList = {
           </template>
           <div class="modal-actions">
             <button class="btn btn-primary" @click="trend.show=false">关闭</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- 回收站弹层 -->
+      <div v-if="recycle.show" class="modal" @click.self="recycle.show=false">
+        <div class="modal-content" style="max-width:720px;width:92%">
+          <h3>回收站</h3>
+          <div v-if="recycle.loading" class="empty-state">加载中…</div>
+          <div v-else-if="!recycle.list.length" class="empty-state">回收站是空的</div>
+          <table v-else class="p8-share-table">
+            <thead><tr><th>文件</th><th>大小</th><th>删除时间</th><th></th></tr></thead>
+            <tbody>
+              <tr v-for="f in recycle.list" :key="f.fileId">
+                <td>{{ f.name }}</td>
+                <td>{{ formatSize(Number(f.size)||0) }}</td>
+                <td>{{ f.deletedAt || '-' }}</td>
+                <td>
+                  <button class="p8-recycle-restore" @click="doRestore(f)">恢复</button>
+                  <button class="p8-recycle-purge" @click="doPurge(f)">彻底删除</button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+          <div class="modal-actions">
+            <span style="margin-right:auto;color:#999;font-size:12px;align-self:center">共 {{ recycle.total }} 条 · 超过 30 天将自动彻底删除</span>
+            <button class="btn btn-primary" @click="recycle.show=false">关闭</button>
           </div>
         </div>
       </div>

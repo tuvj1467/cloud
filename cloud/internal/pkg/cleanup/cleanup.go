@@ -8,10 +8,14 @@ import (
 	"path/filepath"
 	"time"
 
+	"github.com/redis/go-redis/v9"
 	"github.com/zeromicro/go-zero/core/logx"
 
 	"onecloud/ent"
 	"onecloud/ent/filepart"
+	"onecloud/internal/pkg/cache"
+	"onecloud/internal/pkg/storage"
+	"onecloud/internal/repository"
 )
 
 const (
@@ -19,13 +23,16 @@ const (
 	staleTmpAge = 24 * time.Hour
 	// stalePendingAge pending 分片记录的过期阈值（含上传窗口余量）
 	stalePendingAge = 48 * time.Hour
+	// staleDeletedAge 回收站软删文件的保留期，超期每日自动彻底删除
+	staleDeletedAge = 30 * 24 * time.Hour
 	// sweepInterval 清理周期
 	sweepInterval = 12 * time.Hour
 )
 
 // Start 启动清理任务：启动后 30 秒首扫，此后每 12 小时一次，随 ctx 取消退出
-// 仅对本地驱动生效（.tmp 为本地驱动约定）；MinIO 侧建议配置对象生命周期规则
-func Start(ctx context.Context, entClient *ent.Client, localRootDir string) {
+// .tmp/pending 清理仅对本地驱动生效（本地驱动约定；MinIO 侧建议对象生命周期规则）；
+// storageDriver 用于回收站超期文件的物理删除
+func Start(ctx context.Context, entClient *ent.Client, localRootDir string, storageDriver storage.Driver, rdb *redis.Client) {
 	if entClient == nil || localRootDir == "" {
 		return
 	}
@@ -35,13 +42,13 @@ func Start(ctx context.Context, entClient *ent.Client, localRootDir string) {
 		case <-ctx.Done():
 			return
 		}
-		sweep(ctx, entClient, localRootDir)
+		sweep(ctx, entClient, localRootDir, storageDriver, rdb)
 		ticker := time.NewTicker(sweepInterval)
 		defer ticker.Stop()
 		for {
 			select {
 			case <-ticker.C:
-				sweep(ctx, entClient, localRootDir)
+				sweep(ctx, entClient, localRootDir, storageDriver, rdb)
 			case <-ctx.Done():
 				return
 			}
@@ -50,7 +57,8 @@ func Start(ctx context.Context, entClient *ent.Client, localRootDir string) {
 }
 
 // sweep 执行一轮清理，各项失败仅记日志不互相阻塞
-func sweep(ctx context.Context, entClient *ent.Client, localRootDir string) {
+func sweep(ctx context.Context, entClient *ent.Client, localRootDir string, storageDriver storage.Driver, rdb *redis.Client) {
+	purgeStaleDeleted(ctx, entClient, storageDriver, rdb)
 	if n, err := cleanTmpDirs(localRootDir, staleTmpAge); err != nil {
 		logx.Errorf("[cleanup] 清理孤儿 .tmp 目录失败: %v", err)
 	} else if n > 0 {
@@ -61,6 +69,50 @@ func sweep(ctx context.Context, entClient *ent.Client, localRootDir string) {
 	} else if n > 0 {
 		logx.Infof("[cleanup] 已清理过期 pending 分片记录 %d 条", n)
 	}
+}
+
+// purgeStaleDeleted 彻底删除软删超 30 天的文件（回收站自动清空）：
+// 逐个复用 DeleteFull 事务（级联分享 + 归还配额），事务后清理 Redis 与物理文件
+func purgeStaleDeleted(ctx context.Context, entClient *ent.Client, storageDriver storage.Driver, rdb *redis.Client) {
+	if storageDriver == nil {
+		return
+	}
+	before := time.Now().Add(-staleDeletedAge)
+	fileRepo := repository.NewFileRepository(entClient)
+	shareRepo := repository.NewFileShareRepository(entClient)
+	files, err := fileRepo.ListStaleDeleted(ctx, before, 200)
+	if err != nil {
+		logx.Errorf("[cleanup] 查询超期回收站文件失败: %v", err)
+		return
+	}
+	if len(files) == 0 {
+		return
+	}
+	shareCache := cache.NewShareCache(rdb)
+	md5Cache := cache.NewMD5Cache(rdb)
+	purged := 0
+	for _, f := range files {
+		shares, err := shareRepo.ListByFileIDs(ctx, []string{f.ID})
+		if err != nil {
+			logx.Errorf("[cleanup] 查询分享失败 file=%s: %v", f.ID, err)
+		}
+		if err := fileRepo.DeleteFull(ctx, f); err != nil {
+			logx.Errorf("[cleanup] 彻底删除失败 file=%s: %v", f.ID, err)
+			continue
+		}
+		for _, sh := range shares {
+			_ = shareCache.Del(ctx, sh.ShareCode)
+		}
+		if f.Md5 != "" {
+			_ = md5Cache.Del(ctx, f.UserID, f.Md5, f.ID)
+		}
+		if err := storageDriver.Delete(ctx, f.Path); err != nil {
+			logx.Errorf("[cleanup] 物理文件删除失败 file=%s path=%s: %v", f.ID, f.Path, err)
+			continue
+		}
+		purged++
+	}
+	logx.Infof("[cleanup] 已彻底删除软删超 30 天文件 %d 个", purged)
 }
 
 // cleanTmpDirs 删除 .tmp 下修改时间早于 age 的 uploadID 目录，返回删除数量

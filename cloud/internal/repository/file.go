@@ -248,6 +248,18 @@ func (l *FileRepository) ListDeletedByIDs(ctx context.Context, userID string, id
 		All(ctx)
 }
 
+// ListStaleDeleted 加载软删时间早于 before 的文件（回收站 30 天自动清理用），限 limit 条
+func (l *FileRepository) ListStaleDeleted(ctx context.Context, before time.Time, limit int) ([]*ent.File, error) {
+	return l.client.File.Query().
+		Where(
+			file.DeletedAtNotNil(),
+			file.DeletedAtLT(before),
+		).
+		Order(file.ByDeletedAt(entsql.OrderAsc())).
+		Limit(limit).
+		All(ctx)
+}
+
 // SoftDelete 软删除：标记 deleted_at（回收站语义）
 // 配额不归还、物理文件不删除——恢复即还原，彻底删除（Purge）时才执行归还与物理清理
 func (l *FileRepository) SoftDelete(ctx context.Context, id string) error {
