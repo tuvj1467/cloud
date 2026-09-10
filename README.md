@@ -330,6 +330,16 @@ curl -X POST http://127.0.0.1:8888/bucket/create \
 |------|------|------|------|
 | CreateShare | POST | ✅ | 创建分享链接 |
 | AccessShare | GET | - | 匿名访问分享 |
+| DownloadByShare | GET | - | 匿名分享下载（校验提取码/有效期/下载次数） |
+| GetMyShares | GET | ✅ | 我的分享列表（分页，含文件名/已用次数） |
+| RevokeShare | POST | ✅ | 撤销分享（仅限本人，立即失效） |
+
+#### 扩展能力
+
+| 接口 | 方法 | 鉴权 | 说明 |
+|------|------|------|------|
+| GetStorageStats | GET | ✅ | 用量统计（文件数/总容量/分桶明细） |
+| GetPresignedURL | GET | ✅ | 预签名下载 URL（本地驱动返回 40005，前端自动回落） |
 
 ## 数据库设计
 
