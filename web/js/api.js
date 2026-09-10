@@ -71,6 +71,53 @@ export const downloadByShare = (params) => request('/file/share/download', { met
 export const getPresignedURL = (params) => request('/file/presign', { method: 'GET', params });
 export const getMyShares = (params) => request('/file/share/my', { method: 'GET', params });
 export const revokeShare = (body) => request('/file/share/revoke', { body });
+
+// 流式下载：POST /file/download_stream（server-streaming）。
+// 线格式为串联 JSON（每个 64KB 块一个 DownloadChunk 对象），
+// 逐块 base64 解码拼接；onProgress(sent, total) 用于进度回调。
+export async function streamDownload(fileId, name, onProgress) {
+  const resp = await fetch(API_BASE + '/file/download_stream', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${store.token}` },
+    body: JSON.stringify({ file_id: fileId }),
+  });
+  if (!resp.ok) {
+    let msg = `下载失败（HTTP ${resp.status}）`;
+    try { const j = await resp.json(); msg = errText(j.code, j.message); } catch { /* 流式错误可能无响应体 */ }
+    throw { code: -1, message: msg };
+  }
+  const reader = resp.body.getReader();
+  const decoder = new TextDecoder();
+  const parts = [];
+  let buf = '', sent = 0, total = 0;
+  const b64ToBytes = (b64) => {
+    const bin = atob(b64);
+    const bytes = new Uint8Array(bin.length);
+    for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+    return bytes;
+  };
+  for (;;) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    buf += decoder.decode(value, { stream: true });
+    let end;
+    // 串联 JSON 无嵌套：以 '}{ ' 边界切出完整对象
+    while ((end = buf.indexOf('}{')) >= 0) {
+      const obj = JSON.parse(buf.slice(0, end + 1));
+      buf = buf.slice(end + 1);
+      parts.push(b64ToBytes(obj.data));
+      sent = obj.sent; total = obj.total;
+      if (onProgress) onProgress(sent, total);
+    }
+  }
+  if (buf.trim()) {
+    const obj = JSON.parse(buf);
+    parts.push(b64ToBytes(obj.data));
+    sent = obj.sent; total = obj.total;
+    if (onProgress) onProgress(sent, total);
+  }
+  return { blob: new Blob(parts), name, sent, total };
+}
 export const getStorageStats = (params) => request('/file/stats', { method: 'GET', params });
 
 // 下载：bytes 在 JSON 中为 base64，需解码

@@ -56,6 +56,43 @@ func JwtInterceptor() grpc.UnaryServerInterceptor {
 	}
 }
 
+// JwtStreamInterceptor gRPC 流式 JWT 验证拦截器
+// server-streaming 方法不经过 UnaryInterceptor，需单独鉴权（与 Unary 同一 token 规则）
+func JwtStreamInterceptor() grpc.StreamServerInterceptor {
+	return func(srv interface{}, ss grpc.ServerStream, info *grpc.StreamServerInfo, handler grpc.StreamHandler) error {
+		// 流式方法一律要求登录（当前无公开流式方法；新增公开流式方法需在此扩展白名单）
+		md, ok := metadata.FromIncomingContext(ss.Context())
+		if !ok {
+			return status.Error(codes.Unauthenticated, "缺少认证信息")
+		}
+		tokenStrings := md.Get("authorization")
+		if len(tokenStrings) == 0 {
+			tokenStrings = md.Get("gateway-authorization")
+		}
+		if len(tokenStrings) == 0 {
+			return status.Error(codes.Unauthenticated, "缺少 token")
+		}
+		tokenString := tokenStrings[0]
+		if strings.HasPrefix(tokenString, "Bearer ") {
+			tokenString = strings.TrimPrefix(tokenString, "Bearer ")
+		}
+		newCtx, err := jwt.VerifyToken(ss.Context(), tokenString)
+		if err != nil {
+			return status.Error(codes.Unauthenticated, "token 无效或已过期")
+		}
+		wrapped := &authenticatedStream{ServerStream: ss, ctx: newCtx}
+		return handler(srv, wrapped)
+	}
+}
+
+// authenticatedStream 用注入 user_id 的 context 包装原始流
+type authenticatedStream struct {
+	grpc.ServerStream
+	ctx context.Context
+}
+
+func (w *authenticatedStream) Context() context.Context { return w.ctx }
+
 // isPublicMethod 判断是否是公开方法（不需要认证）
 // 注意：方法名必须与 service.proto 中定义的 rpc 方法名完全一致
 func isPublicMethod(fullMethod string) bool {

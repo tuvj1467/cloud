@@ -2354,6 +2354,69 @@ func (x *RevokeShareResponse) GetSuccess() bool {
 	return false
 }
 
+// ==========================================
+// 18. 流式下载（server-streaming，大文件分块传输）
+// ==========================================
+type DownloadChunk struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Data          []byte                 `protobuf:"bytes,1,opt,name=data,proto3" json:"data,omitempty"`    // 分块数据
+	Sent          int64                  `protobuf:"varint,2,opt,name=sent,proto3" json:"sent,omitempty"`   // 已发送字节
+	Total         int64                  `protobuf:"varint,3,opt,name=total,proto3" json:"total,omitempty"` // 文件总大小
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *DownloadChunk) Reset() {
+	*x = DownloadChunk{}
+	mi := &file_file_proto_msgTypes[40]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *DownloadChunk) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*DownloadChunk) ProtoMessage() {}
+
+func (x *DownloadChunk) ProtoReflect() protoreflect.Message {
+	mi := &file_file_proto_msgTypes[40]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use DownloadChunk.ProtoReflect.Descriptor instead.
+func (*DownloadChunk) Descriptor() ([]byte, []int) {
+	return file_file_proto_rawDescGZIP(), []int{40}
+}
+
+func (x *DownloadChunk) GetData() []byte {
+	if x != nil {
+		return x.Data
+	}
+	return nil
+}
+
+func (x *DownloadChunk) GetSent() int64 {
+	if x != nil {
+		return x.Sent
+	}
+	return 0
+}
+
+func (x *DownloadChunk) GetTotal() int64 {
+	if x != nil {
+		return x.Total
+	}
+	return 0
+}
+
 var File_file_proto protoreflect.FileDescriptor
 
 const file_file_proto_rawDesc = "" +
@@ -2540,7 +2603,11 @@ const file_file_proto_rawDesc = "" +
 	"\n" +
 	"share_code\x18\x01 \x01(\tB\a\xfaB\x04r\x02\x10\x01R\tshareCode\"/\n" +
 	"\x13RevokeShareResponse\x12\x18\n" +
-	"\asuccess\x18\x01 \x01(\bR\asuccessB\x10Z\x0e.proto/serviceb\x06proto3"
+	"\asuccess\x18\x01 \x01(\bR\asuccess\"M\n" +
+	"\rDownloadChunk\x12\x12\n" +
+	"\x04data\x18\x01 \x01(\fR\x04data\x12\x12\n" +
+	"\x04sent\x18\x02 \x01(\x03R\x04sent\x12\x14\n" +
+	"\x05total\x18\x03 \x01(\x03R\x05totalB\x10Z\x0e.proto/serviceb\x06proto3"
 
 var (
 	file_file_proto_rawDescOnce sync.Once
@@ -2554,7 +2621,7 @@ func file_file_proto_rawDescGZIP() []byte {
 	return file_file_proto_rawDescData
 }
 
-var file_file_proto_msgTypes = make([]protoimpl.MessageInfo, 40)
+var file_file_proto_msgTypes = make([]protoimpl.MessageInfo, 41)
 var file_file_proto_goTypes = []any{
 	(*FileMeta)(nil),                        // 0: storage.FileMeta
 	(*FileInfoRequest)(nil),                 // 1: storage.FileInfoRequest
@@ -2596,6 +2663,7 @@ var file_file_proto_goTypes = []any{
 	(*GetMySharesResponse)(nil),             // 37: storage.GetMySharesResponse
 	(*RevokeShareRequest)(nil),              // 38: storage.RevokeShareRequest
 	(*RevokeShareResponse)(nil),             // 39: storage.RevokeShareResponse
+	(*DownloadChunk)(nil),                   // 40: storage.DownloadChunk
 }
 var file_file_proto_depIdxs = []int32{
 	0,  // 0: storage.FileInfoResponse.file:type_name -> storage.FileMeta
@@ -2633,7 +2701,7 @@ func file_file_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_file_proto_rawDesc), len(file_file_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   40,
+			NumMessages:   41,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

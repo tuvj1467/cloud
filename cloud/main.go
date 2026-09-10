@@ -70,8 +70,9 @@ func main() {
 	})
 	defer s.Stop()
 
-	// 添加 JWT 拦截器
+	// 添加 JWT 拦截器（Unary + Stream：流式方法如 DownloadStream 需单独鉴权）
 	s.AddUnaryInterceptors(middleware.JwtInterceptor())
+	s.AddStreamInterceptors(middleware.JwtStreamInterceptor())
 
 	// 分片上传遗留清理：孤儿 .tmp 目录 + 过期 pending 分片记录（启动 30s 后首扫，每 12h 一次）
 	cleanupCtx, cleanupCancel := context.WithCancel(context.Background())

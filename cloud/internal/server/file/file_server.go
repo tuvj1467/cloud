@@ -108,6 +108,11 @@ func (s *FileServer) AccessShare(ctx context.Context, in *service.AccessShareReq
 }
 
 // 分享下载（匿名）
+func (s *FileServer) DownloadStream(in *service.DownloadFileRequest, stream service.File_DownloadStreamServer) error {
+	l := filelogic.NewDownloadStreamLogic(stream.Context(), s.svcCtx)
+	return l.DownloadStream(in, stream)
+}
+
 func (s *FileServer) GetMyShares(ctx context.Context, in *service.GetMySharesRequest) (*service.Response, error) {
 	l := filelogic.NewGetMySharesLogic(ctx, s.svcCtx)
 	return l.GetMyShares(in)

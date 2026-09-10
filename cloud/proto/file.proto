@@ -286,3 +286,12 @@ message RevokeShareRequest {
 message RevokeShareResponse {
   bool success = 1;
 }
+
+// ==========================================
+// 18. 流式下载（server-streaming，大文件分块传输）
+// ==========================================
+message DownloadChunk {
+  bytes data = 1;   // 分块数据
+  int64 sent = 2;   // 已发送字节
+  int64 total = 3;  // 文件总大小
+}

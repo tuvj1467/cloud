@@ -646,6 +646,7 @@ const (
 	File_GetPresignedURL_FullMethodName         = "/storage.File/GetPresignedURL"
 	File_GetMyShares_FullMethodName             = "/storage.File/GetMyShares"
 	File_RevokeShare_FullMethodName             = "/storage.File/RevokeShare"
+	File_DownloadStream_FullMethodName          = "/storage.File/DownloadStream"
 )
 
 // FileClient is the client API for File service.
@@ -695,6 +696,8 @@ type FileClient interface {
 	GetMyShares(ctx context.Context, in *GetMySharesRequest, opts ...grpc.CallOption) (*Response, error)
 	// 撤销分享（需登录，仅限本人分享）
 	RevokeShare(ctx context.Context, in *RevokeShareRequest, opts ...grpc.CallOption) (*Response, error)
+	// 流式下载（server-streaming 分块传输，需登录）
+	DownloadStream(ctx context.Context, in *DownloadFileRequest, opts ...grpc.CallOption) (grpc.ServerStreamingClient[DownloadChunk], error)
 }
 
 type fileClient struct {
@@ -895,6 +898,25 @@ func (c *fileClient) RevokeShare(ctx context.Context, in *RevokeShareRequest, op
 	return out, nil
 }
 
+func (c *fileClient) DownloadStream(ctx context.Context, in *DownloadFileRequest, opts ...grpc.CallOption) (grpc.ServerStreamingClient[DownloadChunk], error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	stream, err := c.cc.NewStream(ctx, &File_ServiceDesc.Streams[0], File_DownloadStream_FullMethodName, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	x := &grpc.GenericClientStream[DownloadFileRequest, DownloadChunk]{ClientStream: stream}
+	if err := x.ClientStream.SendMsg(in); err != nil {
+		return nil, err
+	}
+	if err := x.ClientStream.CloseSend(); err != nil {
+		return nil, err
+	}
+	return x, nil
+}
+
+// This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
+type File_DownloadStreamClient = grpc.ServerStreamingClient[DownloadChunk]
+
 // FileServer is the server API for File service.
 // All implementations must embed UnimplementedFileServer
 // for forward compatibility.
@@ -942,6 +964,8 @@ type FileServer interface {
 	GetMyShares(context.Context, *GetMySharesRequest) (*Response, error)
 	// 撤销分享（需登录，仅限本人分享）
 	RevokeShare(context.Context, *RevokeShareRequest) (*Response, error)
+	// 流式下载（server-streaming 分块传输，需登录）
+	DownloadStream(*DownloadFileRequest, grpc.ServerStreamingServer[DownloadChunk]) error
 	mustEmbedUnimplementedFileServer()
 }
 
@@ -1008,6 +1032,9 @@ func (UnimplementedFileServer) GetMyShares(context.Context, *GetMySharesRequest)
 }
 func (UnimplementedFileServer) RevokeShare(context.Context, *RevokeShareRequest) (*Response, error) {
 	return nil, status.Error(codes.Unimplemented, "method RevokeShare not implemented")
+}
+func (UnimplementedFileServer) DownloadStream(*DownloadFileRequest, grpc.ServerStreamingServer[DownloadChunk]) error {
+	return status.Error(codes.Unimplemented, "method DownloadStream not implemented")
 }
 func (UnimplementedFileServer) mustEmbedUnimplementedFileServer() {}
 func (UnimplementedFileServer) testEmbeddedByValue()              {}
@@ -1372,6 +1399,17 @@ func _File_RevokeShare_Handler(srv interface{}, ctx context.Context, dec func(in
 	return interceptor(ctx, in, info, handler)
 }
 
+func _File_DownloadStream_Handler(srv interface{}, stream grpc.ServerStream) error {
+	m := new(DownloadFileRequest)
+	if err := stream.RecvMsg(m); err != nil {
+		return err
+	}
+	return srv.(FileServer).DownloadStream(m, &grpc.GenericServerStream[DownloadFileRequest, DownloadChunk]{ServerStream: stream})
+}
+
+// This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
+type File_DownloadStreamServer = grpc.ServerStreamingServer[DownloadChunk]
+
 // File_ServiceDesc is the grpc.ServiceDesc for File service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -1456,6 +1494,12 @@ var File_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _File_RevokeShare_Handler,
 		},
 	},
-	Streams:  []grpc.StreamDesc{},
+	Streams: []grpc.StreamDesc{
+		{
+			StreamName:    "DownloadStream",
+			Handler:       _File_DownloadStream_Handler,
+			ServerStreams: true,
+		},
+	},
 	Metadata: "service.proto",
 }

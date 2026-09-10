@@ -46,6 +46,9 @@ upstreams:
       - Method: GET
         Path: /file/presign
         RpcPath: storage.File/GetPresignedURL
+      - Method: POST
+        Path: /file/download_stream
+        RpcPath: storage.File/DownloadStream
       - Method: GET
         Path: /file/share/my
         RpcPath: storage.File/GetMyShares

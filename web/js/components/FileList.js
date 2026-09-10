@@ -4,7 +4,7 @@
 // Vue 为全量版全局变量（index.html 先以非 module 方式加载），模块内直接解构
 const { ref, computed, watch, onMounted, onUnmounted } = Vue;
 import {
-  getFileList, getBucketFileList, renameFile, deleteFile, copyFile, downloadBlob, downloadData, getStorageStats, getPresignedURL, getMyShares, revokeShare,
+  getFileList, getBucketFileList, renameFile, deleteFile, copyFile, downloadBlob, downloadData, getStorageStats, getPresignedURL, getMyShares, revokeShare, streamDownload,
 } from '../api.js';
 import { store } from '../store.js';
 import { formatSize, formatTime, fileIcon, toast, confirmBox, saveBlob } from '../common.js';
@@ -213,7 +213,8 @@ export const FileList = {
 
     async function doDownload(f) {
       const fileId = f.fileId || f.file_id;
-      // 优先预签名直连（绕过网关体积限制，MinIO 驱动可用；本地驱动返回 40005 回落）
+      const isBig = (f.size || 0) > 20 * 1024 * 1024;
+      // 1. 预签名直连（绕过网关，MinIO 驱动可用；本地驱动 40005 回落）
       try {
         const pres = await getPresignedURL({ file_id: fileId });
         if (pres && pres.url) {
@@ -225,8 +226,19 @@ export const FileList = {
         }
       } catch (e) {
         if (e.code !== 40005) return toast(e.message, 'error');
-        // 40005 = 驱动不支持预签名，回落普通下载
       }
+      // 2. 大文件走流式分块下载（任意驱动可用，内存只占单块）
+      if (isBig) {
+        try {
+          const { blob } = await streamDownload(fileId, f.name);
+          saveBlob(blob, f.name);
+          toast('文件已开始下载（流式）', 'success');
+          return;
+        } catch (e) {
+          return toast(e.message, 'error');
+        }
+      }
+      // 3. 小文件普通下载（一次性 base64）
       try {
         await downloadBlob('/file/download', { file_id: fileId }, f.name);
         toast('文件已开始下载', 'success');
