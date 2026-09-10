@@ -113,6 +113,11 @@ func (s *FileServer) DownloadStream(in *service.DownloadFileRequest, stream serv
 	return l.DownloadStream(in, stream)
 }
 
+func (s *FileServer) GetFileThumb(ctx context.Context, in *service.FileThumbRequest) (*service.Response, error) {
+	l := filelogic.NewGetFileThumbLogic(ctx, s.svcCtx)
+	return l.GetFileThumb(in)
+}
+
 func (s *FileServer) GetMyShares(ctx context.Context, in *service.GetMySharesRequest) (*service.Response, error) {
 	l := filelogic.NewGetMySharesLogic(ctx, s.svcCtx)
 	return l.GetMyShares(in)

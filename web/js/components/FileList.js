@@ -4,7 +4,7 @@
 // Vue 为全量版全局变量（index.html 先以非 module 方式加载），模块内直接解构
 const { ref, computed, watch, onMounted, onUnmounted } = Vue;
 import {
-  getFileList, getBucketFileList, renameFile, deleteFile, copyFile, downloadBlob, downloadData, getStorageStats, getPresignedURL, getMyShares, revokeShare, streamDownload,
+  getFileList, getBucketFileList, renameFile, deleteFile, copyFile, downloadBlob, downloadData, getStorageStats, getPresignedURL, getMyShares, revokeShare, streamDownload, getThumb,
 } from '../api.js';
 import { store } from '../store.js';
 import { formatSize, formatTime, fileIcon, toast, confirmBox, saveBlob } from '../common.js';
@@ -34,6 +34,7 @@ if (!document.getElementById('p8-filelist-style')) {
     .p8-preview-body img { max-width:80vw; max-height:70vh; object-fit:contain; border-radius:8px; }
     .p8-preview-title { display:flex; justify-content:space-between; align-items:center; font-size:14px; color:#444; }
     .p8-preview-close { border:none; background:none; font-size:18px; cursor:pointer; color:#888; }
+    .p8-item-thumb { width:36px; height:36px; object-fit:cover; border-radius:6px; border:1px solid #eee; }
     .p8-share-table { width:100%; border-collapse:collapse; font-size:13px; }
     .p8-share-table th, .p8-share-table td { padding:8px 6px; border-bottom:1px solid #eee; text-align:left; word-break:break-all; }
     .p8-share-table th { color:#666; font-weight:600; }
@@ -113,6 +114,7 @@ export const FileList = {
         if (seq !== loadSeq) return; // 已有更新的请求发出，丢弃本次过期响应
         F.list = data.files || [];
         F.total = data.total || 0;
+        loadThumbs();
       } catch (e) {
         if (seq !== loadSeq) return; // 过期请求的失败同样不覆盖新数据/不打扰用户
         toast(e.message, 'error');
@@ -176,6 +178,18 @@ export const FileList = {
 
     function closePreview() {
       preview.value = { show: false, url: '', name: '' };
+    }
+
+    // ===== 图片缩略图 =====
+    const thumbs = ref({});
+    async function loadThumbs() {
+      for (const f of F.list) {
+        const id = f.fileId || f.file_id;
+        if (thumbs.value[id] !== undefined) continue; // 已有（含回退空串）
+        if (!isImage(f)) { thumbs.value[id] = ''; continue; }
+        const url = await getThumb(id);
+        thumbs.value[id] = url;
+      }
     }
 
     // ===== 我的分享管理 =====
@@ -314,7 +328,7 @@ export const FileList = {
     return {
       store, keyword, displayList, totalPages, hasBuckets, stats,
       formatSize, formatTime, fileIcon, extOf,
-      doDownload, isImage, openPreview, closePreview, preview, myShares, openMyShares, loadMyShares, doRevoke, doRename, openCopy, copyModal, targetBuckets, doCopy, doDelete,
+      doDownload, isImage, openPreview, closePreview, preview, myShares, openMyShares, loadMyShares, doRevoke, thumbs, loadThumbs, doRename, openCopy, copyModal, targetBuckets, doCopy, doDelete,
       bucketIdOf,
     };
   },
@@ -369,7 +383,8 @@ export const FileList = {
         <template v-else-if="displayList.length">
           <div class="file-item" v-for="f in displayList" :key="f.fileId || f.file_id">
             <div class="p8-item-main">
-              <span class="p8-item-icon">{{ fileIcon(extOf(f)) }}</span>
+              <img v-if="thumbs[f.fileId || f.file_id]" class="p8-item-thumb" :src="thumbs[f.fileId || f.file_id]" alt="">
+              <span v-else class="p8-item-icon">{{ fileIcon(extOf(f)) }}</span>
               <span class="p8-item-name" :title="f.name">{{ f.name }}</span>
             </div>
             <span class="p8-item-meta">{{ formatSize(f.size) }}</span>

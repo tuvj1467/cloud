@@ -95,4 +95,7 @@ service File {
 
   // 流式下载（server-streaming 分块传输，需登录）
   rpc DownloadStream(DownloadFileRequest) returns (stream DownloadChunk);
+
+  // 图片缩略图（需登录；仅本地驱动生成）
+  rpc GetFileThumb(FileThumbRequest) returns (Response);
 }

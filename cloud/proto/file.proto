@@ -295,3 +295,10 @@ message DownloadChunk {
   int64 sent = 2;   // 已发送字节
   int64 total = 3;  // 文件总大小
 }
+
+// ==========================================
+// 19. 图片缩略图（响应复用 DownloadFileResponse，content 为 JPEG 缩略图）
+// ==========================================
+message FileThumbRequest {
+  string file_id = 1 [(validate.rules).string = {min_len: 1}];
+}

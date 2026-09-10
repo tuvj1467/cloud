@@ -69,6 +69,20 @@ export const createShare = (body) => request('/file/share/create', { body });
 export const accessShare = (params) => request('/file/share/access', { method: 'GET', params });
 export const downloadByShare = (params) => request('/file/share/download', { method: 'GET', params });
 export const getPresignedURL = (params) => request('/file/presign', { method: 'GET', params });
+// 图片缩略图（JPEG dataURL，带缓存）；失败返回空串由调用方回退图标
+const thumbCache = new Map();
+export async function getThumb(fileId) {
+  if (thumbCache.has(fileId)) return thumbCache.get(fileId);
+  try {
+    const data = await request('/file/thumb', { method: 'GET', params: { file_id: fileId } });
+    const url = `data:image/jpeg;base64,${data.content}`;
+    thumbCache.set(fileId, url);
+    return url;
+  } catch {
+    thumbCache.set(fileId, '');
+    return '';
+  }
+}
 export const getMyShares = (params) => request('/file/share/my', { method: 'GET', params });
 export const revokeShare = (body) => request('/file/share/revoke', { body });
 

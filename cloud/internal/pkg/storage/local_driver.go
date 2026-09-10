@@ -22,6 +22,9 @@ func NewLocalDriver(rootDir string) *LocalDriver {
 	return &LocalDriver{rootDir: rootDir}
 }
 
+// RootDir 返回存储根目录（缩略图等派生数据落盘定位用）
+func (d *LocalDriver) RootDir() string { return d.rootDir }
+
 // absPath 将相对路径转为绝对路径，越界（穿越）返回 ErrPathInvalid
 func (d *LocalDriver) absPath(path string) (string, error) {
 	return SafeJoin(d.rootDir, filepath.FromSlash(path))

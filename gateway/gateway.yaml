@@ -48,6 +48,9 @@ upstreams:                  # 0空格
         Path: /file/download_stream
         RpcPath: storage.File/DownloadStream
       - Method: GET
+        Path: /file/thumb
+        RpcPath: storage.File/GetFileThumb
+      - Method: GET
         Path: /file/share/my
         RpcPath: storage.File/GetMyShares
       - Method: POST

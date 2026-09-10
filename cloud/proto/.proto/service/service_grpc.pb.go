@@ -647,6 +647,7 @@ const (
 	File_GetMyShares_FullMethodName             = "/storage.File/GetMyShares"
 	File_RevokeShare_FullMethodName             = "/storage.File/RevokeShare"
 	File_DownloadStream_FullMethodName          = "/storage.File/DownloadStream"
+	File_GetFileThumb_FullMethodName            = "/storage.File/GetFileThumb"
 )
 
 // FileClient is the client API for File service.
@@ -698,6 +699,8 @@ type FileClient interface {
 	RevokeShare(ctx context.Context, in *RevokeShareRequest, opts ...grpc.CallOption) (*Response, error)
 	// 流式下载（server-streaming 分块传输，需登录）
 	DownloadStream(ctx context.Context, in *DownloadFileRequest, opts ...grpc.CallOption) (grpc.ServerStreamingClient[DownloadChunk], error)
+	// 图片缩略图（需登录；仅本地驱动生成）
+	GetFileThumb(ctx context.Context, in *FileThumbRequest, opts ...grpc.CallOption) (*Response, error)
 }
 
 type fileClient struct {
@@ -917,6 +920,16 @@ func (c *fileClient) DownloadStream(ctx context.Context, in *DownloadFileRequest
 // This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
 type File_DownloadStreamClient = grpc.ServerStreamingClient[DownloadChunk]
 
+func (c *fileClient) GetFileThumb(ctx context.Context, in *FileThumbRequest, opts ...grpc.CallOption) (*Response, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(Response)
+	err := c.cc.Invoke(ctx, File_GetFileThumb_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // FileServer is the server API for File service.
 // All implementations must embed UnimplementedFileServer
 // for forward compatibility.
@@ -966,6 +979,8 @@ type FileServer interface {
 	RevokeShare(context.Context, *RevokeShareRequest) (*Response, error)
 	// 流式下载（server-streaming 分块传输，需登录）
 	DownloadStream(*DownloadFileRequest, grpc.ServerStreamingServer[DownloadChunk]) error
+	// 图片缩略图（需登录；仅本地驱动生成）
+	GetFileThumb(context.Context, *FileThumbRequest) (*Response, error)
 	mustEmbedUnimplementedFileServer()
 }
 
@@ -1035,6 +1050,9 @@ func (UnimplementedFileServer) RevokeShare(context.Context, *RevokeShareRequest)
 }
 func (UnimplementedFileServer) DownloadStream(*DownloadFileRequest, grpc.ServerStreamingServer[DownloadChunk]) error {
 	return status.Error(codes.Unimplemented, "method DownloadStream not implemented")
+}
+func (UnimplementedFileServer) GetFileThumb(context.Context, *FileThumbRequest) (*Response, error) {
+	return nil, status.Error(codes.Unimplemented, "method GetFileThumb not implemented")
 }
 func (UnimplementedFileServer) mustEmbedUnimplementedFileServer() {}
 func (UnimplementedFileServer) testEmbeddedByValue()              {}
@@ -1410,6 +1428,24 @@ func _File_DownloadStream_Handler(srv interface{}, stream grpc.ServerStream) err
 // This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
 type File_DownloadStreamServer = grpc.ServerStreamingServer[DownloadChunk]
 
+func _File_GetFileThumb_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(FileThumbRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(FileServer).GetFileThumb(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: File_GetFileThumb_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(FileServer).GetFileThumb(ctx, req.(*FileThumbRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // File_ServiceDesc is the grpc.ServiceDesc for File service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -1492,6 +1528,10 @@ var File_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "RevokeShare",
 			Handler:    _File_RevokeShare_Handler,
+		},
+		{
+			MethodName: "GetFileThumb",
+			Handler:    _File_GetFileThumb_Handler,
 		},
 	},
 	Streams: []grpc.StreamDesc{

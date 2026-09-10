@@ -5128,3 +5128,114 @@ var _ interface {
 	Cause() error
 	ErrorName() string
 } = DownloadChunkValidationError{}
+
+// Validate checks the field values on FileThumbRequest with the rules defined
+// in the proto definition for this message. If any rules are violated, the
+// first error encountered is returned, or nil if there are no violations.
+func (m *FileThumbRequest) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on FileThumbRequest with the rules
+// defined in the proto definition for this message. If any rules are
+// violated, the result is a list of violation errors wrapped in
+// FileThumbRequestMultiError, or nil if none found.
+func (m *FileThumbRequest) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *FileThumbRequest) validate(all bool) error {
+	if m == nil {
+		return nil
+	}
+
+	var errors []error
+
+	if utf8.RuneCountInString(m.GetFileId()) < 1 {
+		err := FileThumbRequestValidationError{
+			field:  "FileId",
+			reason: "value length must be at least 1 runes",
+		}
+		if !all {
+			return err
+		}
+		errors = append(errors, err)
+	}
+
+	if len(errors) > 0 {
+		return FileThumbRequestMultiError(errors)
+	}
+
+	return nil
+}
+
+// FileThumbRequestMultiError is an error wrapping multiple validation errors
+// returned by FileThumbRequest.ValidateAll() if the designated constraints
+// aren't met.
+type FileThumbRequestMultiError []error
+
+// Error returns a concatenation of all the error messages it wraps.
+func (m FileThumbRequestMultiError) Error() string {
+	msgs := make([]string, 0, len(m))
+	for _, err := range m {
+		msgs = append(msgs, err.Error())
+	}
+	return strings.Join(msgs, "; ")
+}
+
+// AllErrors returns a list of validation violation errors.
+func (m FileThumbRequestMultiError) AllErrors() []error { return m }
+
+// FileThumbRequestValidationError is the validation error returned by
+// FileThumbRequest.Validate if the designated constraints aren't met.
+type FileThumbRequestValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e FileThumbRequestValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e FileThumbRequestValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e FileThumbRequestValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e FileThumbRequestValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e FileThumbRequestValidationError) ErrorName() string { return "FileThumbRequestValidationError" }
+
+// Error satisfies the builtin error interface
+func (e FileThumbRequestValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sFileThumbRequest.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = FileThumbRequestValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = FileThumbRequestValidationError{}

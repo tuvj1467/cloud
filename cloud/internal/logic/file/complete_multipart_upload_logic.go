@@ -212,6 +212,11 @@ func (l *CompleteMultipartUploadLogic) CompleteMultipartUpload(in *service.Compl
 		return response.ErrWithCode(response.CodeBucketCapacity, "桶容量不足")
 	}
 
+	// 13.2 生成缩略图（增强能力，失败不影响主流程）
+	if statInfo.Size > 50*1024 {
+		BuildThumb(l.ctx, l.svcCtx, newFile.ID, targetPath, meta.FileSuffix)
+	}
+
 	// 14. 更新分片状态为 merged
 	if err := partRepo.MarkMerged(l.ctx, in.GetUploadId()); err != nil {
 		l.Errorf("更新分片状态为 merged 失败 upload_id=%s: %v", in.GetUploadId(), err)

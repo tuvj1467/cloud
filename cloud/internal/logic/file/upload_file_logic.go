@@ -163,6 +163,11 @@ func (l *UploadFileLogic) UploadFile(in *service.UploadFileRequest) (*service.Re
 		l.Errorf("写入 MD5 索引失败（不影响主流程）: %v", err)
 	}
 
+	// 9.2 生成缩略图（增强能力，失败不影响主流程）
+	if size > 50*1024 {
+		BuildThumb(l.ctx, l.svcCtx, res.ID, filePath, in.GetSuffix())
+	}
+
 	// 10. 扣减桶容量（原子 UPDATE，配额由数据库保证）
 	ok, err := bucketRepo.TryIncUsedSize(l.ctx, in.GetBucketId(), size)
 	if err != nil {
