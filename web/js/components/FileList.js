@@ -4,7 +4,7 @@
 // Vue 为全量版全局变量（index.html 先以非 module 方式加载），模块内直接解构
 const { ref, computed, watch, onMounted, onUnmounted } = Vue;
 import {
-  getFileList, getBucketFileList, renameFile, deleteFile, copyFile, downloadBlob, downloadData, getStorageStats, getPresignedURL,
+  getFileList, getBucketFileList, renameFile, deleteFile, copyFile, downloadBlob, downloadData, getStorageStats, getPresignedURL, getMyShares, revokeShare,
 } from '../api.js';
 import { store } from '../store.js';
 import { formatSize, formatTime, fileIcon, toast, confirmBox, saveBlob } from '../common.js';
@@ -34,6 +34,10 @@ if (!document.getElementById('p8-filelist-style')) {
     .p8-preview-body img { max-width:80vw; max-height:70vh; object-fit:contain; border-radius:8px; }
     .p8-preview-title { display:flex; justify-content:space-between; align-items:center; font-size:14px; color:#444; }
     .p8-preview-close { border:none; background:none; font-size:18px; cursor:pointer; color:#888; }
+    .p8-share-table { width:100%; border-collapse:collapse; font-size:13px; }
+    .p8-share-table th, .p8-share-table td { padding:8px 6px; border-bottom:1px solid #eee; text-align:left; word-break:break-all; }
+    .p8-share-table th { color:#666; font-weight:600; }
+    .p8-share-revoke { border:none; background:none; color:#e74c3c; cursor:pointer; padding:2px 6px; }
     .p8-pagination { display:flex; justify-content:space-between; align-items:center; margin-top:20px;
       color:#666; font-size:14px; }
     .p8-page-btns { display:flex; gap:8px; }
@@ -174,6 +178,39 @@ export const FileList = {
       preview.value = { show: false, url: '', name: '' };
     }
 
+    // ===== 我的分享管理 =====
+    const myShares = ref({ show: false, list: [], total: 0, page: 1, pageSize: 10, loading: false });
+
+    async function loadMyShares() {
+      myShares.value.loading = true;
+      try {
+        const data = await getMyShares({ page: myShares.value.page, page_size: myShares.value.pageSize });
+        myShares.value.list = data.shares || [];
+        myShares.value.total = data.total || 0;
+      } catch (e) {
+        toast(e.message, 'error');
+      } finally {
+        myShares.value.loading = false;
+      }
+    }
+
+    function openMyShares() {
+      myShares.value.page = 1;
+      myShares.value.show = true;
+      loadMyShares();
+    }
+
+    async function doRevoke(item) {
+      if (!window.confirm(`确定撤销分享「${item.shareCode}」？撤销后链接立即失效`)) return;
+      try {
+        await revokeShare({ shareCode: item.shareCode });
+        toast('分享已撤销', 'success');
+        loadMyShares();
+      } catch (e) {
+        toast(e.message, 'error');
+      }
+    }
+
     async function doDownload(f) {
       const fileId = f.fileId || f.file_id;
       // 优先预签名直连（绕过网关体积限制，MinIO 驱动可用；本地驱动返回 40005 回落）
@@ -265,13 +302,16 @@ export const FileList = {
     return {
       store, keyword, displayList, totalPages, hasBuckets, stats,
       formatSize, formatTime, fileIcon, extOf,
-      doDownload, isImage, openPreview, closePreview, preview, doRename, openCopy, copyModal, targetBuckets, doCopy, doDelete,
+      doDownload, isImage, openPreview, closePreview, preview, myShares, openMyShares, loadMyShares, doRevoke, doRename, openCopy, copyModal, targetBuckets, doCopy, doDelete,
       bucketIdOf,
     };
   },
   template: `
     <div class="panel">
-      <div class="panel-header"><h2>我的文件</h2></div>
+      <div class="panel-header">
+        <h2>我的文件</h2>
+        <button class="btn btn-secondary" @click="openMyShares">我的分享</button>
+      </div>
 
       <!-- 统计卡（P10）：用量概览，加载失败显示占位 -->
       <div class="p10-stats-card">
@@ -369,6 +409,34 @@ export const FileList = {
           <div class="modal-actions">
             <button class="btn btn-secondary" @click="copyModal.show=false">取消</button>
             <button class="btn btn-primary" style="width:auto;flex:1" @click="doCopy">确认复制</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- 我的分享弹层 -->
+      <div v-if="myShares.show" class="modal" @click.self="myShares.show=false">
+        <div class="modal-content" style="max-width:720px;width:92%">
+          <h3>我的分享</h3>
+          <div v-if="myShares.loading" class="empty-state">加载中…</div>
+          <div v-else-if="!myShares.list.length" class="empty-state">还没有创建过分享</div>
+          <table v-else class="p8-share-table">
+            <thead><tr><th>提取码</th><th>文件</th><th>权限</th><th>已用/上限</th><th>过期时间</th><th></th></tr></thead>
+            <tbody>
+              <tr v-for="it in myShares.list" :key="it.shareCode">
+                <td><strong>{{ it.shareCode }}</strong></td>
+                <td>{{ it.fileName || it.fileId }}</td>
+                <td>{{ it.permission === 'download' ? '下载' : '查看' }}</td>
+                <td>{{ it.usedCount }} / {{ it.maxCount != null ? it.maxCount : '∞' }}</td>
+                <td>{{ it.expireAt || '永久' }}</td>
+                <td><button class="p8-share-revoke" @click="doRevoke(it)">撤销</button></td>
+              </tr>
+            </tbody>
+          </table>
+          <div class="modal-actions">
+            <span style="margin-right:auto;color:#999;font-size:12px;align-self:center">共 {{ myShares.total }} 条</span>
+            <button class="btn btn-secondary" @click="myShares.page>1 && (myShares.page--, loadMyShares())" :disabled="myShares.page<=1">上一页</button>
+            <button class="btn btn-secondary" @click="myShares.page < Math.ceil(myShares.total/myShares.pageSize) && (myShares.page++, loadMyShares())" :disabled="myShares.page >= Math.ceil(myShares.total/myShares.pageSize)">下一页</button>
+            <button class="btn btn-primary" @click="myShares.show=false">关闭</button>
           </div>
         </div>
       </div>

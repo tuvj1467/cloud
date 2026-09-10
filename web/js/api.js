@@ -69,6 +69,8 @@ export const createShare = (body) => request('/file/share/create', { body });
 export const accessShare = (params) => request('/file/share/access', { method: 'GET', params });
 export const downloadByShare = (params) => request('/file/share/download', { method: 'GET', params });
 export const getPresignedURL = (params) => request('/file/presign', { method: 'GET', params });
+export const getMyShares = (params) => request('/file/share/my', { method: 'GET', params });
+export const revokeShare = (body) => request('/file/share/revoke', { body });
 export const getStorageStats = (params) => request('/file/stats', { method: 'GET', params });
 
 // 下载：bytes 在 JSON 中为 base64，需解码

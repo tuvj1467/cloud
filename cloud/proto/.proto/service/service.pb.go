@@ -41,7 +41,7 @@ const file_service_proto_rawDesc = "" +
 	"\rGetBucketList\x12\x1a.storage.BucketListRequest\x1a\x11.storage.Response\x12>\n" +
 	"\rGetBucketInfo\x12\x1a.storage.BucketInfoRequest\x1a\x11.storage.Response\x12?\n" +
 	"\fUpdateBucket\x12\x1c.storage.UpdateBucketRequest\x1a\x11.storage.Response\x12?\n" +
-	"\fDeleteBucket\x12\x1c.storage.DeleteBucketRequest\x1a\x11.storage.Response2\xfe\b\n" +
+	"\fDeleteBucket\x12\x1c.storage.DeleteBucketRequest\x1a\x11.storage.Response2\xfc\t\n" +
 	"\x04File\x12:\n" +
 	"\vGetFileInfo\x12\x18.storage.FileInfoRequest\x1a\x11.storage.Response\x12;\n" +
 	"\n" +
@@ -63,7 +63,9 @@ const file_service_proto_rawDesc = "" +
 	"\vAccessShare\x12\x1b.storage.AccessShareRequest\x1a\x11.storage.Response\x12E\n" +
 	"\x0fDownloadByShare\x12\x1f.storage.DownloadByShareRequest\x1a\x11.storage.Response\x12E\n" +
 	"\x0fGetStorageStats\x12\x1f.storage.GetStorageStatsRequest\x1a\x11.storage.Response\x12E\n" +
-	"\x0fGetPresignedURL\x12\x1f.storage.GetPresignedURLRequest\x1a\x11.storage.ResponseB\x10Z\x0e.proto/serviceb\x06proto3"
+	"\x0fGetPresignedURL\x12\x1f.storage.GetPresignedURLRequest\x1a\x11.storage.Response\x12=\n" +
+	"\vGetMyShares\x12\x1b.storage.GetMySharesRequest\x1a\x11.storage.Response\x12=\n" +
+	"\vRevokeShare\x12\x1b.storage.RevokeShareRequest\x1a\x11.storage.ResponseB\x10Z\x0e.proto/serviceb\x06proto3"
 
 var file_service_proto_goTypes = []any{
 	(*RegisterReq)(nil),                    // 0: storage.RegisterReq
@@ -95,7 +97,9 @@ var file_service_proto_goTypes = []any{
 	(*DownloadByShareRequest)(nil),         // 26: storage.DownloadByShareRequest
 	(*GetStorageStatsRequest)(nil),         // 27: storage.GetStorageStatsRequest
 	(*GetPresignedURLRequest)(nil),         // 28: storage.GetPresignedURLRequest
-	(*Response)(nil),                       // 29: storage.Response
+	(*GetMySharesRequest)(nil),             // 29: storage.GetMySharesRequest
+	(*RevokeShareRequest)(nil),             // 30: storage.RevokeShareRequest
+	(*Response)(nil),                       // 31: storage.Response
 }
 var file_service_proto_depIdxs = []int32{
 	0,  // 0: storage.User.Register:input_type -> storage.RegisterReq
@@ -127,37 +131,41 @@ var file_service_proto_depIdxs = []int32{
 	26, // 26: storage.File.DownloadByShare:input_type -> storage.DownloadByShareRequest
 	27, // 27: storage.File.GetStorageStats:input_type -> storage.GetStorageStatsRequest
 	28, // 28: storage.File.GetPresignedURL:input_type -> storage.GetPresignedURLRequest
-	29, // 29: storage.User.Register:output_type -> storage.Response
-	29, // 30: storage.User.LoginByAccount:output_type -> storage.Response
-	29, // 31: storage.User.LoginByPhoneSms:output_type -> storage.Response
-	29, // 32: storage.User.LoginByEmailSms:output_type -> storage.Response
-	29, // 33: storage.User.SendVerificationCode:output_type -> storage.Response
-	29, // 34: storage.User.ResetPassword:output_type -> storage.Response
-	29, // 35: storage.User.FindAccount:output_type -> storage.Response
-	29, // 36: storage.Bucket.CreateBucket:output_type -> storage.Response
-	29, // 37: storage.Bucket.GetBucketList:output_type -> storage.Response
-	29, // 38: storage.Bucket.GetBucketInfo:output_type -> storage.Response
-	29, // 39: storage.Bucket.UpdateBucket:output_type -> storage.Response
-	29, // 40: storage.Bucket.DeleteBucket:output_type -> storage.Response
-	29, // 41: storage.File.GetFileInfo:output_type -> storage.Response
-	29, // 42: storage.File.UploadFile:output_type -> storage.Response
-	29, // 43: storage.File.GetFileList:output_type -> storage.Response
-	29, // 44: storage.File.GetBucketFileList:output_type -> storage.Response
-	29, // 45: storage.File.RenameFile:output_type -> storage.Response
-	29, // 46: storage.File.DeleteFile:output_type -> storage.Response
-	29, // 47: storage.File.DownloadFile:output_type -> storage.Response
-	29, // 48: storage.File.CopyFile:output_type -> storage.Response
-	29, // 49: storage.File.InitMultipartUpload:output_type -> storage.Response
-	29, // 50: storage.File.UploadPart:output_type -> storage.Response
-	29, // 51: storage.File.CompleteMultipartUpload:output_type -> storage.Response
-	29, // 52: storage.File.AbortMultipartUpload:output_type -> storage.Response
-	29, // 53: storage.File.CreateShare:output_type -> storage.Response
-	29, // 54: storage.File.AccessShare:output_type -> storage.Response
-	29, // 55: storage.File.DownloadByShare:output_type -> storage.Response
-	29, // 56: storage.File.GetStorageStats:output_type -> storage.Response
-	29, // 57: storage.File.GetPresignedURL:output_type -> storage.Response
-	29, // [29:58] is the sub-list for method output_type
-	0,  // [0:29] is the sub-list for method input_type
+	29, // 29: storage.File.GetMyShares:input_type -> storage.GetMySharesRequest
+	30, // 30: storage.File.RevokeShare:input_type -> storage.RevokeShareRequest
+	31, // 31: storage.User.Register:output_type -> storage.Response
+	31, // 32: storage.User.LoginByAccount:output_type -> storage.Response
+	31, // 33: storage.User.LoginByPhoneSms:output_type -> storage.Response
+	31, // 34: storage.User.LoginByEmailSms:output_type -> storage.Response
+	31, // 35: storage.User.SendVerificationCode:output_type -> storage.Response
+	31, // 36: storage.User.ResetPassword:output_type -> storage.Response
+	31, // 37: storage.User.FindAccount:output_type -> storage.Response
+	31, // 38: storage.Bucket.CreateBucket:output_type -> storage.Response
+	31, // 39: storage.Bucket.GetBucketList:output_type -> storage.Response
+	31, // 40: storage.Bucket.GetBucketInfo:output_type -> storage.Response
+	31, // 41: storage.Bucket.UpdateBucket:output_type -> storage.Response
+	31, // 42: storage.Bucket.DeleteBucket:output_type -> storage.Response
+	31, // 43: storage.File.GetFileInfo:output_type -> storage.Response
+	31, // 44: storage.File.UploadFile:output_type -> storage.Response
+	31, // 45: storage.File.GetFileList:output_type -> storage.Response
+	31, // 46: storage.File.GetBucketFileList:output_type -> storage.Response
+	31, // 47: storage.File.RenameFile:output_type -> storage.Response
+	31, // 48: storage.File.DeleteFile:output_type -> storage.Response
+	31, // 49: storage.File.DownloadFile:output_type -> storage.Response
+	31, // 50: storage.File.CopyFile:output_type -> storage.Response
+	31, // 51: storage.File.InitMultipartUpload:output_type -> storage.Response
+	31, // 52: storage.File.UploadPart:output_type -> storage.Response
+	31, // 53: storage.File.CompleteMultipartUpload:output_type -> storage.Response
+	31, // 54: storage.File.AbortMultipartUpload:output_type -> storage.Response
+	31, // 55: storage.File.CreateShare:output_type -> storage.Response
+	31, // 56: storage.File.AccessShare:output_type -> storage.Response
+	31, // 57: storage.File.DownloadByShare:output_type -> storage.Response
+	31, // 58: storage.File.GetStorageStats:output_type -> storage.Response
+	31, // 59: storage.File.GetPresignedURL:output_type -> storage.Response
+	31, // 60: storage.File.GetMyShares:output_type -> storage.Response
+	31, // 61: storage.File.RevokeShare:output_type -> storage.Response
+	31, // [31:62] is the sub-list for method output_type
+	0,  // [0:31] is the sub-list for method input_type
 	0,  // [0:0] is the sub-list for extension type_name
 	0,  // [0:0] is the sub-list for extension extendee
 	0,  // [0:0] is the sub-list for field type_name

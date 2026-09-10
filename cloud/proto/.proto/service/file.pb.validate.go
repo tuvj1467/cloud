@@ -4426,3 +4426,599 @@ var _ interface {
 	Cause() error
 	ErrorName() string
 } = GetPresignedURLResponseValidationError{}
+
+// Validate checks the field values on GetMySharesRequest with the rules
+// defined in the proto definition for this message. If any rules are
+// violated, the first error encountered is returned, or nil if there are no violations.
+func (m *GetMySharesRequest) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on GetMySharesRequest with the rules
+// defined in the proto definition for this message. If any rules are
+// violated, the result is a list of violation errors wrapped in
+// GetMySharesRequestMultiError, or nil if none found.
+func (m *GetMySharesRequest) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *GetMySharesRequest) validate(all bool) error {
+	if m == nil {
+		return nil
+	}
+
+	var errors []error
+
+	if m.GetPage() < 1 {
+		err := GetMySharesRequestValidationError{
+			field:  "Page",
+			reason: "value must be greater than or equal to 1",
+		}
+		if !all {
+			return err
+		}
+		errors = append(errors, err)
+	}
+
+	if val := m.GetPageSize(); val < 1 || val > 50 {
+		err := GetMySharesRequestValidationError{
+			field:  "PageSize",
+			reason: "value must be inside range [1, 50]",
+		}
+		if !all {
+			return err
+		}
+		errors = append(errors, err)
+	}
+
+	if len(errors) > 0 {
+		return GetMySharesRequestMultiError(errors)
+	}
+
+	return nil
+}
+
+// GetMySharesRequestMultiError is an error wrapping multiple validation errors
+// returned by GetMySharesRequest.ValidateAll() if the designated constraints
+// aren't met.
+type GetMySharesRequestMultiError []error
+
+// Error returns a concatenation of all the error messages it wraps.
+func (m GetMySharesRequestMultiError) Error() string {
+	msgs := make([]string, 0, len(m))
+	for _, err := range m {
+		msgs = append(msgs, err.Error())
+	}
+	return strings.Join(msgs, "; ")
+}
+
+// AllErrors returns a list of validation violation errors.
+func (m GetMySharesRequestMultiError) AllErrors() []error { return m }
+
+// GetMySharesRequestValidationError is the validation error returned by
+// GetMySharesRequest.Validate if the designated constraints aren't met.
+type GetMySharesRequestValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e GetMySharesRequestValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e GetMySharesRequestValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e GetMySharesRequestValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e GetMySharesRequestValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e GetMySharesRequestValidationError) ErrorName() string {
+	return "GetMySharesRequestValidationError"
+}
+
+// Error satisfies the builtin error interface
+func (e GetMySharesRequestValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sGetMySharesRequest.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = GetMySharesRequestValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = GetMySharesRequestValidationError{}
+
+// Validate checks the field values on ShareItem with the rules defined in the
+// proto definition for this message. If any rules are violated, the first
+// error encountered is returned, or nil if there are no violations.
+func (m *ShareItem) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on ShareItem with the rules defined in
+// the proto definition for this message. If any rules are violated, the
+// result is a list of violation errors wrapped in ShareItemMultiError, or nil
+// if none found.
+func (m *ShareItem) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *ShareItem) validate(all bool) error {
+	if m == nil {
+		return nil
+	}
+
+	var errors []error
+
+	// no validation rules for ShareCode
+
+	// no validation rules for FileId
+
+	// no validation rules for FileName
+
+	// no validation rules for Permission
+
+	// no validation rules for ExpireAt
+
+	// no validation rules for UsedCount
+
+	// no validation rules for CreatedAt
+
+	if m.MaxCount != nil {
+		// no validation rules for MaxCount
+	}
+
+	if len(errors) > 0 {
+		return ShareItemMultiError(errors)
+	}
+
+	return nil
+}
+
+// ShareItemMultiError is an error wrapping multiple validation errors returned
+// by ShareItem.ValidateAll() if the designated constraints aren't met.
+type ShareItemMultiError []error
+
+// Error returns a concatenation of all the error messages it wraps.
+func (m ShareItemMultiError) Error() string {
+	msgs := make([]string, 0, len(m))
+	for _, err := range m {
+		msgs = append(msgs, err.Error())
+	}
+	return strings.Join(msgs, "; ")
+}
+
+// AllErrors returns a list of validation violation errors.
+func (m ShareItemMultiError) AllErrors() []error { return m }
+
+// ShareItemValidationError is the validation error returned by
+// ShareItem.Validate if the designated constraints aren't met.
+type ShareItemValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e ShareItemValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e ShareItemValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e ShareItemValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e ShareItemValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e ShareItemValidationError) ErrorName() string { return "ShareItemValidationError" }
+
+// Error satisfies the builtin error interface
+func (e ShareItemValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sShareItem.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = ShareItemValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = ShareItemValidationError{}
+
+// Validate checks the field values on GetMySharesResponse with the rules
+// defined in the proto definition for this message. If any rules are
+// violated, the first error encountered is returned, or nil if there are no violations.
+func (m *GetMySharesResponse) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on GetMySharesResponse with the rules
+// defined in the proto definition for this message. If any rules are
+// violated, the result is a list of violation errors wrapped in
+// GetMySharesResponseMultiError, or nil if none found.
+func (m *GetMySharesResponse) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *GetMySharesResponse) validate(all bool) error {
+	if m == nil {
+		return nil
+	}
+
+	var errors []error
+
+	for idx, item := range m.GetShares() {
+		_, _ = idx, item
+
+		if all {
+			switch v := interface{}(item).(type) {
+			case interface{ ValidateAll() error }:
+				if err := v.ValidateAll(); err != nil {
+					errors = append(errors, GetMySharesResponseValidationError{
+						field:  fmt.Sprintf("Shares[%v]", idx),
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			case interface{ Validate() error }:
+				if err := v.Validate(); err != nil {
+					errors = append(errors, GetMySharesResponseValidationError{
+						field:  fmt.Sprintf("Shares[%v]", idx),
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			}
+		} else if v, ok := interface{}(item).(interface{ Validate() error }); ok {
+			if err := v.Validate(); err != nil {
+				return GetMySharesResponseValidationError{
+					field:  fmt.Sprintf("Shares[%v]", idx),
+					reason: "embedded message failed validation",
+					cause:  err,
+				}
+			}
+		}
+
+	}
+
+	// no validation rules for Total
+
+	if len(errors) > 0 {
+		return GetMySharesResponseMultiError(errors)
+	}
+
+	return nil
+}
+
+// GetMySharesResponseMultiError is an error wrapping multiple validation
+// errors returned by GetMySharesResponse.ValidateAll() if the designated
+// constraints aren't met.
+type GetMySharesResponseMultiError []error
+
+// Error returns a concatenation of all the error messages it wraps.
+func (m GetMySharesResponseMultiError) Error() string {
+	msgs := make([]string, 0, len(m))
+	for _, err := range m {
+		msgs = append(msgs, err.Error())
+	}
+	return strings.Join(msgs, "; ")
+}
+
+// AllErrors returns a list of validation violation errors.
+func (m GetMySharesResponseMultiError) AllErrors() []error { return m }
+
+// GetMySharesResponseValidationError is the validation error returned by
+// GetMySharesResponse.Validate if the designated constraints aren't met.
+type GetMySharesResponseValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e GetMySharesResponseValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e GetMySharesResponseValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e GetMySharesResponseValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e GetMySharesResponseValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e GetMySharesResponseValidationError) ErrorName() string {
+	return "GetMySharesResponseValidationError"
+}
+
+// Error satisfies the builtin error interface
+func (e GetMySharesResponseValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sGetMySharesResponse.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = GetMySharesResponseValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = GetMySharesResponseValidationError{}
+
+// Validate checks the field values on RevokeShareRequest with the rules
+// defined in the proto definition for this message. If any rules are
+// violated, the first error encountered is returned, or nil if there are no violations.
+func (m *RevokeShareRequest) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on RevokeShareRequest with the rules
+// defined in the proto definition for this message. If any rules are
+// violated, the result is a list of violation errors wrapped in
+// RevokeShareRequestMultiError, or nil if none found.
+func (m *RevokeShareRequest) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *RevokeShareRequest) validate(all bool) error {
+	if m == nil {
+		return nil
+	}
+
+	var errors []error
+
+	if utf8.RuneCountInString(m.GetShareCode()) < 1 {
+		err := RevokeShareRequestValidationError{
+			field:  "ShareCode",
+			reason: "value length must be at least 1 runes",
+		}
+		if !all {
+			return err
+		}
+		errors = append(errors, err)
+	}
+
+	if len(errors) > 0 {
+		return RevokeShareRequestMultiError(errors)
+	}
+
+	return nil
+}
+
+// RevokeShareRequestMultiError is an error wrapping multiple validation errors
+// returned by RevokeShareRequest.ValidateAll() if the designated constraints
+// aren't met.
+type RevokeShareRequestMultiError []error
+
+// Error returns a concatenation of all the error messages it wraps.
+func (m RevokeShareRequestMultiError) Error() string {
+	msgs := make([]string, 0, len(m))
+	for _, err := range m {
+		msgs = append(msgs, err.Error())
+	}
+	return strings.Join(msgs, "; ")
+}
+
+// AllErrors returns a list of validation violation errors.
+func (m RevokeShareRequestMultiError) AllErrors() []error { return m }
+
+// RevokeShareRequestValidationError is the validation error returned by
+// RevokeShareRequest.Validate if the designated constraints aren't met.
+type RevokeShareRequestValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e RevokeShareRequestValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e RevokeShareRequestValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e RevokeShareRequestValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e RevokeShareRequestValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e RevokeShareRequestValidationError) ErrorName() string {
+	return "RevokeShareRequestValidationError"
+}
+
+// Error satisfies the builtin error interface
+func (e RevokeShareRequestValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sRevokeShareRequest.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = RevokeShareRequestValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = RevokeShareRequestValidationError{}
+
+// Validate checks the field values on RevokeShareResponse with the rules
+// defined in the proto definition for this message. If any rules are
+// violated, the first error encountered is returned, or nil if there are no violations.
+func (m *RevokeShareResponse) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on RevokeShareResponse with the rules
+// defined in the proto definition for this message. If any rules are
+// violated, the result is a list of violation errors wrapped in
+// RevokeShareResponseMultiError, or nil if none found.
+func (m *RevokeShareResponse) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *RevokeShareResponse) validate(all bool) error {
+	if m == nil {
+		return nil
+	}
+
+	var errors []error
+
+	// no validation rules for Success
+
+	if len(errors) > 0 {
+		return RevokeShareResponseMultiError(errors)
+	}
+
+	return nil
+}
+
+// RevokeShareResponseMultiError is an error wrapping multiple validation
+// errors returned by RevokeShareResponse.ValidateAll() if the designated
+// constraints aren't met.
+type RevokeShareResponseMultiError []error
+
+// Error returns a concatenation of all the error messages it wraps.
+func (m RevokeShareResponseMultiError) Error() string {
+	msgs := make([]string, 0, len(m))
+	for _, err := range m {
+		msgs = append(msgs, err.Error())
+	}
+	return strings.Join(msgs, "; ")
+}
+
+// AllErrors returns a list of validation violation errors.
+func (m RevokeShareResponseMultiError) AllErrors() []error { return m }
+
+// RevokeShareResponseValidationError is the validation error returned by
+// RevokeShareResponse.Validate if the designated constraints aren't met.
+type RevokeShareResponseValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e RevokeShareResponseValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e RevokeShareResponseValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e RevokeShareResponseValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e RevokeShareResponseValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e RevokeShareResponseValidationError) ErrorName() string {
+	return "RevokeShareResponseValidationError"
+}
+
+// Error satisfies the builtin error interface
+func (e RevokeShareResponseValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sRevokeShareResponse.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = RevokeShareResponseValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = RevokeShareResponseValidationError{}

@@ -2059,6 +2059,301 @@ func (x *GetPresignedURLResponse) GetExpireAt() int64 {
 	return 0
 }
 
+// ==========================================
+// 17. 分享管理（我的分享列表 / 撤销）
+// ==========================================
+type GetMySharesRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Page          int32                  `protobuf:"varint,1,opt,name=page,proto3" json:"page,omitempty"`
+	PageSize      int32                  `protobuf:"varint,2,opt,name=page_size,json=pageSize,proto3" json:"page_size,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetMySharesRequest) Reset() {
+	*x = GetMySharesRequest{}
+	mi := &file_file_proto_msgTypes[35]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetMySharesRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetMySharesRequest) ProtoMessage() {}
+
+func (x *GetMySharesRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_file_proto_msgTypes[35]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetMySharesRequest.ProtoReflect.Descriptor instead.
+func (*GetMySharesRequest) Descriptor() ([]byte, []int) {
+	return file_file_proto_rawDescGZIP(), []int{35}
+}
+
+func (x *GetMySharesRequest) GetPage() int32 {
+	if x != nil {
+		return x.Page
+	}
+	return 0
+}
+
+func (x *GetMySharesRequest) GetPageSize() int32 {
+	if x != nil {
+		return x.PageSize
+	}
+	return 0
+}
+
+type ShareItem struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	ShareCode     string                 `protobuf:"bytes,1,opt,name=share_code,json=shareCode,proto3" json:"share_code,omitempty"`     // 提取码
+	FileId        string                 `protobuf:"bytes,2,opt,name=file_id,json=fileId,proto3" json:"file_id,omitempty"`              // 文件 ID
+	FileName      string                 `protobuf:"bytes,3,opt,name=file_name,json=fileName,proto3" json:"file_name,omitempty"`        // 文件名（冗余返回，免前端二次查询）
+	Permission    string                 `protobuf:"bytes,4,opt,name=permission,proto3" json:"permission,omitempty"`                    // read / download
+	ExpireAt      string                 `protobuf:"bytes,5,opt,name=expire_at,json=expireAt,proto3" json:"expire_at,omitempty"`        // 过期时间（空=永久）
+	MaxCount      *int32                 `protobuf:"varint,6,opt,name=max_count,json=maxCount,proto3,oneof" json:"max_count,omitempty"` // 下载次数上限（空=不限）
+	UsedCount     int64                  `protobuf:"varint,7,opt,name=used_count,json=usedCount,proto3" json:"used_count,omitempty"`    // 已用下载次数
+	CreatedAt     string                 `protobuf:"bytes,8,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`     // 创建时间
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ShareItem) Reset() {
+	*x = ShareItem{}
+	mi := &file_file_proto_msgTypes[36]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ShareItem) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ShareItem) ProtoMessage() {}
+
+func (x *ShareItem) ProtoReflect() protoreflect.Message {
+	mi := &file_file_proto_msgTypes[36]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ShareItem.ProtoReflect.Descriptor instead.
+func (*ShareItem) Descriptor() ([]byte, []int) {
+	return file_file_proto_rawDescGZIP(), []int{36}
+}
+
+func (x *ShareItem) GetShareCode() string {
+	if x != nil {
+		return x.ShareCode
+	}
+	return ""
+}
+
+func (x *ShareItem) GetFileId() string {
+	if x != nil {
+		return x.FileId
+	}
+	return ""
+}
+
+func (x *ShareItem) GetFileName() string {
+	if x != nil {
+		return x.FileName
+	}
+	return ""
+}
+
+func (x *ShareItem) GetPermission() string {
+	if x != nil {
+		return x.Permission
+	}
+	return ""
+}
+
+func (x *ShareItem) GetExpireAt() string {
+	if x != nil {
+		return x.ExpireAt
+	}
+	return ""
+}
+
+func (x *ShareItem) GetMaxCount() int32 {
+	if x != nil && x.MaxCount != nil {
+		return *x.MaxCount
+	}
+	return 0
+}
+
+func (x *ShareItem) GetUsedCount() int64 {
+	if x != nil {
+		return x.UsedCount
+	}
+	return 0
+}
+
+func (x *ShareItem) GetCreatedAt() string {
+	if x != nil {
+		return x.CreatedAt
+	}
+	return ""
+}
+
+type GetMySharesResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Shares        []*ShareItem           `protobuf:"bytes,1,rep,name=shares,proto3" json:"shares,omitempty"`
+	Total         int32                  `protobuf:"varint,2,opt,name=total,proto3" json:"total,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetMySharesResponse) Reset() {
+	*x = GetMySharesResponse{}
+	mi := &file_file_proto_msgTypes[37]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetMySharesResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetMySharesResponse) ProtoMessage() {}
+
+func (x *GetMySharesResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_file_proto_msgTypes[37]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetMySharesResponse.ProtoReflect.Descriptor instead.
+func (*GetMySharesResponse) Descriptor() ([]byte, []int) {
+	return file_file_proto_rawDescGZIP(), []int{37}
+}
+
+func (x *GetMySharesResponse) GetShares() []*ShareItem {
+	if x != nil {
+		return x.Shares
+	}
+	return nil
+}
+
+func (x *GetMySharesResponse) GetTotal() int32 {
+	if x != nil {
+		return x.Total
+	}
+	return 0
+}
+
+type RevokeShareRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	ShareCode     string                 `protobuf:"bytes,1,opt,name=share_code,json=shareCode,proto3" json:"share_code,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *RevokeShareRequest) Reset() {
+	*x = RevokeShareRequest{}
+	mi := &file_file_proto_msgTypes[38]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *RevokeShareRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*RevokeShareRequest) ProtoMessage() {}
+
+func (x *RevokeShareRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_file_proto_msgTypes[38]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use RevokeShareRequest.ProtoReflect.Descriptor instead.
+func (*RevokeShareRequest) Descriptor() ([]byte, []int) {
+	return file_file_proto_rawDescGZIP(), []int{38}
+}
+
+func (x *RevokeShareRequest) GetShareCode() string {
+	if x != nil {
+		return x.ShareCode
+	}
+	return ""
+}
+
+type RevokeShareResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Success       bool                   `protobuf:"varint,1,opt,name=success,proto3" json:"success,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *RevokeShareResponse) Reset() {
+	*x = RevokeShareResponse{}
+	mi := &file_file_proto_msgTypes[39]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *RevokeShareResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*RevokeShareResponse) ProtoMessage() {}
+
+func (x *RevokeShareResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_file_proto_msgTypes[39]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use RevokeShareResponse.ProtoReflect.Descriptor instead.
+func (*RevokeShareResponse) Descriptor() ([]byte, []int) {
+	return file_file_proto_rawDescGZIP(), []int{39}
+}
+
+func (x *RevokeShareResponse) GetSuccess() bool {
+	if x != nil {
+		return x.Success
+	}
+	return false
+}
+
 var File_file_proto protoreflect.FileDescriptor
 
 const file_file_proto_rawDesc = "" +
@@ -2218,7 +2513,34 @@ const file_file_proto_rawDesc = "" +
 	"\x0f_expire_seconds\"H\n" +
 	"\x17GetPresignedURLResponse\x12\x10\n" +
 	"\x03url\x18\x01 \x01(\tR\x03url\x12\x1b\n" +
-	"\texpire_at\x18\x02 \x01(\x03R\bexpireAtB\x10Z\x0e.proto/serviceb\x06proto3"
+	"\texpire_at\x18\x02 \x01(\x03R\bexpireAt\"Y\n" +
+	"\x12GetMySharesRequest\x12\x1b\n" +
+	"\x04page\x18\x01 \x01(\x05B\a\xfaB\x04\x1a\x02(\x01R\x04page\x12&\n" +
+	"\tpage_size\x18\x02 \x01(\x05B\t\xfaB\x06\x1a\x04\x182(\x01R\bpageSize\"\x8b\x02\n" +
+	"\tShareItem\x12\x1d\n" +
+	"\n" +
+	"share_code\x18\x01 \x01(\tR\tshareCode\x12\x17\n" +
+	"\afile_id\x18\x02 \x01(\tR\x06fileId\x12\x1b\n" +
+	"\tfile_name\x18\x03 \x01(\tR\bfileName\x12\x1e\n" +
+	"\n" +
+	"permission\x18\x04 \x01(\tR\n" +
+	"permission\x12\x1b\n" +
+	"\texpire_at\x18\x05 \x01(\tR\bexpireAt\x12 \n" +
+	"\tmax_count\x18\x06 \x01(\x05H\x00R\bmaxCount\x88\x01\x01\x12\x1d\n" +
+	"\n" +
+	"used_count\x18\a \x01(\x03R\tusedCount\x12\x1d\n" +
+	"\n" +
+	"created_at\x18\b \x01(\tR\tcreatedAtB\f\n" +
+	"\n" +
+	"_max_count\"W\n" +
+	"\x13GetMySharesResponse\x12*\n" +
+	"\x06shares\x18\x01 \x03(\v2\x12.storage.ShareItemR\x06shares\x12\x14\n" +
+	"\x05total\x18\x02 \x01(\x05R\x05total\"<\n" +
+	"\x12RevokeShareRequest\x12&\n" +
+	"\n" +
+	"share_code\x18\x01 \x01(\tB\a\xfaB\x04r\x02\x10\x01R\tshareCode\"/\n" +
+	"\x13RevokeShareResponse\x12\x18\n" +
+	"\asuccess\x18\x01 \x01(\bR\asuccessB\x10Z\x0e.proto/serviceb\x06proto3"
 
 var (
 	file_file_proto_rawDescOnce sync.Once
@@ -2232,7 +2554,7 @@ func file_file_proto_rawDescGZIP() []byte {
 	return file_file_proto_rawDescData
 }
 
-var file_file_proto_msgTypes = make([]protoimpl.MessageInfo, 35)
+var file_file_proto_msgTypes = make([]protoimpl.MessageInfo, 40)
 var file_file_proto_goTypes = []any{
 	(*FileMeta)(nil),                        // 0: storage.FileMeta
 	(*FileInfoRequest)(nil),                 // 1: storage.FileInfoRequest
@@ -2269,6 +2591,11 @@ var file_file_proto_goTypes = []any{
 	(*StorageStatsResponse)(nil),            // 32: storage.StorageStatsResponse
 	(*GetPresignedURLRequest)(nil),          // 33: storage.GetPresignedURLRequest
 	(*GetPresignedURLResponse)(nil),         // 34: storage.GetPresignedURLResponse
+	(*GetMySharesRequest)(nil),              // 35: storage.GetMySharesRequest
+	(*ShareItem)(nil),                       // 36: storage.ShareItem
+	(*GetMySharesResponse)(nil),             // 37: storage.GetMySharesResponse
+	(*RevokeShareRequest)(nil),              // 38: storage.RevokeShareRequest
+	(*RevokeShareResponse)(nil),             // 39: storage.RevokeShareResponse
 }
 var file_file_proto_depIdxs = []int32{
 	0,  // 0: storage.FileInfoResponse.file:type_name -> storage.FileMeta
@@ -2280,11 +2607,12 @@ var file_file_proto_depIdxs = []int32{
 	0,  // 6: storage.AccessShareResponse.file:type_name -> storage.FileMeta
 	0,  // 7: storage.DownloadByShareResponse.file:type_name -> storage.FileMeta
 	31, // 8: storage.StorageStatsResponse.buckets:type_name -> storage.BucketStats
-	9,  // [9:9] is the sub-list for method output_type
-	9,  // [9:9] is the sub-list for method input_type
-	9,  // [9:9] is the sub-list for extension type_name
-	9,  // [9:9] is the sub-list for extension extendee
-	0,  // [0:9] is the sub-list for field type_name
+	36, // 9: storage.GetMySharesResponse.shares:type_name -> storage.ShareItem
+	10, // [10:10] is the sub-list for method output_type
+	10, // [10:10] is the sub-list for method input_type
+	10, // [10:10] is the sub-list for extension type_name
+	10, // [10:10] is the sub-list for extension extendee
+	0,  // [0:10] is the sub-list for field type_name
 }
 
 func init() { file_file_proto_init() }
@@ -2298,13 +2626,14 @@ func file_file_proto_init() {
 	file_file_proto_msgTypes[16].OneofWrappers = []any{}
 	file_file_proto_msgTypes[24].OneofWrappers = []any{}
 	file_file_proto_msgTypes[33].OneofWrappers = []any{}
+	file_file_proto_msgTypes[36].OneofWrappers = []any{}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_file_proto_rawDesc), len(file_file_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   35,
+			NumMessages:   40,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

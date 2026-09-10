@@ -254,3 +254,35 @@ message GetPresignedURLResponse {
   string url = 1;       // 预签名下载 URL
   int64 expire_at = 2;  // 过期时间（unix 秒）
 }
+
+// ==========================================
+// 17. 分享管理（我的分享列表 / 撤销）
+// ==========================================
+message GetMySharesRequest {
+  int32 page = 1 [(validate.rules).int32 = {gte: 1}];
+  int32 page_size = 2 [(validate.rules).int32 = {gte:1, lte:50}];
+}
+
+message ShareItem {
+  string share_code = 1;         // 提取码
+  string file_id = 2;            // 文件 ID
+  string file_name = 3;          // 文件名（冗余返回，免前端二次查询）
+  string permission = 4;         // read / download
+  string expire_at = 5;          // 过期时间（空=永久）
+  optional int32 max_count = 6;  // 下载次数上限（空=不限）
+  int64 used_count = 7;          // 已用下载次数
+  string created_at = 8;         // 创建时间
+}
+
+message GetMySharesResponse {
+  repeated ShareItem shares = 1;
+  int32 total = 2;
+}
+
+message RevokeShareRequest {
+  string share_code = 1 [(validate.rules).string = {min_len: 1}];
+}
+
+message RevokeShareResponse {
+  bool success = 1;
+}

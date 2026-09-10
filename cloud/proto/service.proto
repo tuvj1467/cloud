@@ -86,4 +86,10 @@ service File {
 
   // 获取预签名下载 URL（需登录；本地驱动不支持返回 40005）
   rpc GetPresignedURL(GetPresignedURLRequest) returns (Response);
+
+  // 我的分享列表（需登录）
+  rpc GetMyShares(GetMySharesRequest) returns (Response);
+
+  // 撤销分享（需登录，仅限本人分享）
+  rpc RevokeShare(RevokeShareRequest) returns (Response);
 }

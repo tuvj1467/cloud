@@ -46,6 +46,12 @@ upstreams:
       - Method: GET
         Path: /file/presign
         RpcPath: storage.File/GetPresignedURL
+      - Method: GET
+        Path: /file/share/my
+        RpcPath: storage.File/GetMyShares
+      - Method: POST
+        Path: /file/share/revoke
+        RpcPath: storage.File/RevokeShare
       # ===== 分片上传 =====
       - Method: POST
         Path: /file/multipart/init

@@ -6,6 +6,8 @@ import (
 
 	"onecloud/ent"
 	"onecloud/ent/fileshare"
+
+	entsql "entgo.io/ent/dialect/sql"
 )
 
 // FileShareRepository 文件分享数据访问层
@@ -79,6 +81,26 @@ func (r *FileShareRepository) IncUsedCount(ctx context.Context, id string, versi
 // DeleteByID 删除分享记录
 func (r *FileShareRepository) DeleteByID(ctx context.Context, id string) error {
 	return r.client.FileShare.DeleteOneID(id).Exec(ctx)
+}
+
+// ListByUser 分页查询用户的分享记录（创建时间倒序），返回列表与总数
+func (r *FileShareRepository) ListByUser(ctx context.Context, userID string, page, pageSize int) ([]*ent.FileShare, int, error) {
+	if page <= 0 {
+		page = 1
+	}
+	if pageSize <= 0 {
+		pageSize = 10
+	}
+	base := r.client.FileShare.Query().Where(fileshare.UserIDEQ(userID))
+	total, err := base.Count(ctx)
+	if err != nil {
+		return nil, 0, err
+	}
+	list, err := base.Order(fileshare.ByCreatedAt(entsql.OrderDesc())).Offset((page - 1) * pageSize).Limit(pageSize).All(ctx)
+	if err != nil {
+		return nil, 0, err
+	}
+	return list, total, nil
 }
 
 // ListByFileIDs 查询一组文件的分享记录（事务删除前查出，供事务后清理 Redis）

@@ -644,6 +644,8 @@ const (
 	File_DownloadByShare_FullMethodName         = "/storage.File/DownloadByShare"
 	File_GetStorageStats_FullMethodName         = "/storage.File/GetStorageStats"
 	File_GetPresignedURL_FullMethodName         = "/storage.File/GetPresignedURL"
+	File_GetMyShares_FullMethodName             = "/storage.File/GetMyShares"
+	File_RevokeShare_FullMethodName             = "/storage.File/RevokeShare"
 )
 
 // FileClient is the client API for File service.
@@ -689,6 +691,10 @@ type FileClient interface {
 	GetStorageStats(ctx context.Context, in *GetStorageStatsRequest, opts ...grpc.CallOption) (*Response, error)
 	// 获取预签名下载 URL（需登录；本地驱动不支持返回 40005）
 	GetPresignedURL(ctx context.Context, in *GetPresignedURLRequest, opts ...grpc.CallOption) (*Response, error)
+	// 我的分享列表（需登录）
+	GetMyShares(ctx context.Context, in *GetMySharesRequest, opts ...grpc.CallOption) (*Response, error)
+	// 撤销分享（需登录，仅限本人分享）
+	RevokeShare(ctx context.Context, in *RevokeShareRequest, opts ...grpc.CallOption) (*Response, error)
 }
 
 type fileClient struct {
@@ -869,6 +875,26 @@ func (c *fileClient) GetPresignedURL(ctx context.Context, in *GetPresignedURLReq
 	return out, nil
 }
 
+func (c *fileClient) GetMyShares(ctx context.Context, in *GetMySharesRequest, opts ...grpc.CallOption) (*Response, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(Response)
+	err := c.cc.Invoke(ctx, File_GetMyShares_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *fileClient) RevokeShare(ctx context.Context, in *RevokeShareRequest, opts ...grpc.CallOption) (*Response, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(Response)
+	err := c.cc.Invoke(ctx, File_RevokeShare_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // FileServer is the server API for File service.
 // All implementations must embed UnimplementedFileServer
 // for forward compatibility.
@@ -912,6 +938,10 @@ type FileServer interface {
 	GetStorageStats(context.Context, *GetStorageStatsRequest) (*Response, error)
 	// 获取预签名下载 URL（需登录；本地驱动不支持返回 40005）
 	GetPresignedURL(context.Context, *GetPresignedURLRequest) (*Response, error)
+	// 我的分享列表（需登录）
+	GetMyShares(context.Context, *GetMySharesRequest) (*Response, error)
+	// 撤销分享（需登录，仅限本人分享）
+	RevokeShare(context.Context, *RevokeShareRequest) (*Response, error)
 	mustEmbedUnimplementedFileServer()
 }
 
@@ -972,6 +1002,12 @@ func (UnimplementedFileServer) GetStorageStats(context.Context, *GetStorageStats
 }
 func (UnimplementedFileServer) GetPresignedURL(context.Context, *GetPresignedURLRequest) (*Response, error) {
 	return nil, status.Error(codes.Unimplemented, "method GetPresignedURL not implemented")
+}
+func (UnimplementedFileServer) GetMyShares(context.Context, *GetMySharesRequest) (*Response, error) {
+	return nil, status.Error(codes.Unimplemented, "method GetMyShares not implemented")
+}
+func (UnimplementedFileServer) RevokeShare(context.Context, *RevokeShareRequest) (*Response, error) {
+	return nil, status.Error(codes.Unimplemented, "method RevokeShare not implemented")
 }
 func (UnimplementedFileServer) mustEmbedUnimplementedFileServer() {}
 func (UnimplementedFileServer) testEmbeddedByValue()              {}
@@ -1300,6 +1336,42 @@ func _File_GetPresignedURL_Handler(srv interface{}, ctx context.Context, dec fun
 	return interceptor(ctx, in, info, handler)
 }
 
+func _File_GetMyShares_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetMySharesRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(FileServer).GetMyShares(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: File_GetMyShares_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(FileServer).GetMyShares(ctx, req.(*GetMySharesRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _File_RevokeShare_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(RevokeShareRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(FileServer).RevokeShare(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: File_RevokeShare_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(FileServer).RevokeShare(ctx, req.(*RevokeShareRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // File_ServiceDesc is the grpc.ServiceDesc for File service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -1374,6 +1446,14 @@ var File_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetPresignedURL",
 			Handler:    _File_GetPresignedURL_Handler,
+		},
+		{
+			MethodName: "GetMyShares",
+			Handler:    _File_GetMyShares_Handler,
+		},
+		{
+			MethodName: "RevokeShare",
+			Handler:    _File_RevokeShare_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
