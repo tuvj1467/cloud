@@ -302,3 +302,20 @@ message DownloadChunk {
 message FileThumbRequest {
   string file_id = 1 [(validate.rules).string = {min_len: 1}];
 }
+
+// ==========================================
+// 20. 用量趋势
+// ==========================================
+message GetStorageTrendRequest {
+  optional int32 days = 1 [(validate.rules).int32 = {gte: 7, lte: 90}]; // 天数（缺省 30，上限 90）
+}
+
+message TrendPoint {
+  string date = 1;      // 日期（2006-01-02）
+  int64 file_count = 2; // 当日文件总数
+  int64 total_size = 3; // 当日总容量（字节）
+}
+
+message GetStorageTrendResponse {
+  repeated TrendPoint points = 1;
+}

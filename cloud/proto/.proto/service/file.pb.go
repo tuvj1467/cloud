@@ -2464,6 +2464,157 @@ func (x *FileThumbRequest) GetFileId() string {
 	return ""
 }
 
+// ==========================================
+// 20. 用量趋势
+// ==========================================
+type GetStorageTrendRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Days          *int32                 `protobuf:"varint,1,opt,name=days,proto3,oneof" json:"days,omitempty"` // 天数（缺省 30，上限 90）
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetStorageTrendRequest) Reset() {
+	*x = GetStorageTrendRequest{}
+	mi := &file_file_proto_msgTypes[42]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetStorageTrendRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetStorageTrendRequest) ProtoMessage() {}
+
+func (x *GetStorageTrendRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_file_proto_msgTypes[42]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetStorageTrendRequest.ProtoReflect.Descriptor instead.
+func (*GetStorageTrendRequest) Descriptor() ([]byte, []int) {
+	return file_file_proto_rawDescGZIP(), []int{42}
+}
+
+func (x *GetStorageTrendRequest) GetDays() int32 {
+	if x != nil && x.Days != nil {
+		return *x.Days
+	}
+	return 0
+}
+
+type TrendPoint struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Date          string                 `protobuf:"bytes,1,opt,name=date,proto3" json:"date,omitempty"`                             // 日期（2006-01-02）
+	FileCount     int64                  `protobuf:"varint,2,opt,name=file_count,json=fileCount,proto3" json:"file_count,omitempty"` // 当日文件总数
+	TotalSize     int64                  `protobuf:"varint,3,opt,name=total_size,json=totalSize,proto3" json:"total_size,omitempty"` // 当日总容量（字节）
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *TrendPoint) Reset() {
+	*x = TrendPoint{}
+	mi := &file_file_proto_msgTypes[43]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *TrendPoint) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*TrendPoint) ProtoMessage() {}
+
+func (x *TrendPoint) ProtoReflect() protoreflect.Message {
+	mi := &file_file_proto_msgTypes[43]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use TrendPoint.ProtoReflect.Descriptor instead.
+func (*TrendPoint) Descriptor() ([]byte, []int) {
+	return file_file_proto_rawDescGZIP(), []int{43}
+}
+
+func (x *TrendPoint) GetDate() string {
+	if x != nil {
+		return x.Date
+	}
+	return ""
+}
+
+func (x *TrendPoint) GetFileCount() int64 {
+	if x != nil {
+		return x.FileCount
+	}
+	return 0
+}
+
+func (x *TrendPoint) GetTotalSize() int64 {
+	if x != nil {
+		return x.TotalSize
+	}
+	return 0
+}
+
+type GetStorageTrendResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Points        []*TrendPoint          `protobuf:"bytes,1,rep,name=points,proto3" json:"points,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetStorageTrendResponse) Reset() {
+	*x = GetStorageTrendResponse{}
+	mi := &file_file_proto_msgTypes[44]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetStorageTrendResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetStorageTrendResponse) ProtoMessage() {}
+
+func (x *GetStorageTrendResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_file_proto_msgTypes[44]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetStorageTrendResponse.ProtoReflect.Descriptor instead.
+func (*GetStorageTrendResponse) Descriptor() ([]byte, []int) {
+	return file_file_proto_rawDescGZIP(), []int{44}
+}
+
+func (x *GetStorageTrendResponse) GetPoints() []*TrendPoint {
+	if x != nil {
+		return x.Points
+	}
+	return nil
+}
+
 var File_file_proto protoreflect.FileDescriptor
 
 const file_file_proto_rawDesc = "" +
@@ -2656,7 +2807,19 @@ const file_file_proto_rawDesc = "" +
 	"\x04sent\x18\x02 \x01(\x03R\x04sent\x12\x14\n" +
 	"\x05total\x18\x03 \x01(\x03R\x05total\"4\n" +
 	"\x10FileThumbRequest\x12 \n" +
-	"\afile_id\x18\x01 \x01(\tB\a\xfaB\x04r\x02\x10\x01R\x06fileIdB\x10Z\x0e.proto/serviceb\x06proto3"
+	"\afile_id\x18\x01 \x01(\tB\a\xfaB\x04r\x02\x10\x01R\x06fileId\"E\n" +
+	"\x16GetStorageTrendRequest\x12\"\n" +
+	"\x04days\x18\x01 \x01(\x05B\t\xfaB\x06\x1a\x04\x18Z(\aH\x00R\x04days\x88\x01\x01B\a\n" +
+	"\x05_days\"^\n" +
+	"\n" +
+	"TrendPoint\x12\x12\n" +
+	"\x04date\x18\x01 \x01(\tR\x04date\x12\x1d\n" +
+	"\n" +
+	"file_count\x18\x02 \x01(\x03R\tfileCount\x12\x1d\n" +
+	"\n" +
+	"total_size\x18\x03 \x01(\x03R\ttotalSize\"F\n" +
+	"\x17GetStorageTrendResponse\x12+\n" +
+	"\x06points\x18\x01 \x03(\v2\x13.storage.TrendPointR\x06pointsB\x10Z\x0e.proto/serviceb\x06proto3"
 
 var (
 	file_file_proto_rawDescOnce sync.Once
@@ -2670,7 +2833,7 @@ func file_file_proto_rawDescGZIP() []byte {
 	return file_file_proto_rawDescData
 }
 
-var file_file_proto_msgTypes = make([]protoimpl.MessageInfo, 42)
+var file_file_proto_msgTypes = make([]protoimpl.MessageInfo, 45)
 var file_file_proto_goTypes = []any{
 	(*FileMeta)(nil),                        // 0: storage.FileMeta
 	(*FileInfoRequest)(nil),                 // 1: storage.FileInfoRequest
@@ -2714,6 +2877,9 @@ var file_file_proto_goTypes = []any{
 	(*RevokeShareResponse)(nil),             // 39: storage.RevokeShareResponse
 	(*DownloadChunk)(nil),                   // 40: storage.DownloadChunk
 	(*FileThumbRequest)(nil),                // 41: storage.FileThumbRequest
+	(*GetStorageTrendRequest)(nil),          // 42: storage.GetStorageTrendRequest
+	(*TrendPoint)(nil),                      // 43: storage.TrendPoint
+	(*GetStorageTrendResponse)(nil),         // 44: storage.GetStorageTrendResponse
 }
 var file_file_proto_depIdxs = []int32{
 	0,  // 0: storage.FileInfoResponse.file:type_name -> storage.FileMeta
@@ -2726,11 +2892,12 @@ var file_file_proto_depIdxs = []int32{
 	0,  // 7: storage.DownloadByShareResponse.file:type_name -> storage.FileMeta
 	31, // 8: storage.StorageStatsResponse.buckets:type_name -> storage.BucketStats
 	36, // 9: storage.GetMySharesResponse.shares:type_name -> storage.ShareItem
-	10, // [10:10] is the sub-list for method output_type
-	10, // [10:10] is the sub-list for method input_type
-	10, // [10:10] is the sub-list for extension type_name
-	10, // [10:10] is the sub-list for extension extendee
-	0,  // [0:10] is the sub-list for field type_name
+	43, // 10: storage.GetStorageTrendResponse.points:type_name -> storage.TrendPoint
+	11, // [11:11] is the sub-list for method output_type
+	11, // [11:11] is the sub-list for method input_type
+	11, // [11:11] is the sub-list for extension type_name
+	11, // [11:11] is the sub-list for extension extendee
+	0,  // [0:11] is the sub-list for field type_name
 }
 
 func init() { file_file_proto_init() }
@@ -2745,13 +2912,14 @@ func file_file_proto_init() {
 	file_file_proto_msgTypes[24].OneofWrappers = []any{}
 	file_file_proto_msgTypes[33].OneofWrappers = []any{}
 	file_file_proto_msgTypes[36].OneofWrappers = []any{}
+	file_file_proto_msgTypes[42].OneofWrappers = []any{}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_file_proto_rawDesc), len(file_file_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   42,
+			NumMessages:   45,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

@@ -5239,3 +5239,361 @@ var _ interface {
 	Cause() error
 	ErrorName() string
 } = FileThumbRequestValidationError{}
+
+// Validate checks the field values on GetStorageTrendRequest with the rules
+// defined in the proto definition for this message. If any rules are
+// violated, the first error encountered is returned, or nil if there are no violations.
+func (m *GetStorageTrendRequest) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on GetStorageTrendRequest with the rules
+// defined in the proto definition for this message. If any rules are
+// violated, the result is a list of violation errors wrapped in
+// GetStorageTrendRequestMultiError, or nil if none found.
+func (m *GetStorageTrendRequest) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *GetStorageTrendRequest) validate(all bool) error {
+	if m == nil {
+		return nil
+	}
+
+	var errors []error
+
+	if m.Days != nil {
+
+		if val := m.GetDays(); val < 7 || val > 90 {
+			err := GetStorageTrendRequestValidationError{
+				field:  "Days",
+				reason: "value must be inside range [7, 90]",
+			}
+			if !all {
+				return err
+			}
+			errors = append(errors, err)
+		}
+
+	}
+
+	if len(errors) > 0 {
+		return GetStorageTrendRequestMultiError(errors)
+	}
+
+	return nil
+}
+
+// GetStorageTrendRequestMultiError is an error wrapping multiple validation
+// errors returned by GetStorageTrendRequest.ValidateAll() if the designated
+// constraints aren't met.
+type GetStorageTrendRequestMultiError []error
+
+// Error returns a concatenation of all the error messages it wraps.
+func (m GetStorageTrendRequestMultiError) Error() string {
+	msgs := make([]string, 0, len(m))
+	for _, err := range m {
+		msgs = append(msgs, err.Error())
+	}
+	return strings.Join(msgs, "; ")
+}
+
+// AllErrors returns a list of validation violation errors.
+func (m GetStorageTrendRequestMultiError) AllErrors() []error { return m }
+
+// GetStorageTrendRequestValidationError is the validation error returned by
+// GetStorageTrendRequest.Validate if the designated constraints aren't met.
+type GetStorageTrendRequestValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e GetStorageTrendRequestValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e GetStorageTrendRequestValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e GetStorageTrendRequestValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e GetStorageTrendRequestValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e GetStorageTrendRequestValidationError) ErrorName() string {
+	return "GetStorageTrendRequestValidationError"
+}
+
+// Error satisfies the builtin error interface
+func (e GetStorageTrendRequestValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sGetStorageTrendRequest.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = GetStorageTrendRequestValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = GetStorageTrendRequestValidationError{}
+
+// Validate checks the field values on TrendPoint with the rules defined in the
+// proto definition for this message. If any rules are violated, the first
+// error encountered is returned, or nil if there are no violations.
+func (m *TrendPoint) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on TrendPoint with the rules defined in
+// the proto definition for this message. If any rules are violated, the
+// result is a list of violation errors wrapped in TrendPointMultiError, or
+// nil if none found.
+func (m *TrendPoint) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *TrendPoint) validate(all bool) error {
+	if m == nil {
+		return nil
+	}
+
+	var errors []error
+
+	// no validation rules for Date
+
+	// no validation rules for FileCount
+
+	// no validation rules for TotalSize
+
+	if len(errors) > 0 {
+		return TrendPointMultiError(errors)
+	}
+
+	return nil
+}
+
+// TrendPointMultiError is an error wrapping multiple validation errors
+// returned by TrendPoint.ValidateAll() if the designated constraints aren't met.
+type TrendPointMultiError []error
+
+// Error returns a concatenation of all the error messages it wraps.
+func (m TrendPointMultiError) Error() string {
+	msgs := make([]string, 0, len(m))
+	for _, err := range m {
+		msgs = append(msgs, err.Error())
+	}
+	return strings.Join(msgs, "; ")
+}
+
+// AllErrors returns a list of validation violation errors.
+func (m TrendPointMultiError) AllErrors() []error { return m }
+
+// TrendPointValidationError is the validation error returned by
+// TrendPoint.Validate if the designated constraints aren't met.
+type TrendPointValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e TrendPointValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e TrendPointValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e TrendPointValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e TrendPointValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e TrendPointValidationError) ErrorName() string { return "TrendPointValidationError" }
+
+// Error satisfies the builtin error interface
+func (e TrendPointValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sTrendPoint.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = TrendPointValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = TrendPointValidationError{}
+
+// Validate checks the field values on GetStorageTrendResponse with the rules
+// defined in the proto definition for this message. If any rules are
+// violated, the first error encountered is returned, or nil if there are no violations.
+func (m *GetStorageTrendResponse) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on GetStorageTrendResponse with the
+// rules defined in the proto definition for this message. If any rules are
+// violated, the result is a list of violation errors wrapped in
+// GetStorageTrendResponseMultiError, or nil if none found.
+func (m *GetStorageTrendResponse) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *GetStorageTrendResponse) validate(all bool) error {
+	if m == nil {
+		return nil
+	}
+
+	var errors []error
+
+	for idx, item := range m.GetPoints() {
+		_, _ = idx, item
+
+		if all {
+			switch v := interface{}(item).(type) {
+			case interface{ ValidateAll() error }:
+				if err := v.ValidateAll(); err != nil {
+					errors = append(errors, GetStorageTrendResponseValidationError{
+						field:  fmt.Sprintf("Points[%v]", idx),
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			case interface{ Validate() error }:
+				if err := v.Validate(); err != nil {
+					errors = append(errors, GetStorageTrendResponseValidationError{
+						field:  fmt.Sprintf("Points[%v]", idx),
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			}
+		} else if v, ok := interface{}(item).(interface{ Validate() error }); ok {
+			if err := v.Validate(); err != nil {
+				return GetStorageTrendResponseValidationError{
+					field:  fmt.Sprintf("Points[%v]", idx),
+					reason: "embedded message failed validation",
+					cause:  err,
+				}
+			}
+		}
+
+	}
+
+	if len(errors) > 0 {
+		return GetStorageTrendResponseMultiError(errors)
+	}
+
+	return nil
+}
+
+// GetStorageTrendResponseMultiError is an error wrapping multiple validation
+// errors returned by GetStorageTrendResponse.ValidateAll() if the designated
+// constraints aren't met.
+type GetStorageTrendResponseMultiError []error
+
+// Error returns a concatenation of all the error messages it wraps.
+func (m GetStorageTrendResponseMultiError) Error() string {
+	msgs := make([]string, 0, len(m))
+	for _, err := range m {
+		msgs = append(msgs, err.Error())
+	}
+	return strings.Join(msgs, "; ")
+}
+
+// AllErrors returns a list of validation violation errors.
+func (m GetStorageTrendResponseMultiError) AllErrors() []error { return m }
+
+// GetStorageTrendResponseValidationError is the validation error returned by
+// GetStorageTrendResponse.Validate if the designated constraints aren't met.
+type GetStorageTrendResponseValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e GetStorageTrendResponseValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e GetStorageTrendResponseValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e GetStorageTrendResponseValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e GetStorageTrendResponseValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e GetStorageTrendResponseValidationError) ErrorName() string {
+	return "GetStorageTrendResponseValidationError"
+}
+
+// Error satisfies the builtin error interface
+func (e GetStorageTrendResponseValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sGetStorageTrendResponse.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = GetStorageTrendResponseValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = GetStorageTrendResponseValidationError{}

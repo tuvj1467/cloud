@@ -15,6 +15,7 @@ import (
 	"onecloud/ent/file"
 	"onecloud/ent/filepart"
 	"onecloud/ent/fileshare"
+	"onecloud/ent/storagesnapshot"
 	"onecloud/ent/user"
 
 	"entgo.io/ent"
@@ -35,6 +36,8 @@ type Client struct {
 	FilePart *FilePartClient
 	// FileShare is the client for interacting with the FileShare builders.
 	FileShare *FileShareClient
+	// StorageSnapshot is the client for interacting with the StorageSnapshot builders.
+	StorageSnapshot *StorageSnapshotClient
 	// User is the client for interacting with the User builders.
 	User *UserClient
 }
@@ -52,6 +55,7 @@ func (c *Client) init() {
 	c.File = NewFileClient(c.config)
 	c.FilePart = NewFilePartClient(c.config)
 	c.FileShare = NewFileShareClient(c.config)
+	c.StorageSnapshot = NewStorageSnapshotClient(c.config)
 	c.User = NewUserClient(c.config)
 }
 
@@ -143,13 +147,14 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 	cfg := c.config
 	cfg.driver = tx
 	return &Tx{
-		ctx:       ctx,
-		config:    cfg,
-		Bucket:    NewBucketClient(cfg),
-		File:      NewFileClient(cfg),
-		FilePart:  NewFilePartClient(cfg),
-		FileShare: NewFileShareClient(cfg),
-		User:      NewUserClient(cfg),
+		ctx:             ctx,
+		config:          cfg,
+		Bucket:          NewBucketClient(cfg),
+		File:            NewFileClient(cfg),
+		FilePart:        NewFilePartClient(cfg),
+		FileShare:       NewFileShareClient(cfg),
+		StorageSnapshot: NewStorageSnapshotClient(cfg),
+		User:            NewUserClient(cfg),
 	}, nil
 }
 
@@ -167,13 +172,14 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 	cfg := c.config
 	cfg.driver = &txDriver{tx: tx, drv: c.driver}
 	return &Tx{
-		ctx:       ctx,
-		config:    cfg,
-		Bucket:    NewBucketClient(cfg),
-		File:      NewFileClient(cfg),
-		FilePart:  NewFilePartClient(cfg),
-		FileShare: NewFileShareClient(cfg),
-		User:      NewUserClient(cfg),
+		ctx:             ctx,
+		config:          cfg,
+		Bucket:          NewBucketClient(cfg),
+		File:            NewFileClient(cfg),
+		FilePart:        NewFilePartClient(cfg),
+		FileShare:       NewFileShareClient(cfg),
+		StorageSnapshot: NewStorageSnapshotClient(cfg),
+		User:            NewUserClient(cfg),
 	}, nil
 }
 
@@ -202,21 +208,21 @@ func (c *Client) Close() error {
 // Use adds the mutation hooks to all the entity clients.
 // In order to add hooks to a specific client, call: `client.Node.Use(...)`.
 func (c *Client) Use(hooks ...Hook) {
-	c.Bucket.Use(hooks...)
-	c.File.Use(hooks...)
-	c.FilePart.Use(hooks...)
-	c.FileShare.Use(hooks...)
-	c.User.Use(hooks...)
+	for _, n := range []interface{ Use(...Hook) }{
+		c.Bucket, c.File, c.FilePart, c.FileShare, c.StorageSnapshot, c.User,
+	} {
+		n.Use(hooks...)
+	}
 }
 
 // Intercept adds the query interceptors to all the entity clients.
 // In order to add interceptors to a specific client, call: `client.Node.Intercept(...)`.
 func (c *Client) Intercept(interceptors ...Interceptor) {
-	c.Bucket.Intercept(interceptors...)
-	c.File.Intercept(interceptors...)
-	c.FilePart.Intercept(interceptors...)
-	c.FileShare.Intercept(interceptors...)
-	c.User.Intercept(interceptors...)
+	for _, n := range []interface{ Intercept(...Interceptor) }{
+		c.Bucket, c.File, c.FilePart, c.FileShare, c.StorageSnapshot, c.User,
+	} {
+		n.Intercept(interceptors...)
+	}
 }
 
 // Mutate implements the ent.Mutator interface.
@@ -230,6 +236,8 @@ func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 		return c.FilePart.mutate(ctx, m)
 	case *FileShareMutation:
 		return c.FileShare.mutate(ctx, m)
+	case *StorageSnapshotMutation:
+		return c.StorageSnapshot.mutate(ctx, m)
 	case *UserMutation:
 		return c.User.mutate(ctx, m)
 	default:
@@ -769,6 +777,139 @@ func (c *FileShareClient) mutate(ctx context.Context, m *FileShareMutation) (Val
 	}
 }
 
+// StorageSnapshotClient is a client for the StorageSnapshot schema.
+type StorageSnapshotClient struct {
+	config
+}
+
+// NewStorageSnapshotClient returns a client for the StorageSnapshot from the given config.
+func NewStorageSnapshotClient(c config) *StorageSnapshotClient {
+	return &StorageSnapshotClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `storagesnapshot.Hooks(f(g(h())))`.
+func (c *StorageSnapshotClient) Use(hooks ...Hook) {
+	c.hooks.StorageSnapshot = append(c.hooks.StorageSnapshot, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `storagesnapshot.Intercept(f(g(h())))`.
+func (c *StorageSnapshotClient) Intercept(interceptors ...Interceptor) {
+	c.inters.StorageSnapshot = append(c.inters.StorageSnapshot, interceptors...)
+}
+
+// Create returns a builder for creating a StorageSnapshot entity.
+func (c *StorageSnapshotClient) Create() *StorageSnapshotCreate {
+	mutation := newStorageSnapshotMutation(c.config, OpCreate)
+	return &StorageSnapshotCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of StorageSnapshot entities.
+func (c *StorageSnapshotClient) CreateBulk(builders ...*StorageSnapshotCreate) *StorageSnapshotCreateBulk {
+	return &StorageSnapshotCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *StorageSnapshotClient) MapCreateBulk(slice any, setFunc func(*StorageSnapshotCreate, int)) *StorageSnapshotCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &StorageSnapshotCreateBulk{err: fmt.Errorf("calling to StorageSnapshotClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*StorageSnapshotCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &StorageSnapshotCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for StorageSnapshot.
+func (c *StorageSnapshotClient) Update() *StorageSnapshotUpdate {
+	mutation := newStorageSnapshotMutation(c.config, OpUpdate)
+	return &StorageSnapshotUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *StorageSnapshotClient) UpdateOne(_m *StorageSnapshot) *StorageSnapshotUpdateOne {
+	mutation := newStorageSnapshotMutation(c.config, OpUpdateOne, withStorageSnapshot(_m))
+	return &StorageSnapshotUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *StorageSnapshotClient) UpdateOneID(id string) *StorageSnapshotUpdateOne {
+	mutation := newStorageSnapshotMutation(c.config, OpUpdateOne, withStorageSnapshotID(id))
+	return &StorageSnapshotUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for StorageSnapshot.
+func (c *StorageSnapshotClient) Delete() *StorageSnapshotDelete {
+	mutation := newStorageSnapshotMutation(c.config, OpDelete)
+	return &StorageSnapshotDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *StorageSnapshotClient) DeleteOne(_m *StorageSnapshot) *StorageSnapshotDeleteOne {
+	return c.DeleteOneID(_m.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *StorageSnapshotClient) DeleteOneID(id string) *StorageSnapshotDeleteOne {
+	builder := c.Delete().Where(storagesnapshot.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &StorageSnapshotDeleteOne{builder}
+}
+
+// Query returns a query builder for StorageSnapshot.
+func (c *StorageSnapshotClient) Query() *StorageSnapshotQuery {
+	return &StorageSnapshotQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeStorageSnapshot},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a StorageSnapshot entity by its id.
+func (c *StorageSnapshotClient) Get(ctx context.Context, id string) (*StorageSnapshot, error) {
+	return c.Query().Where(storagesnapshot.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *StorageSnapshotClient) GetX(ctx context.Context, id string) *StorageSnapshot {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// Hooks returns the client hooks.
+func (c *StorageSnapshotClient) Hooks() []Hook {
+	return c.hooks.StorageSnapshot
+}
+
+// Interceptors returns the client interceptors.
+func (c *StorageSnapshotClient) Interceptors() []Interceptor {
+	return c.inters.StorageSnapshot
+}
+
+func (c *StorageSnapshotClient) mutate(ctx context.Context, m *StorageSnapshotMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&StorageSnapshotCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&StorageSnapshotUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&StorageSnapshotUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&StorageSnapshotDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown StorageSnapshot mutation op: %q", m.Op())
+	}
+}
+
 // UserClient is a client for the User schema.
 type UserClient struct {
 	config
@@ -905,9 +1046,9 @@ func (c *UserClient) mutate(ctx context.Context, m *UserMutation) (Value, error)
 // hooks and interceptors per client, for fast access.
 type (
 	hooks struct {
-		Bucket, File, FilePart, FileShare, User []ent.Hook
+		Bucket, File, FilePart, FileShare, StorageSnapshot, User []ent.Hook
 	}
 	inters struct {
-		Bucket, File, FilePart, FileShare, User []ent.Interceptor
+		Bucket, File, FilePart, FileShare, StorageSnapshot, User []ent.Interceptor
 	}
 )

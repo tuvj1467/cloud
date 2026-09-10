@@ -648,6 +648,7 @@ const (
 	File_RevokeShare_FullMethodName             = "/storage.File/RevokeShare"
 	File_DownloadStream_FullMethodName          = "/storage.File/DownloadStream"
 	File_GetFileThumb_FullMethodName            = "/storage.File/GetFileThumb"
+	File_GetStorageTrend_FullMethodName         = "/storage.File/GetStorageTrend"
 )
 
 // FileClient is the client API for File service.
@@ -701,6 +702,8 @@ type FileClient interface {
 	DownloadStream(ctx context.Context, in *DownloadFileRequest, opts ...grpc.CallOption) (grpc.ServerStreamingClient[DownloadChunk], error)
 	// 图片缩略图（需登录；仅本地驱动生成）
 	GetFileThumb(ctx context.Context, in *FileThumbRequest, opts ...grpc.CallOption) (*Response, error)
+	// 用量趋势（需登录）
+	GetStorageTrend(ctx context.Context, in *GetStorageTrendRequest, opts ...grpc.CallOption) (*Response, error)
 }
 
 type fileClient struct {
@@ -930,6 +933,16 @@ func (c *fileClient) GetFileThumb(ctx context.Context, in *FileThumbRequest, opt
 	return out, nil
 }
 
+func (c *fileClient) GetStorageTrend(ctx context.Context, in *GetStorageTrendRequest, opts ...grpc.CallOption) (*Response, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(Response)
+	err := c.cc.Invoke(ctx, File_GetStorageTrend_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // FileServer is the server API for File service.
 // All implementations must embed UnimplementedFileServer
 // for forward compatibility.
@@ -981,6 +994,8 @@ type FileServer interface {
 	DownloadStream(*DownloadFileRequest, grpc.ServerStreamingServer[DownloadChunk]) error
 	// 图片缩略图（需登录；仅本地驱动生成）
 	GetFileThumb(context.Context, *FileThumbRequest) (*Response, error)
+	// 用量趋势（需登录）
+	GetStorageTrend(context.Context, *GetStorageTrendRequest) (*Response, error)
 	mustEmbedUnimplementedFileServer()
 }
 
@@ -1053,6 +1068,9 @@ func (UnimplementedFileServer) DownloadStream(*DownloadFileRequest, grpc.ServerS
 }
 func (UnimplementedFileServer) GetFileThumb(context.Context, *FileThumbRequest) (*Response, error) {
 	return nil, status.Error(codes.Unimplemented, "method GetFileThumb not implemented")
+}
+func (UnimplementedFileServer) GetStorageTrend(context.Context, *GetStorageTrendRequest) (*Response, error) {
+	return nil, status.Error(codes.Unimplemented, "method GetStorageTrend not implemented")
 }
 func (UnimplementedFileServer) mustEmbedUnimplementedFileServer() {}
 func (UnimplementedFileServer) testEmbeddedByValue()              {}
@@ -1446,6 +1464,24 @@ func _File_GetFileThumb_Handler(srv interface{}, ctx context.Context, dec func(i
 	return interceptor(ctx, in, info, handler)
 }
 
+func _File_GetStorageTrend_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetStorageTrendRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(FileServer).GetStorageTrend(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: File_GetStorageTrend_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(FileServer).GetStorageTrend(ctx, req.(*GetStorageTrendRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // File_ServiceDesc is the grpc.ServiceDesc for File service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -1532,6 +1568,10 @@ var File_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetFileThumb",
 			Handler:    _File_GetFileThumb_Handler,
+		},
+		{
+			MethodName: "GetStorageTrend",
+			Handler:    _File_GetStorageTrend_Handler,
 		},
 	},
 	Streams: []grpc.StreamDesc{

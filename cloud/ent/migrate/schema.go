@@ -112,6 +112,27 @@ var (
 		Columns:    FileSharesColumns,
 		PrimaryKey: []*schema.Column{FileSharesColumns[0]},
 	}
+	// StorageSnapshotsColumns holds the columns for the "storage_snapshots" table.
+	StorageSnapshotsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeString, Unique: true, Comment: "雪花ID"},
+		{Name: "date", Type: field.TypeString, Size: 10, Comment: "快照日期（2006-01-02）"},
+		{Name: "user_id", Type: field.TypeString, Comment: "用户ID"},
+		{Name: "file_count", Type: field.TypeInt64, Comment: "截至当日该用户文件总数", Default: 0},
+		{Name: "total_size", Type: field.TypeInt64, Comment: "截至当日该用户文件总大小（字节）", Default: 0},
+	}
+	// StorageSnapshotsTable holds the schema information for the "storage_snapshots" table.
+	StorageSnapshotsTable = &schema.Table{
+		Name:       "storage_snapshots",
+		Columns:    StorageSnapshotsColumns,
+		PrimaryKey: []*schema.Column{StorageSnapshotsColumns[0]},
+		Indexes: []*schema.Index{
+			{
+				Name:    "storagesnapshot_date_user_id",
+				Unique:  true,
+				Columns: []*schema.Column{StorageSnapshotsColumns[1], StorageSnapshotsColumns[2]},
+			},
+		},
+	}
 	// UsersColumns holds the columns for the "users" table.
 	UsersColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeString, Unique: true, Comment: "雪花ID（业务层禁止修改）"},
@@ -149,6 +170,7 @@ var (
 		FilesTable,
 		FilePartsTable,
 		FileSharesTable,
+		StorageSnapshotsTable,
 		UsersTable,
 	}
 )

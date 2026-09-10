@@ -8,6 +8,7 @@ import (
 	"onecloud/ent/filepart"
 	"onecloud/ent/fileshare"
 	"onecloud/ent/schema"
+	"onecloud/ent/storagesnapshot"
 	"onecloud/ent/user"
 	"time"
 )
@@ -164,6 +165,42 @@ func init() {
 	fileshareDescID := fileshareFields[0].Descriptor()
 	// fileshare.IDValidator is a validator for the "id" field. It is called by the builders before save.
 	fileshare.IDValidator = fileshareDescID.Validators[0].(func(string) error)
+	storagesnapshotFields := schema.StorageSnapshot{}.Fields()
+	_ = storagesnapshotFields
+	// storagesnapshotDescDate is the schema descriptor for date field.
+	storagesnapshotDescDate := storagesnapshotFields[1].Descriptor()
+	// storagesnapshot.DateValidator is a validator for the "date" field. It is called by the builders before save.
+	storagesnapshot.DateValidator = func() func(string) error {
+		validators := storagesnapshotDescDate.Validators
+		fns := [...]func(string) error{
+			validators[0].(func(string) error),
+			validators[1].(func(string) error),
+		}
+		return func(date string) error {
+			for _, fn := range fns {
+				if err := fn(date); err != nil {
+					return err
+				}
+			}
+			return nil
+		}
+	}()
+	// storagesnapshotDescUserID is the schema descriptor for user_id field.
+	storagesnapshotDescUserID := storagesnapshotFields[2].Descriptor()
+	// storagesnapshot.UserIDValidator is a validator for the "user_id" field. It is called by the builders before save.
+	storagesnapshot.UserIDValidator = storagesnapshotDescUserID.Validators[0].(func(string) error)
+	// storagesnapshotDescFileCount is the schema descriptor for file_count field.
+	storagesnapshotDescFileCount := storagesnapshotFields[3].Descriptor()
+	// storagesnapshot.DefaultFileCount holds the default value on creation for the file_count field.
+	storagesnapshot.DefaultFileCount = storagesnapshotDescFileCount.Default.(int64)
+	// storagesnapshotDescTotalSize is the schema descriptor for total_size field.
+	storagesnapshotDescTotalSize := storagesnapshotFields[4].Descriptor()
+	// storagesnapshot.DefaultTotalSize holds the default value on creation for the total_size field.
+	storagesnapshot.DefaultTotalSize = storagesnapshotDescTotalSize.Default.(int64)
+	// storagesnapshotDescID is the schema descriptor for id field.
+	storagesnapshotDescID := storagesnapshotFields[0].Descriptor()
+	// storagesnapshot.IDValidator is a validator for the "id" field. It is called by the builders before save.
+	storagesnapshot.IDValidator = storagesnapshotDescID.Validators[0].(func(string) error)
 	userMixin := schema.User{}.Mixin()
 	userMixinFields0 := userMixin[0].Fields()
 	_ = userMixinFields0

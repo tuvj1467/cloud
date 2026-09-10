@@ -4,7 +4,7 @@
 // Vue 为全量版全局变量（index.html 先以非 module 方式加载），模块内直接解构
 const { ref, computed, watch, onMounted, onUnmounted } = Vue;
 import {
-  getFileList, getBucketFileList, renameFile, deleteFile, copyFile, downloadBlob, downloadData, getStorageStats, getPresignedURL, getMyShares, revokeShare, streamDownload, getThumb,
+  getFileList, getBucketFileList, renameFile, deleteFile, copyFile, downloadBlob, downloadData, getStorageStats, getPresignedURL, getMyShares, revokeShare, streamDownload, getThumb, getStorageTrend,
 } from '../api.js';
 import { store } from '../store.js';
 import { formatSize, formatTime, fileIcon, toast, confirmBox, saveBlob } from '../common.js';
@@ -39,6 +39,11 @@ if (!document.getElementById('p8-filelist-style')) {
     .p8-share-table th, .p8-share-table td { padding:8px 6px; border-bottom:1px solid #eee; text-align:left; word-break:break-all; }
     .p8-share-table th { color:#666; font-weight:600; }
     .p8-share-revoke { border:none; background:none; color:#e74c3c; cursor:pointer; padding:2px 6px; }
+    .p8-trend-chart { display:flex; align-items:flex-end; gap:4px; height:180px; padding:10px 4px 0; }
+    .p8-trend-col { flex:1; display:flex; flex-direction:column; align-items:center; justify-content:flex-end; height:100%; }
+    .p8-trend-bar { width:100%; max-width:26px; background:linear-gradient(180deg,#667eea,#764ba2); border-radius:4px 4px 0 0; min-height:2px; }
+    .p8-trend-col:hover .p8-trend-bar { background:#5563d8; }
+    .p8-trend-tip { font-size:11px; color:#666; margin-top:4px; transform:rotate(-45deg); white-space:nowrap; }
     .p8-pagination { display:flex; justify-content:space-between; align-items:center; margin-top:20px;
       color:#666; font-size:14px; }
     .p8-page-btns { display:flex; gap:8px; }
@@ -178,6 +183,23 @@ export const FileList = {
 
     function closePreview() {
       preview.value = { show: false, url: '', name: '' };
+    }
+
+    // ===== 用量趋势 =====
+    const trend = ref({ show: false, points: [], loading: false, days: 30 });
+    const maxTrendSize = computed(() => Math.max(1, ...trend.value.points.map((p) => Number(p.totalSize) || 0)));
+
+    async function openTrend() {
+      trend.value.show = true;
+      trend.value.loading = true;
+      try {
+        const data = await getStorageTrend({ days: trend.value.days });
+        trend.value.points = data.points || [];
+      } catch (e) {
+        toast(e.message, 'error');
+      } finally {
+        trend.value.loading = false;
+      }
     }
 
     // ===== 图片缩略图 =====
@@ -328,7 +350,7 @@ export const FileList = {
     return {
       store, keyword, displayList, totalPages, hasBuckets, stats,
       formatSize, formatTime, fileIcon, extOf,
-      doDownload, isImage, openPreview, closePreview, preview, myShares, openMyShares, loadMyShares, doRevoke, thumbs, loadThumbs, doRename, openCopy, copyModal, targetBuckets, doCopy, doDelete,
+      doDownload, isImage, openPreview, closePreview, preview, myShares, openMyShares, loadMyShares, doRevoke, thumbs, loadThumbs, trend, openTrend, maxTrendSize, doRename, openCopy, copyModal, targetBuckets, doCopy, doDelete,
       bucketIdOf,
     };
   },
@@ -337,6 +359,7 @@ export const FileList = {
       <div class="panel-header">
         <h2>我的文件</h2>
         <button class="btn btn-secondary" @click="openMyShares">我的分享</button>
+        <button class="btn btn-secondary" style="margin-left:8px" @click="openTrend">用量趋势</button>
       </div>
 
       <!-- 统计卡（P10）：用量概览，加载失败显示占位 -->
@@ -464,6 +487,30 @@ export const FileList = {
             <button class="btn btn-secondary" @click="myShares.page>1 && (myShares.page--, loadMyShares())" :disabled="myShares.page<=1">上一页</button>
             <button class="btn btn-secondary" @click="myShares.page < Math.ceil(myShares.total/myShares.pageSize) && (myShares.page++, loadMyShares())" :disabled="myShares.page >= Math.ceil(myShares.total/myShares.pageSize)">下一页</button>
             <button class="btn btn-primary" @click="myShares.show=false">关闭</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- 用量趋势弹层 -->
+      <div v-if="trend.show" class="modal" @click.self="trend.show=false">
+        <div class="modal-content" style="max-width:820px;width:94%">
+          <h3>用量趋势（近 {{ trend.days }} 天）</h3>
+          <div v-if="trend.loading" class="empty-state">加载中…</div>
+          <template v-else>
+            <div class="p8-trend-chart">
+              <div class="p8-trend-col" v-for="p in trend.points" :key="p.date"
+                   :title="p.date + '：' + p.fileCount + ' 个文件 / ' + formatSize(Number(p.totalSize)||0)">
+                <div class="p8-trend-bar" :style="{ height: Math.max(2, (Number(p.totalSize)||0)/maxTrendSize*150) + 'px' }"></div>
+              </div>
+            </div>
+            <div style="display:flex; justify-content:space-between; color:#999; font-size:12px; padding:6px 4px">
+              <span>{{ trend.points[0] && trend.points[0].date }}</span>
+              <span>容量（柱高按当日总容量占比）</span>
+              <span>{{ trend.points[trend.points.length-1] && trend.points[trend.points.length-1].date }}</span>
+            </div>
+          </template>
+          <div class="modal-actions">
+            <button class="btn btn-primary" @click="trend.show=false">关闭</button>
           </div>
         </div>
       </div>

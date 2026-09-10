@@ -18,5 +18,8 @@ type FilePart func(*sql.Selector)
 // FileShare is the predicate function for fileshare builders.
 type FileShare func(*sql.Selector)
 
+// StorageSnapshot is the predicate function for storagesnapshot builders.
+type StorageSnapshot func(*sql.Selector)
+
 // User is the predicate function for user builders.
 type User func(*sql.Selector)

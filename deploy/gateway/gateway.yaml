@@ -53,6 +53,9 @@ upstreams:
         Path: /file/thumb
         RpcPath: storage.File/GetFileThumb
       - Method: GET
+        Path: /file/stats/trend
+        RpcPath: storage.File/GetStorageTrend
+      - Method: GET
         Path: /file/share/my
         RpcPath: storage.File/GetMyShares
       - Method: POST

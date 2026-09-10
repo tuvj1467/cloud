@@ -10,6 +10,7 @@ import (
 	"onecloud/ent/file"
 	"onecloud/ent/filepart"
 	"onecloud/ent/fileshare"
+	"onecloud/ent/storagesnapshot"
 	"onecloud/ent/user"
 	"reflect"
 	"sync"
@@ -77,11 +78,12 @@ var (
 func checkColumn(t, c string) error {
 	initCheck.Do(func() {
 		columnCheck = sql.NewColumnCheck(map[string]func(string) bool{
-			bucket.Table:    bucket.ValidColumn,
-			file.Table:      file.ValidColumn,
-			filepart.Table:  filepart.ValidColumn,
-			fileshare.Table: fileshare.ValidColumn,
-			user.Table:      user.ValidColumn,
+			bucket.Table:          bucket.ValidColumn,
+			file.Table:            file.ValidColumn,
+			filepart.Table:        filepart.ValidColumn,
+			fileshare.Table:       fileshare.ValidColumn,
+			storagesnapshot.Table: storagesnapshot.ValidColumn,
+			user.Table:            user.ValidColumn,
 		})
 	})
 	return columnCheck(t, c)

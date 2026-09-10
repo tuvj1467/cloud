@@ -98,4 +98,7 @@ service File {
 
   // 图片缩略图（需登录；仅本地驱动生成）
   rpc GetFileThumb(FileThumbRequest) returns (Response);
+
+  // 用量趋势（需登录）
+  rpc GetStorageTrend(GetStorageTrendRequest) returns (Response);
 }

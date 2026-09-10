@@ -8,6 +8,7 @@ import (
 	"onecloud/internal/middleware"
 	"onecloud/internal/pkg/cleanup"
 	"onecloud/internal/pkg/migrate"
+	"onecloud/internal/pkg/snapshot"
 	"onecloud/internal/pkg/snowId"
 	bucket "onecloud/internal/server/bucket"
 	file "onecloud/internal/server/file"
@@ -78,6 +79,9 @@ func main() {
 	cleanupCtx, cleanupCancel := context.WithCancel(context.Background())
 	defer cleanupCancel()
 	cleanup.Start(cleanupCtx, ctx.EntClient, c.Storage.Local.RootDir)
+
+	// 用量快照：启动 20s 后历史补齐 + 每日 00:05 聚合（趋势报表数据源）
+	snapshot.Start(cleanupCtx, ctx.EntClient, ctx.Snowflake)
 
 	// 放宽 gRPC 单消息接收上限至 110MB：上传/分片（含 JSON base64 膨胀）与大文件下载
 	// 需要超过默认 4MB；与网关 MaxBytes、业务 MaxUploadSize（100MB）对齐

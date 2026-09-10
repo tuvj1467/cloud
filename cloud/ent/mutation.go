@@ -11,6 +11,7 @@ import (
 	"onecloud/ent/filepart"
 	"onecloud/ent/fileshare"
 	"onecloud/ent/predicate"
+	"onecloud/ent/storagesnapshot"
 	"onecloud/ent/user"
 	"sync"
 	"time"
@@ -28,11 +29,12 @@ const (
 	OpUpdateOne = ent.OpUpdateOne
 
 	// Node types.
-	TypeBucket    = "Bucket"
-	TypeFile      = "File"
-	TypeFilePart  = "FilePart"
-	TypeFileShare = "FileShare"
-	TypeUser      = "User"
+	TypeBucket          = "Bucket"
+	TypeFile            = "File"
+	TypeFilePart        = "FilePart"
+	TypeFileShare       = "FileShare"
+	TypeStorageSnapshot = "StorageSnapshot"
+	TypeUser            = "User"
 )
 
 // BucketMutation represents an operation that mutates the Bucket nodes in the graph.
@@ -4143,6 +4145,569 @@ func (m *FileShareMutation) ClearEdge(name string) error {
 // It returns an error if the edge is not defined in the schema.
 func (m *FileShareMutation) ResetEdge(name string) error {
 	return fmt.Errorf("unknown FileShare edge %s", name)
+}
+
+// StorageSnapshotMutation represents an operation that mutates the StorageSnapshot nodes in the graph.
+type StorageSnapshotMutation struct {
+	config
+	op            Op
+	typ           string
+	id            *string
+	date          *string
+	user_id       *string
+	file_count    *int64
+	addfile_count *int64
+	total_size    *int64
+	addtotal_size *int64
+	clearedFields map[string]struct{}
+	done          bool
+	oldValue      func(context.Context) (*StorageSnapshot, error)
+	predicates    []predicate.StorageSnapshot
+}
+
+var _ ent.Mutation = (*StorageSnapshotMutation)(nil)
+
+// storagesnapshotOption allows management of the mutation configuration using functional options.
+type storagesnapshotOption func(*StorageSnapshotMutation)
+
+// newStorageSnapshotMutation creates new mutation for the StorageSnapshot entity.
+func newStorageSnapshotMutation(c config, op Op, opts ...storagesnapshotOption) *StorageSnapshotMutation {
+	m := &StorageSnapshotMutation{
+		config:        c,
+		op:            op,
+		typ:           TypeStorageSnapshot,
+		clearedFields: make(map[string]struct{}),
+	}
+	for _, opt := range opts {
+		opt(m)
+	}
+	return m
+}
+
+// withStorageSnapshotID sets the ID field of the mutation.
+func withStorageSnapshotID(id string) storagesnapshotOption {
+	return func(m *StorageSnapshotMutation) {
+		var (
+			err   error
+			once  sync.Once
+			value *StorageSnapshot
+		)
+		m.oldValue = func(ctx context.Context) (*StorageSnapshot, error) {
+			once.Do(func() {
+				if m.done {
+					err = errors.New("querying old values post mutation is not allowed")
+				} else {
+					value, err = m.Client().StorageSnapshot.Get(ctx, id)
+				}
+			})
+			return value, err
+		}
+		m.id = &id
+	}
+}
+
+// withStorageSnapshot sets the old StorageSnapshot of the mutation.
+func withStorageSnapshot(node *StorageSnapshot) storagesnapshotOption {
+	return func(m *StorageSnapshotMutation) {
+		m.oldValue = func(context.Context) (*StorageSnapshot, error) {
+			return node, nil
+		}
+		m.id = &node.ID
+	}
+}
+
+// Client returns a new `ent.Client` from the mutation. If the mutation was
+// executed in a transaction (ent.Tx), a transactional client is returned.
+func (m StorageSnapshotMutation) Client() *Client {
+	client := &Client{config: m.config}
+	client.init()
+	return client
+}
+
+// Tx returns an `ent.Tx` for mutations that were executed in transactions;
+// it returns an error otherwise.
+func (m StorageSnapshotMutation) Tx() (*Tx, error) {
+	if _, ok := m.driver.(*txDriver); !ok {
+		return nil, errors.New("ent: mutation is not running in a transaction")
+	}
+	tx := &Tx{config: m.config}
+	tx.init()
+	return tx, nil
+}
+
+// SetID sets the value of the id field. Note that this
+// operation is only accepted on creation of StorageSnapshot entities.
+func (m *StorageSnapshotMutation) SetID(id string) {
+	m.id = &id
+}
+
+// ID returns the ID value in the mutation. Note that the ID is only available
+// if it was provided to the builder or after it was returned from the database.
+func (m *StorageSnapshotMutation) ID() (id string, exists bool) {
+	if m.id == nil {
+		return
+	}
+	return *m.id, true
+}
+
+// IDs queries the database and returns the entity ids that match the mutation's predicate.
+// That means, if the mutation is applied within a transaction with an isolation level such
+// as sql.LevelSerializable, the returned ids match the ids of the rows that will be updated
+// or updated by the mutation.
+func (m *StorageSnapshotMutation) IDs(ctx context.Context) ([]string, error) {
+	switch {
+	case m.op.Is(OpUpdateOne | OpDeleteOne):
+		id, exists := m.ID()
+		if exists {
+			return []string{id}, nil
+		}
+		fallthrough
+	case m.op.Is(OpUpdate | OpDelete):
+		return m.Client().StorageSnapshot.Query().Where(m.predicates...).IDs(ctx)
+	default:
+		return nil, fmt.Errorf("IDs is not allowed on %s operations", m.op)
+	}
+}
+
+// SetDate sets the "date" field.
+func (m *StorageSnapshotMutation) SetDate(s string) {
+	m.date = &s
+}
+
+// Date returns the value of the "date" field in the mutation.
+func (m *StorageSnapshotMutation) Date() (r string, exists bool) {
+	v := m.date
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldDate returns the old "date" field's value of the StorageSnapshot entity.
+// If the StorageSnapshot object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *StorageSnapshotMutation) OldDate(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldDate is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldDate requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldDate: %w", err)
+	}
+	return oldValue.Date, nil
+}
+
+// ResetDate resets all changes to the "date" field.
+func (m *StorageSnapshotMutation) ResetDate() {
+	m.date = nil
+}
+
+// SetUserID sets the "user_id" field.
+func (m *StorageSnapshotMutation) SetUserID(s string) {
+	m.user_id = &s
+}
+
+// UserID returns the value of the "user_id" field in the mutation.
+func (m *StorageSnapshotMutation) UserID() (r string, exists bool) {
+	v := m.user_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldUserID returns the old "user_id" field's value of the StorageSnapshot entity.
+// If the StorageSnapshot object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *StorageSnapshotMutation) OldUserID(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldUserID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldUserID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldUserID: %w", err)
+	}
+	return oldValue.UserID, nil
+}
+
+// ResetUserID resets all changes to the "user_id" field.
+func (m *StorageSnapshotMutation) ResetUserID() {
+	m.user_id = nil
+}
+
+// SetFileCount sets the "file_count" field.
+func (m *StorageSnapshotMutation) SetFileCount(i int64) {
+	m.file_count = &i
+	m.addfile_count = nil
+}
+
+// FileCount returns the value of the "file_count" field in the mutation.
+func (m *StorageSnapshotMutation) FileCount() (r int64, exists bool) {
+	v := m.file_count
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldFileCount returns the old "file_count" field's value of the StorageSnapshot entity.
+// If the StorageSnapshot object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *StorageSnapshotMutation) OldFileCount(ctx context.Context) (v int64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldFileCount is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldFileCount requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldFileCount: %w", err)
+	}
+	return oldValue.FileCount, nil
+}
+
+// AddFileCount adds i to the "file_count" field.
+func (m *StorageSnapshotMutation) AddFileCount(i int64) {
+	if m.addfile_count != nil {
+		*m.addfile_count += i
+	} else {
+		m.addfile_count = &i
+	}
+}
+
+// AddedFileCount returns the value that was added to the "file_count" field in this mutation.
+func (m *StorageSnapshotMutation) AddedFileCount() (r int64, exists bool) {
+	v := m.addfile_count
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetFileCount resets all changes to the "file_count" field.
+func (m *StorageSnapshotMutation) ResetFileCount() {
+	m.file_count = nil
+	m.addfile_count = nil
+}
+
+// SetTotalSize sets the "total_size" field.
+func (m *StorageSnapshotMutation) SetTotalSize(i int64) {
+	m.total_size = &i
+	m.addtotal_size = nil
+}
+
+// TotalSize returns the value of the "total_size" field in the mutation.
+func (m *StorageSnapshotMutation) TotalSize() (r int64, exists bool) {
+	v := m.total_size
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldTotalSize returns the old "total_size" field's value of the StorageSnapshot entity.
+// If the StorageSnapshot object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *StorageSnapshotMutation) OldTotalSize(ctx context.Context) (v int64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldTotalSize is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldTotalSize requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldTotalSize: %w", err)
+	}
+	return oldValue.TotalSize, nil
+}
+
+// AddTotalSize adds i to the "total_size" field.
+func (m *StorageSnapshotMutation) AddTotalSize(i int64) {
+	if m.addtotal_size != nil {
+		*m.addtotal_size += i
+	} else {
+		m.addtotal_size = &i
+	}
+}
+
+// AddedTotalSize returns the value that was added to the "total_size" field in this mutation.
+func (m *StorageSnapshotMutation) AddedTotalSize() (r int64, exists bool) {
+	v := m.addtotal_size
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetTotalSize resets all changes to the "total_size" field.
+func (m *StorageSnapshotMutation) ResetTotalSize() {
+	m.total_size = nil
+	m.addtotal_size = nil
+}
+
+// Where appends a list predicates to the StorageSnapshotMutation builder.
+func (m *StorageSnapshotMutation) Where(ps ...predicate.StorageSnapshot) {
+	m.predicates = append(m.predicates, ps...)
+}
+
+// WhereP appends storage-level predicates to the StorageSnapshotMutation builder. Using this method,
+// users can use type-assertion to append predicates that do not depend on any generated package.
+func (m *StorageSnapshotMutation) WhereP(ps ...func(*sql.Selector)) {
+	p := make([]predicate.StorageSnapshot, len(ps))
+	for i := range ps {
+		p[i] = ps[i]
+	}
+	m.Where(p...)
+}
+
+// Op returns the operation name.
+func (m *StorageSnapshotMutation) Op() Op {
+	return m.op
+}
+
+// SetOp allows setting the mutation operation.
+func (m *StorageSnapshotMutation) SetOp(op Op) {
+	m.op = op
+}
+
+// Type returns the node type of this mutation (StorageSnapshot).
+func (m *StorageSnapshotMutation) Type() string {
+	return m.typ
+}
+
+// Fields returns all fields that were changed during this mutation. Note that in
+// order to get all numeric fields that were incremented/decremented, call
+// AddedFields().
+func (m *StorageSnapshotMutation) Fields() []string {
+	fields := make([]string, 0, 4)
+	if m.date != nil {
+		fields = append(fields, storagesnapshot.FieldDate)
+	}
+	if m.user_id != nil {
+		fields = append(fields, storagesnapshot.FieldUserID)
+	}
+	if m.file_count != nil {
+		fields = append(fields, storagesnapshot.FieldFileCount)
+	}
+	if m.total_size != nil {
+		fields = append(fields, storagesnapshot.FieldTotalSize)
+	}
+	return fields
+}
+
+// Field returns the value of a field with the given name. The second boolean
+// return value indicates that this field was not set, or was not defined in the
+// schema.
+func (m *StorageSnapshotMutation) Field(name string) (ent.Value, bool) {
+	switch name {
+	case storagesnapshot.FieldDate:
+		return m.Date()
+	case storagesnapshot.FieldUserID:
+		return m.UserID()
+	case storagesnapshot.FieldFileCount:
+		return m.FileCount()
+	case storagesnapshot.FieldTotalSize:
+		return m.TotalSize()
+	}
+	return nil, false
+}
+
+// OldField returns the old value of the field from the database. An error is
+// returned if the mutation operation is not UpdateOne, or the query to the
+// database failed.
+func (m *StorageSnapshotMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
+	switch name {
+	case storagesnapshot.FieldDate:
+		return m.OldDate(ctx)
+	case storagesnapshot.FieldUserID:
+		return m.OldUserID(ctx)
+	case storagesnapshot.FieldFileCount:
+		return m.OldFileCount(ctx)
+	case storagesnapshot.FieldTotalSize:
+		return m.OldTotalSize(ctx)
+	}
+	return nil, fmt.Errorf("unknown StorageSnapshot field %s", name)
+}
+
+// SetField sets the value of a field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *StorageSnapshotMutation) SetField(name string, value ent.Value) error {
+	switch name {
+	case storagesnapshot.FieldDate:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetDate(v)
+		return nil
+	case storagesnapshot.FieldUserID:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetUserID(v)
+		return nil
+	case storagesnapshot.FieldFileCount:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetFileCount(v)
+		return nil
+	case storagesnapshot.FieldTotalSize:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetTotalSize(v)
+		return nil
+	}
+	return fmt.Errorf("unknown StorageSnapshot field %s", name)
+}
+
+// AddedFields returns all numeric fields that were incremented/decremented during
+// this mutation.
+func (m *StorageSnapshotMutation) AddedFields() []string {
+	var fields []string
+	if m.addfile_count != nil {
+		fields = append(fields, storagesnapshot.FieldFileCount)
+	}
+	if m.addtotal_size != nil {
+		fields = append(fields, storagesnapshot.FieldTotalSize)
+	}
+	return fields
+}
+
+// AddedField returns the numeric value that was incremented/decremented on a field
+// with the given name. The second boolean return value indicates that this field
+// was not set, or was not defined in the schema.
+func (m *StorageSnapshotMutation) AddedField(name string) (ent.Value, bool) {
+	switch name {
+	case storagesnapshot.FieldFileCount:
+		return m.AddedFileCount()
+	case storagesnapshot.FieldTotalSize:
+		return m.AddedTotalSize()
+	}
+	return nil, false
+}
+
+// AddField adds the value to the field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *StorageSnapshotMutation) AddField(name string, value ent.Value) error {
+	switch name {
+	case storagesnapshot.FieldFileCount:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddFileCount(v)
+		return nil
+	case storagesnapshot.FieldTotalSize:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddTotalSize(v)
+		return nil
+	}
+	return fmt.Errorf("unknown StorageSnapshot numeric field %s", name)
+}
+
+// ClearedFields returns all nullable fields that were cleared during this
+// mutation.
+func (m *StorageSnapshotMutation) ClearedFields() []string {
+	return nil
+}
+
+// FieldCleared returns a boolean indicating if a field with the given name was
+// cleared in this mutation.
+func (m *StorageSnapshotMutation) FieldCleared(name string) bool {
+	_, ok := m.clearedFields[name]
+	return ok
+}
+
+// ClearField clears the value of the field with the given name. It returns an
+// error if the field is not defined in the schema.
+func (m *StorageSnapshotMutation) ClearField(name string) error {
+	return fmt.Errorf("unknown StorageSnapshot nullable field %s", name)
+}
+
+// ResetField resets all changes in the mutation for the field with the given name.
+// It returns an error if the field is not defined in the schema.
+func (m *StorageSnapshotMutation) ResetField(name string) error {
+	switch name {
+	case storagesnapshot.FieldDate:
+		m.ResetDate()
+		return nil
+	case storagesnapshot.FieldUserID:
+		m.ResetUserID()
+		return nil
+	case storagesnapshot.FieldFileCount:
+		m.ResetFileCount()
+		return nil
+	case storagesnapshot.FieldTotalSize:
+		m.ResetTotalSize()
+		return nil
+	}
+	return fmt.Errorf("unknown StorageSnapshot field %s", name)
+}
+
+// AddedEdges returns all edge names that were set/added in this mutation.
+func (m *StorageSnapshotMutation) AddedEdges() []string {
+	edges := make([]string, 0, 0)
+	return edges
+}
+
+// AddedIDs returns all IDs (to other nodes) that were added for the given edge
+// name in this mutation.
+func (m *StorageSnapshotMutation) AddedIDs(name string) []ent.Value {
+	return nil
+}
+
+// RemovedEdges returns all edge names that were removed in this mutation.
+func (m *StorageSnapshotMutation) RemovedEdges() []string {
+	edges := make([]string, 0, 0)
+	return edges
+}
+
+// RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
+// the given name in this mutation.
+func (m *StorageSnapshotMutation) RemovedIDs(name string) []ent.Value {
+	return nil
+}
+
+// ClearedEdges returns all edge names that were cleared in this mutation.
+func (m *StorageSnapshotMutation) ClearedEdges() []string {
+	edges := make([]string, 0, 0)
+	return edges
+}
+
+// EdgeCleared returns a boolean which indicates if the edge with the given name
+// was cleared in this mutation.
+func (m *StorageSnapshotMutation) EdgeCleared(name string) bool {
+	return false
+}
+
+// ClearEdge clears the value of the edge with the given name. It returns an error
+// if that edge is not defined in the schema.
+func (m *StorageSnapshotMutation) ClearEdge(name string) error {
+	return fmt.Errorf("unknown StorageSnapshot unique edge %s", name)
+}
+
+// ResetEdge resets all changes to the edge with the given name in this mutation.
+// It returns an error if the edge is not defined in the schema.
+func (m *StorageSnapshotMutation) ResetEdge(name string) error {
+	return fmt.Errorf("unknown StorageSnapshot edge %s", name)
 }
 
 // UserMutation represents an operation that mutates the User nodes in the graph.
