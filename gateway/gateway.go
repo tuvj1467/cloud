@@ -7,6 +7,8 @@ import (
 
 	"github.com/zeromicro/go-zero/core/conf"
 	"github.com/zeromicro/go-zero/gateway"
+	"github.com/zeromicro/go-zero/zrpc"
+	"google.golang.org/grpc"
 )
 
 type GatewayConfig struct {
@@ -37,13 +39,25 @@ func main() {
 	// 浏览器 fetch 无法设置该前缀（fetch 规范禁止以 Grpc- 开头的 header），
 	// 这里把标准 Authorization header 桥接为 gateway-authorization，与 cloud jwt_middleware 的 fallback 匹配，
 	// 使前端 Authorization: Bearer <token> 正常鉴权；Grpc-Metadata-Authorization 透传路径不受影响。
-	server := gateway.MustNewServer(c.GatewayConf, gateway.WithHeaderProcessor(func(header http.Header) []string {
-		var vals []string
-		for _, v := range header.Values("Authorization") {
-			vals = append(vals, "gateway-authorization:"+v) // 原样转发，Bearer 前缀由 jwt_middleware 统一剥离
-		}
-		return vals
-	}))
+	server := gateway.MustNewServer(c.GatewayConf,
+		gateway.WithHeaderProcessor(func(header http.Header) []string {
+			var vals []string
+			for _, v := range header.Values("Authorization") {
+				vals = append(vals, "gateway-authorization:"+v) // 原样转发，Bearer 前缀由 jwt_middleware 统一剥离
+			}
+			return vals
+		}),
+		// 放宽网关内部 gRPC 客户端的消息上限（go-zero 默认接收 4MB，导致 >4MB 下载 429），
+		// 与 cloud 侧 MaxRecv/SendMsgSize 及 MaxUploadSize（100MB）对齐
+		gateway.WithDialer(func(conf zrpc.RpcClientConf) zrpc.Client {
+			return zrpc.MustNewClient(conf, zrpc.WithDialOption(
+				grpc.WithDefaultCallOptions(
+					grpc.MaxCallRecvMsgSize(110*1024*1024),
+					grpc.MaxCallSendMsgSize(110*1024*1024),
+				),
+			))
+		}),
+	)
 
 	fmt.Printf("Gateway started at %s:%d\n", c.Host, c.Port)
 	server.Start()

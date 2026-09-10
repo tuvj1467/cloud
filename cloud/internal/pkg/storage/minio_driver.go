@@ -230,6 +230,7 @@ func (d *MinioDriver) listPartETags(ctx context.Context, tmpKey, serverID string
 
 // CompletePart 校验分片数量与逐片 MD5 后合并为目标对象
 // S3 语义：Complete 作用于 init 时的临时对象名，完成后服务端拷贝到目标键并清理临时对象
+// ⚠ S3 强制约束：除最后一片外每片必须 ≥5MiB——调用方（业务层/前端）需保证切片大小合规
 func (d *MinioDriver) CompletePart(ctx context.Context, uploadID string, targetPath string, expectedParts int, expectedMD5 map[int]string) error {
 	tmpKey, err := tmpObject(uploadID)
 	if err != nil {

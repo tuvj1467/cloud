@@ -1,0 +1,28 @@
+Name: storage.rpc
+ListenOn: 0.0.0.0:8081
+Mode: dev
+MySQL:
+  Host: 127.0.0.1:3306
+  User: "root"
+  Password: "12345"
+  Database: "cloud"
+  Charset: utf8mb4
+  Debug: false
+  Loc: Local
+RedisConf:
+  Host: 127.0.0.1:6379
+Storage:
+  Driver: minio
+  MaxUploadSize: 104857600
+  Minio:
+    Endpoint: localhost:9000
+    AccessKey: minioadmin
+    SecretKey: minioadmin
+    Bucket: onecloud-smoke
+    UseSSL: false
+  Local:
+    RootDir: ./cloud_storage
+JWT:
+  Secret: www.topgoer.com
+  Expire: 604800
+  Issuer: 127.0.0.1

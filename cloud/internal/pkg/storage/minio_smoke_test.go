@@ -47,7 +47,7 @@ func TestMinioSmoke(t *testing.T) {
 	}
 
 	// ===== 1. Put / Stat / Exists / Get / Delete =====
-	content := bytes.Repeat([]byte("onecloud-smoke-"), 1000) // 15000 字节
+	content := bytes.Repeat([]byte("onecloud-smoke-"), 800000) // 12MB（满足分片 ≥5MiB 语义）
 	path := "smoke/p13/object-a.bin"
 	if err := d.Put(ctx, path, bytes.NewReader(content), int64(len(content))); err != nil {
 		t.Fatalf("Put: %v", err)
@@ -70,11 +70,12 @@ func TestMinioSmoke(t *testing.T) {
 	}
 
 	// ===== 2. 分片全流程：Init → 2 片上传（记录 ETag）→ Complete（数量+MD5 校验）=====
+	// S3/MinIO 语义：Complete 时除最后一片外每片必须 ≥5MiB，故测试用 6MiB+6MiB
 	uploadID := "900000000000000001"
 	if err := d.InitPart(ctx, uploadID, 2); err != nil {
 		t.Fatalf("InitPart: %v", err)
 	}
-	part1, part2 := content[:10000], content[10000:]
+	part1, part2 := content[:6*1024*1024], content[6*1024*1024:]
 	md5Of := func(b []byte) string {
 		h := md5.Sum(b)
 		return hex.EncodeToString(h[:])
