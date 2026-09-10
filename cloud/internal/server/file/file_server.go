@@ -108,6 +108,21 @@ func (s *FileServer) AccessShare(ctx context.Context, in *service.AccessShareReq
 }
 
 // 分享下载（匿名）
+func (s *FileServer) ListDeletedFiles(ctx context.Context, in *service.ListDeletedFilesRequest) (*service.Response, error) {
+	l := filelogic.NewListDeletedFilesLogic(ctx, s.svcCtx)
+	return l.ListDeletedFiles(in)
+}
+
+func (s *FileServer) RestoreFiles(ctx context.Context, in *service.RestoreFilesRequest) (*service.Response, error) {
+	l := filelogic.NewRestoreFilesLogic(ctx, s.svcCtx)
+	return l.RestoreFiles(in)
+}
+
+func (s *FileServer) PurgeFiles(ctx context.Context, in *service.PurgeFilesRequest) (*service.Response, error) {
+	l := filelogic.NewPurgeFilesLogic(ctx, s.svcCtx)
+	return l.PurgeFiles(in)
+}
+
 func (s *FileServer) GetStorageTrend(ctx context.Context, in *service.GetStorageTrendRequest) (*service.Response, error) {
 	l := filelogic.NewGetStorageTrendLogic(ctx, s.svcCtx)
 	return l.GetStorageTrend(in)

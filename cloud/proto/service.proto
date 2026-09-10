@@ -101,4 +101,13 @@ service File {
 
   // 用量趋势（需登录）
   rpc GetStorageTrend(GetStorageTrendRequest) returns (Response);
+
+  // 回收站：已删文件列表（需登录）
+  rpc ListDeletedFiles(ListDeletedFilesRequest) returns (Response);
+
+  // 回收站：恢复（需登录，仅限本人）
+  rpc RestoreFiles(RestoreFilesRequest) returns (Response);
+
+  // 回收站：彻底删除（需登录，仅限本人；级联分享/归还配额/删物理文件）
+  rpc PurgeFiles(PurgeFilesRequest) returns (Response);
 }

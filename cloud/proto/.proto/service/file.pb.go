@@ -2615,6 +2615,365 @@ func (x *GetStorageTrendResponse) GetPoints() []*TrendPoint {
 	return nil
 }
 
+// ==========================================
+// 21. 回收站（列表 / 恢复 / 彻底删除）
+// ==========================================
+type ListDeletedFilesRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Page          int32                  `protobuf:"varint,1,opt,name=page,proto3" json:"page,omitempty"`
+	PageSize      int32                  `protobuf:"varint,2,opt,name=page_size,json=pageSize,proto3" json:"page_size,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ListDeletedFilesRequest) Reset() {
+	*x = ListDeletedFilesRequest{}
+	mi := &file_file_proto_msgTypes[45]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListDeletedFilesRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListDeletedFilesRequest) ProtoMessage() {}
+
+func (x *ListDeletedFilesRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_file_proto_msgTypes[45]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ListDeletedFilesRequest.ProtoReflect.Descriptor instead.
+func (*ListDeletedFilesRequest) Descriptor() ([]byte, []int) {
+	return file_file_proto_rawDescGZIP(), []int{45}
+}
+
+func (x *ListDeletedFilesRequest) GetPage() int32 {
+	if x != nil {
+		return x.Page
+	}
+	return 0
+}
+
+func (x *ListDeletedFilesRequest) GetPageSize() int32 {
+	if x != nil {
+		return x.PageSize
+	}
+	return 0
+}
+
+type DeletedFileItem struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	FileId        string                 `protobuf:"bytes,1,opt,name=file_id,json=fileId,proto3" json:"file_id,omitempty"`          // 文件 ID
+	Name          string                 `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`                            // 文件名
+	Size          int64                  `protobuf:"varint,3,opt,name=size,proto3" json:"size,omitempty"`                           // 大小（字节）
+	BucketId      string                 `protobuf:"bytes,4,opt,name=bucket_id,json=bucketId,proto3" json:"bucket_id,omitempty"`    // 原属桶 ID
+	DeletedAt     string                 `protobuf:"bytes,5,opt,name=deleted_at,json=deletedAt,proto3" json:"deleted_at,omitempty"` // 删除时间
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *DeletedFileItem) Reset() {
+	*x = DeletedFileItem{}
+	mi := &file_file_proto_msgTypes[46]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *DeletedFileItem) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*DeletedFileItem) ProtoMessage() {}
+
+func (x *DeletedFileItem) ProtoReflect() protoreflect.Message {
+	mi := &file_file_proto_msgTypes[46]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use DeletedFileItem.ProtoReflect.Descriptor instead.
+func (*DeletedFileItem) Descriptor() ([]byte, []int) {
+	return file_file_proto_rawDescGZIP(), []int{46}
+}
+
+func (x *DeletedFileItem) GetFileId() string {
+	if x != nil {
+		return x.FileId
+	}
+	return ""
+}
+
+func (x *DeletedFileItem) GetName() string {
+	if x != nil {
+		return x.Name
+	}
+	return ""
+}
+
+func (x *DeletedFileItem) GetSize() int64 {
+	if x != nil {
+		return x.Size
+	}
+	return 0
+}
+
+func (x *DeletedFileItem) GetBucketId() string {
+	if x != nil {
+		return x.BucketId
+	}
+	return ""
+}
+
+func (x *DeletedFileItem) GetDeletedAt() string {
+	if x != nil {
+		return x.DeletedAt
+	}
+	return ""
+}
+
+type ListDeletedFilesResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Files         []*DeletedFileItem     `protobuf:"bytes,1,rep,name=files,proto3" json:"files,omitempty"`
+	Total         int32                  `protobuf:"varint,2,opt,name=total,proto3" json:"total,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ListDeletedFilesResponse) Reset() {
+	*x = ListDeletedFilesResponse{}
+	mi := &file_file_proto_msgTypes[47]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListDeletedFilesResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListDeletedFilesResponse) ProtoMessage() {}
+
+func (x *ListDeletedFilesResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_file_proto_msgTypes[47]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ListDeletedFilesResponse.ProtoReflect.Descriptor instead.
+func (*ListDeletedFilesResponse) Descriptor() ([]byte, []int) {
+	return file_file_proto_rawDescGZIP(), []int{47}
+}
+
+func (x *ListDeletedFilesResponse) GetFiles() []*DeletedFileItem {
+	if x != nil {
+		return x.Files
+	}
+	return nil
+}
+
+func (x *ListDeletedFilesResponse) GetTotal() int32 {
+	if x != nil {
+		return x.Total
+	}
+	return 0
+}
+
+type RestoreFilesRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	FileIds       []string               `protobuf:"bytes,1,rep,name=file_ids,json=fileIds,proto3" json:"file_ids,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *RestoreFilesRequest) Reset() {
+	*x = RestoreFilesRequest{}
+	mi := &file_file_proto_msgTypes[48]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *RestoreFilesRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*RestoreFilesRequest) ProtoMessage() {}
+
+func (x *RestoreFilesRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_file_proto_msgTypes[48]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use RestoreFilesRequest.ProtoReflect.Descriptor instead.
+func (*RestoreFilesRequest) Descriptor() ([]byte, []int) {
+	return file_file_proto_rawDescGZIP(), []int{48}
+}
+
+func (x *RestoreFilesRequest) GetFileIds() []string {
+	if x != nil {
+		return x.FileIds
+	}
+	return nil
+}
+
+type RestoreFilesResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	RestoredCount int32                  `protobuf:"varint,1,opt,name=restored_count,json=restoredCount,proto3" json:"restored_count,omitempty"` // 实际恢复数（不存在的自动跳过）
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *RestoreFilesResponse) Reset() {
+	*x = RestoreFilesResponse{}
+	mi := &file_file_proto_msgTypes[49]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *RestoreFilesResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*RestoreFilesResponse) ProtoMessage() {}
+
+func (x *RestoreFilesResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_file_proto_msgTypes[49]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use RestoreFilesResponse.ProtoReflect.Descriptor instead.
+func (*RestoreFilesResponse) Descriptor() ([]byte, []int) {
+	return file_file_proto_rawDescGZIP(), []int{49}
+}
+
+func (x *RestoreFilesResponse) GetRestoredCount() int32 {
+	if x != nil {
+		return x.RestoredCount
+	}
+	return 0
+}
+
+type PurgeFilesRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	FileIds       []string               `protobuf:"bytes,1,rep,name=file_ids,json=fileIds,proto3" json:"file_ids,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *PurgeFilesRequest) Reset() {
+	*x = PurgeFilesRequest{}
+	mi := &file_file_proto_msgTypes[50]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *PurgeFilesRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*PurgeFilesRequest) ProtoMessage() {}
+
+func (x *PurgeFilesRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_file_proto_msgTypes[50]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use PurgeFilesRequest.ProtoReflect.Descriptor instead.
+func (*PurgeFilesRequest) Descriptor() ([]byte, []int) {
+	return file_file_proto_rawDescGZIP(), []int{50}
+}
+
+func (x *PurgeFilesRequest) GetFileIds() []string {
+	if x != nil {
+		return x.FileIds
+	}
+	return nil
+}
+
+type PurgeFilesResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	PurgedCount   int32                  `protobuf:"varint,1,opt,name=purged_count,json=purgedCount,proto3" json:"purged_count,omitempty"` // 实际彻底删除数
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *PurgeFilesResponse) Reset() {
+	*x = PurgeFilesResponse{}
+	mi := &file_file_proto_msgTypes[51]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *PurgeFilesResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*PurgeFilesResponse) ProtoMessage() {}
+
+func (x *PurgeFilesResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_file_proto_msgTypes[51]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use PurgeFilesResponse.ProtoReflect.Descriptor instead.
+func (*PurgeFilesResponse) Descriptor() ([]byte, []int) {
+	return file_file_proto_rawDescGZIP(), []int{51}
+}
+
+func (x *PurgeFilesResponse) GetPurgedCount() int32 {
+	if x != nil {
+		return x.PurgedCount
+	}
+	return 0
+}
+
 var File_file_proto protoreflect.FileDescriptor
 
 const file_file_proto_rawDesc = "" +
@@ -2819,7 +3178,30 @@ const file_file_proto_rawDesc = "" +
 	"\n" +
 	"total_size\x18\x03 \x01(\x03R\ttotalSize\"F\n" +
 	"\x17GetStorageTrendResponse\x12+\n" +
-	"\x06points\x18\x01 \x03(\v2\x13.storage.TrendPointR\x06pointsB\x10Z\x0e.proto/serviceb\x06proto3"
+	"\x06points\x18\x01 \x03(\v2\x13.storage.TrendPointR\x06points\"^\n" +
+	"\x17ListDeletedFilesRequest\x12\x1b\n" +
+	"\x04page\x18\x01 \x01(\x05B\a\xfaB\x04\x1a\x02(\x01R\x04page\x12&\n" +
+	"\tpage_size\x18\x02 \x01(\x05B\t\xfaB\x06\x1a\x04\x182(\x01R\bpageSize\"\x8e\x01\n" +
+	"\x0fDeletedFileItem\x12\x17\n" +
+	"\afile_id\x18\x01 \x01(\tR\x06fileId\x12\x12\n" +
+	"\x04name\x18\x02 \x01(\tR\x04name\x12\x12\n" +
+	"\x04size\x18\x03 \x01(\x03R\x04size\x12\x1b\n" +
+	"\tbucket_id\x18\x04 \x01(\tR\bbucketId\x12\x1d\n" +
+	"\n" +
+	"deleted_at\x18\x05 \x01(\tR\tdeletedAt\"`\n" +
+	"\x18ListDeletedFilesResponse\x12.\n" +
+	"\x05files\x18\x01 \x03(\v2\x18.storage.DeletedFileItemR\x05files\x12\x14\n" +
+	"\x05total\x18\x02 \x01(\x05R\x05total\"<\n" +
+	"\x13RestoreFilesRequest\x12%\n" +
+	"\bfile_ids\x18\x01 \x03(\tB\n" +
+	"\xfaB\a\x92\x01\x04\b\x01\x10dR\afileIds\"=\n" +
+	"\x14RestoreFilesResponse\x12%\n" +
+	"\x0erestored_count\x18\x01 \x01(\x05R\rrestoredCount\":\n" +
+	"\x11PurgeFilesRequest\x12%\n" +
+	"\bfile_ids\x18\x01 \x03(\tB\n" +
+	"\xfaB\a\x92\x01\x04\b\x01\x10dR\afileIds\"7\n" +
+	"\x12PurgeFilesResponse\x12!\n" +
+	"\fpurged_count\x18\x01 \x01(\x05R\vpurgedCountB\x10Z\x0e.proto/serviceb\x06proto3"
 
 var (
 	file_file_proto_rawDescOnce sync.Once
@@ -2833,7 +3215,7 @@ func file_file_proto_rawDescGZIP() []byte {
 	return file_file_proto_rawDescData
 }
 
-var file_file_proto_msgTypes = make([]protoimpl.MessageInfo, 45)
+var file_file_proto_msgTypes = make([]protoimpl.MessageInfo, 52)
 var file_file_proto_goTypes = []any{
 	(*FileMeta)(nil),                        // 0: storage.FileMeta
 	(*FileInfoRequest)(nil),                 // 1: storage.FileInfoRequest
@@ -2880,6 +3262,13 @@ var file_file_proto_goTypes = []any{
 	(*GetStorageTrendRequest)(nil),          // 42: storage.GetStorageTrendRequest
 	(*TrendPoint)(nil),                      // 43: storage.TrendPoint
 	(*GetStorageTrendResponse)(nil),         // 44: storage.GetStorageTrendResponse
+	(*ListDeletedFilesRequest)(nil),         // 45: storage.ListDeletedFilesRequest
+	(*DeletedFileItem)(nil),                 // 46: storage.DeletedFileItem
+	(*ListDeletedFilesResponse)(nil),        // 47: storage.ListDeletedFilesResponse
+	(*RestoreFilesRequest)(nil),             // 48: storage.RestoreFilesRequest
+	(*RestoreFilesResponse)(nil),            // 49: storage.RestoreFilesResponse
+	(*PurgeFilesRequest)(nil),               // 50: storage.PurgeFilesRequest
+	(*PurgeFilesResponse)(nil),              // 51: storage.PurgeFilesResponse
 }
 var file_file_proto_depIdxs = []int32{
 	0,  // 0: storage.FileInfoResponse.file:type_name -> storage.FileMeta
@@ -2893,11 +3282,12 @@ var file_file_proto_depIdxs = []int32{
 	31, // 8: storage.StorageStatsResponse.buckets:type_name -> storage.BucketStats
 	36, // 9: storage.GetMySharesResponse.shares:type_name -> storage.ShareItem
 	43, // 10: storage.GetStorageTrendResponse.points:type_name -> storage.TrendPoint
-	11, // [11:11] is the sub-list for method output_type
-	11, // [11:11] is the sub-list for method input_type
-	11, // [11:11] is the sub-list for extension type_name
-	11, // [11:11] is the sub-list for extension extendee
-	0,  // [0:11] is the sub-list for field type_name
+	46, // 11: storage.ListDeletedFilesResponse.files:type_name -> storage.DeletedFileItem
+	12, // [12:12] is the sub-list for method output_type
+	12, // [12:12] is the sub-list for method input_type
+	12, // [12:12] is the sub-list for extension type_name
+	12, // [12:12] is the sub-list for extension extendee
+	0,  // [0:12] is the sub-list for field type_name
 }
 
 func init() { file_file_proto_init() }
@@ -2919,7 +3309,7 @@ func file_file_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_file_proto_rawDesc), len(file_file_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   45,
+			NumMessages:   52,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

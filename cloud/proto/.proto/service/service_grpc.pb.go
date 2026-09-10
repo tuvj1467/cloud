@@ -649,6 +649,9 @@ const (
 	File_DownloadStream_FullMethodName          = "/storage.File/DownloadStream"
 	File_GetFileThumb_FullMethodName            = "/storage.File/GetFileThumb"
 	File_GetStorageTrend_FullMethodName         = "/storage.File/GetStorageTrend"
+	File_ListDeletedFiles_FullMethodName        = "/storage.File/ListDeletedFiles"
+	File_RestoreFiles_FullMethodName            = "/storage.File/RestoreFiles"
+	File_PurgeFiles_FullMethodName              = "/storage.File/PurgeFiles"
 )
 
 // FileClient is the client API for File service.
@@ -704,6 +707,12 @@ type FileClient interface {
 	GetFileThumb(ctx context.Context, in *FileThumbRequest, opts ...grpc.CallOption) (*Response, error)
 	// 用量趋势（需登录）
 	GetStorageTrend(ctx context.Context, in *GetStorageTrendRequest, opts ...grpc.CallOption) (*Response, error)
+	// 回收站：已删文件列表（需登录）
+	ListDeletedFiles(ctx context.Context, in *ListDeletedFilesRequest, opts ...grpc.CallOption) (*Response, error)
+	// 回收站：恢复（需登录，仅限本人）
+	RestoreFiles(ctx context.Context, in *RestoreFilesRequest, opts ...grpc.CallOption) (*Response, error)
+	// 回收站：彻底删除（需登录，仅限本人；级联分享/归还配额/删物理文件）
+	PurgeFiles(ctx context.Context, in *PurgeFilesRequest, opts ...grpc.CallOption) (*Response, error)
 }
 
 type fileClient struct {
@@ -943,6 +952,36 @@ func (c *fileClient) GetStorageTrend(ctx context.Context, in *GetStorageTrendReq
 	return out, nil
 }
 
+func (c *fileClient) ListDeletedFiles(ctx context.Context, in *ListDeletedFilesRequest, opts ...grpc.CallOption) (*Response, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(Response)
+	err := c.cc.Invoke(ctx, File_ListDeletedFiles_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *fileClient) RestoreFiles(ctx context.Context, in *RestoreFilesRequest, opts ...grpc.CallOption) (*Response, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(Response)
+	err := c.cc.Invoke(ctx, File_RestoreFiles_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *fileClient) PurgeFiles(ctx context.Context, in *PurgeFilesRequest, opts ...grpc.CallOption) (*Response, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(Response)
+	err := c.cc.Invoke(ctx, File_PurgeFiles_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // FileServer is the server API for File service.
 // All implementations must embed UnimplementedFileServer
 // for forward compatibility.
@@ -996,6 +1035,12 @@ type FileServer interface {
 	GetFileThumb(context.Context, *FileThumbRequest) (*Response, error)
 	// 用量趋势（需登录）
 	GetStorageTrend(context.Context, *GetStorageTrendRequest) (*Response, error)
+	// 回收站：已删文件列表（需登录）
+	ListDeletedFiles(context.Context, *ListDeletedFilesRequest) (*Response, error)
+	// 回收站：恢复（需登录，仅限本人）
+	RestoreFiles(context.Context, *RestoreFilesRequest) (*Response, error)
+	// 回收站：彻底删除（需登录，仅限本人；级联分享/归还配额/删物理文件）
+	PurgeFiles(context.Context, *PurgeFilesRequest) (*Response, error)
 	mustEmbedUnimplementedFileServer()
 }
 
@@ -1071,6 +1116,15 @@ func (UnimplementedFileServer) GetFileThumb(context.Context, *FileThumbRequest) 
 }
 func (UnimplementedFileServer) GetStorageTrend(context.Context, *GetStorageTrendRequest) (*Response, error) {
 	return nil, status.Error(codes.Unimplemented, "method GetStorageTrend not implemented")
+}
+func (UnimplementedFileServer) ListDeletedFiles(context.Context, *ListDeletedFilesRequest) (*Response, error) {
+	return nil, status.Error(codes.Unimplemented, "method ListDeletedFiles not implemented")
+}
+func (UnimplementedFileServer) RestoreFiles(context.Context, *RestoreFilesRequest) (*Response, error) {
+	return nil, status.Error(codes.Unimplemented, "method RestoreFiles not implemented")
+}
+func (UnimplementedFileServer) PurgeFiles(context.Context, *PurgeFilesRequest) (*Response, error) {
+	return nil, status.Error(codes.Unimplemented, "method PurgeFiles not implemented")
 }
 func (UnimplementedFileServer) mustEmbedUnimplementedFileServer() {}
 func (UnimplementedFileServer) testEmbeddedByValue()              {}
@@ -1482,6 +1536,60 @@ func _File_GetStorageTrend_Handler(srv interface{}, ctx context.Context, dec fun
 	return interceptor(ctx, in, info, handler)
 }
 
+func _File_ListDeletedFiles_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListDeletedFilesRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(FileServer).ListDeletedFiles(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: File_ListDeletedFiles_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(FileServer).ListDeletedFiles(ctx, req.(*ListDeletedFilesRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _File_RestoreFiles_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(RestoreFilesRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(FileServer).RestoreFiles(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: File_RestoreFiles_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(FileServer).RestoreFiles(ctx, req.(*RestoreFilesRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _File_PurgeFiles_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(PurgeFilesRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(FileServer).PurgeFiles(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: File_PurgeFiles_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(FileServer).PurgeFiles(ctx, req.(*PurgeFilesRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // File_ServiceDesc is the grpc.ServiceDesc for File service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -1572,6 +1680,18 @@ var File_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetStorageTrend",
 			Handler:    _File_GetStorageTrend_Handler,
+		},
+		{
+			MethodName: "ListDeletedFiles",
+			Handler:    _File_ListDeletedFiles_Handler,
+		},
+		{
+			MethodName: "RestoreFiles",
+			Handler:    _File_RestoreFiles_Handler,
+		},
+		{
+			MethodName: "PurgeFiles",
+			Handler:    _File_PurgeFiles_Handler,
 		},
 	},
 	Streams: []grpc.StreamDesc{

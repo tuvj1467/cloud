@@ -319,3 +319,40 @@ message TrendPoint {
 message GetStorageTrendResponse {
   repeated TrendPoint points = 1;
 }
+
+// ==========================================
+// 21. 回收站（列表 / 恢复 / 彻底删除）
+// ==========================================
+message ListDeletedFilesRequest {
+  int32 page = 1 [(validate.rules).int32 = {gte: 1}];
+  int32 page_size = 2 [(validate.rules).int32 = {gte:1, lte:50}];
+}
+
+message DeletedFileItem {
+  string file_id = 1;      // 文件 ID
+  string name = 2;         // 文件名
+  int64 size = 3;          // 大小（字节）
+  string bucket_id = 4;    // 原属桶 ID
+  string deleted_at = 5;   // 删除时间
+}
+
+message ListDeletedFilesResponse {
+  repeated DeletedFileItem files = 1;
+  int32 total = 2;
+}
+
+message RestoreFilesRequest {
+  repeated string file_ids = 1 [(validate.rules).repeated = {min_items: 1, max_items: 100}];
+}
+
+message RestoreFilesResponse {
+  int32 restored_count = 1; // 实际恢复数（不存在的自动跳过）
+}
+
+message PurgeFilesRequest {
+  repeated string file_ids = 1 [(validate.rules).repeated = {min_items: 1, max_items: 100}];
+}
+
+message PurgeFilesResponse {
+  int32 purged_count = 1;   // 实际彻底删除数
+}

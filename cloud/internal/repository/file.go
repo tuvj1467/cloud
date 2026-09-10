@@ -202,6 +202,52 @@ func (l *FileRepository) Delete(ctx context.Context, id string) error {
 	return l.client.File.DeleteOneID(id).Exec(ctx)
 }
 
+// ListDeleted 分页查询用户回收站（按删除时间倒序），返回列表与总数
+func (l *FileRepository) ListDeleted(ctx context.Context, userID string, page, pageSize int) ([]*ent.File, int, error) {
+	if page <= 0 {
+		page = 1
+	}
+	if pageSize <= 0 {
+		pageSize = 10
+	}
+	base := l.client.File.Query().
+		Where(file.UserIDEQ(userID), file.DeletedAtNotNil())
+	total, err := base.Count(ctx)
+	if err != nil {
+		return nil, 0, err
+	}
+	list, err := base.Order(file.ByDeletedAt(entsql.OrderDesc())).
+		Offset((page - 1) * pageSize).Limit(pageSize).All(ctx)
+	if err != nil {
+		return nil, 0, err
+	}
+	return list, total, nil
+}
+
+// RestoreByIDs 恢复本人的一组回收站文件（置空 deleted_at）
+// 返回实际恢复数；不属于本人或不在回收站的 ID 自动跳过
+func (l *FileRepository) RestoreByIDs(ctx context.Context, userID string, ids []string) (int, error) {
+	return l.client.File.Update().
+		Where(
+			file.IDIn(ids...),
+			file.UserIDEQ(userID),
+			file.DeletedAtNotNil(),
+		).
+		ClearDeletedAt().
+		Save(ctx)
+}
+
+// ListDeletedByIDs 加载本人回收站中的指定文件（Purge 前置校验与事后清理用）
+func (l *FileRepository) ListDeletedByIDs(ctx context.Context, userID string, ids []string) ([]*ent.File, error) {
+	return l.client.File.Query().
+		Where(
+			file.IDIn(ids...),
+			file.UserIDEQ(userID),
+			file.DeletedAtNotNil(),
+		).
+		All(ctx)
+}
+
 // SoftDelete 软删除：标记 deleted_at（回收站语义）
 // 配额不归还、物理文件不删除——恢复即还原，彻底删除（Purge）时才执行归还与物理清理
 func (l *FileRepository) SoftDelete(ctx context.Context, id string) error {
