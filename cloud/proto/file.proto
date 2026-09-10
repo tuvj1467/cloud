@@ -60,6 +60,7 @@ message FileListRequest {
   int32 page_size = 2 [(validate.rules).int32 = {gte:1, lte:50}]; // 每页数量 1-50
   string sort_by = 3 [(validate.rules).string = {in: ["name", "size", "create_time", "update_time"]}];
   string sort_order = 4 [(validate.rules).string = {in: ["asc", "desc"]}];
+  optional string name_keyword = 5 [(validate.rules).string = {max_len: 50}]; // 文件名模糊搜索（可选）
 }
 
 message BucketFileListRequest {
@@ -68,6 +69,7 @@ message BucketFileListRequest {
   int32 page_size = 3 [(validate.rules).int32 = {gte:1, lte:50}];
   string sort_by = 4 [(validate.rules).string = {in: ["name", "size", "create_time", "update_time"]}];
   string sort_order = 5 [(validate.rules).string = {in: ["asc", "desc"]}];
+  optional string name_keyword = 6 [(validate.rules).string = {max_len: 50}]; // 文件名模糊搜索（可选）
 }
 
 

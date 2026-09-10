@@ -386,6 +386,7 @@ type FileListRequest struct {
 	PageSize      int32                  `protobuf:"varint,2,opt,name=page_size,json=pageSize,proto3" json:"page_size,omitempty"` // 每页数量 1-50
 	SortBy        string                 `protobuf:"bytes,3,opt,name=sort_by,json=sortBy,proto3" json:"sort_by,omitempty"`
 	SortOrder     string                 `protobuf:"bytes,4,opt,name=sort_order,json=sortOrder,proto3" json:"sort_order,omitempty"`
+	NameKeyword   *string                `protobuf:"bytes,5,opt,name=name_keyword,json=nameKeyword,proto3,oneof" json:"name_keyword,omitempty"` // 文件名模糊搜索（可选）
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -448,6 +449,13 @@ func (x *FileListRequest) GetSortOrder() string {
 	return ""
 }
 
+func (x *FileListRequest) GetNameKeyword() string {
+	if x != nil && x.NameKeyword != nil {
+		return *x.NameKeyword
+	}
+	return ""
+}
+
 type BucketFileListRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	BucketId      string                 `protobuf:"bytes,1,opt,name=bucket_id,json=bucketId,proto3" json:"bucket_id,omitempty"`
@@ -455,6 +463,7 @@ type BucketFileListRequest struct {
 	PageSize      int32                  `protobuf:"varint,3,opt,name=page_size,json=pageSize,proto3" json:"page_size,omitempty"`
 	SortBy        string                 `protobuf:"bytes,4,opt,name=sort_by,json=sortBy,proto3" json:"sort_by,omitempty"`
 	SortOrder     string                 `protobuf:"bytes,5,opt,name=sort_order,json=sortOrder,proto3" json:"sort_order,omitempty"`
+	NameKeyword   *string                `protobuf:"bytes,6,opt,name=name_keyword,json=nameKeyword,proto3,oneof" json:"name_keyword,omitempty"` // 文件名模糊搜索（可选）
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -520,6 +529,13 @@ func (x *BucketFileListRequest) GetSortBy() string {
 func (x *BucketFileListRequest) GetSortOrder() string {
 	if x != nil {
 		return x.SortOrder
+	}
+	return ""
+}
+
+func (x *BucketFileListRequest) GetNameKeyword() string {
+	if x != nil && x.NameKeyword != nil {
+		return *x.NameKeyword
 	}
 	return ""
 }
@@ -2078,20 +2094,24 @@ const file_file_proto_rawDesc = "" +
 	"\x04_md5\"U\n" +
 	"\x12UploadFileResponse\x12%\n" +
 	"\x04file\x18\x01 \x01(\v2\x11.storage.FileMetaR\x04file\x12\x18\n" +
-	"\ainstant\x18\x02 \x01(\bR\ainstant\"\xcd\x01\n" +
+	"\ainstant\x18\x02 \x01(\bR\ainstant\"\x8f\x02\n" +
 	"\x0fFileListRequest\x12\x1b\n" +
 	"\x04page\x18\x01 \x01(\x05B\a\xfaB\x04\x1a\x02(\x01R\x04page\x12&\n" +
 	"\tpage_size\x18\x02 \x01(\x05B\t\xfaB\x06\x1a\x04\x182(\x01R\bpageSize\x12D\n" +
 	"\asort_by\x18\x03 \x01(\tB+\xfaB(r&R\x04nameR\x04sizeR\vcreate_timeR\vupdate_timeR\x06sortBy\x12/\n" +
 	"\n" +
-	"sort_order\x18\x04 \x01(\tB\x10\xfaB\rr\vR\x03ascR\x04descR\tsortOrder\"\xf9\x01\n" +
+	"sort_order\x18\x04 \x01(\tB\x10\xfaB\rr\vR\x03ascR\x04descR\tsortOrder\x12/\n" +
+	"\fname_keyword\x18\x05 \x01(\tB\a\xfaB\x04r\x02\x182H\x00R\vnameKeyword\x88\x01\x01B\x0f\n" +
+	"\r_name_keyword\"\xbb\x02\n" +
 	"\x15BucketFileListRequest\x12$\n" +
 	"\tbucket_id\x18\x01 \x01(\tB\a\xfaB\x04r\x02\x10\x01R\bbucketId\x12\x1b\n" +
 	"\x04page\x18\x02 \x01(\x05B\a\xfaB\x04\x1a\x02(\x01R\x04page\x12&\n" +
 	"\tpage_size\x18\x03 \x01(\x05B\t\xfaB\x06\x1a\x04\x182(\x01R\bpageSize\x12D\n" +
 	"\asort_by\x18\x04 \x01(\tB+\xfaB(r&R\x04nameR\x04sizeR\vcreate_timeR\vupdate_timeR\x06sortBy\x12/\n" +
 	"\n" +
-	"sort_order\x18\x05 \x01(\tB\x10\xfaB\rr\vR\x03ascR\x04descR\tsortOrder\"Q\n" +
+	"sort_order\x18\x05 \x01(\tB\x10\xfaB\rr\vR\x03ascR\x04descR\tsortOrder\x12/\n" +
+	"\fname_keyword\x18\x06 \x01(\tB\a\xfaB\x04r\x02\x182H\x00R\vnameKeyword\x88\x01\x01B\x0f\n" +
+	"\r_name_keyword\"Q\n" +
 	"\x10FileListResponse\x12'\n" +
 	"\x05files\x18\x01 \x03(\v2\x11.storage.FileMetaR\x05files\x12\x14\n" +
 	"\x05total\x18\x02 \x01(\x05R\x05total\"[\n" +
@@ -2273,6 +2293,8 @@ func file_file_proto_init() {
 		return
 	}
 	file_file_proto_msgTypes[3].OneofWrappers = []any{}
+	file_file_proto_msgTypes[5].OneofWrappers = []any{}
+	file_file_proto_msgTypes[6].OneofWrappers = []any{}
 	file_file_proto_msgTypes[16].OneofWrappers = []any{}
 	file_file_proto_msgTypes[24].OneofWrappers = []any{}
 	file_file_proto_msgTypes[33].OneofWrappers = []any{}

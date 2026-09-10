@@ -25,15 +25,16 @@ const (
 // 桶元信息
 type BucketMeta struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	BucketId      string                 `protobuf:"bytes,1,opt,name=bucket_id,json=bucketId,proto3" json:"bucket_id,omitempty"`     // 桶唯一ID（雪花ID）
-	Name          string                 `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`                             // 桶名称（用户内唯一）
-	UserId        string                 `protobuf:"bytes,3,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`           // 所属用户ID
-	Description   string                 `protobuf:"bytes,4,opt,name=description,proto3" json:"description,omitempty"`               // 桶描述
-	SizeLimit     int64                  `protobuf:"varint,5,opt,name=size_limit,json=sizeLimit,proto3" json:"size_limit,omitempty"` // 桶容量限制（字节）
-	UsedSize      int64                  `protobuf:"varint,6,opt,name=used_size,json=usedSize,proto3" json:"used_size,omitempty"`    // 已使用容量（字节）
-	Visibility    string                 `protobuf:"bytes,7,opt,name=visibility,proto3" json:"visibility,omitempty"`                 // 访问权限：private / internal / public
-	CreatedAt     string                 `protobuf:"bytes,8,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`  // 创建时间
-	UpdatedAt     string                 `protobuf:"bytes,9,opt,name=updated_at,json=updatedAt,proto3" json:"updated_at,omitempty"`  // 更新时间
+	BucketId      string                 `protobuf:"bytes,1,opt,name=bucket_id,json=bucketId,proto3" json:"bucket_id,omitempty"`            // 桶唯一ID（雪花ID）
+	Name          string                 `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`                                    // 桶名称（用户内唯一）
+	UserId        string                 `protobuf:"bytes,3,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`                  // 所属用户ID
+	Description   string                 `protobuf:"bytes,4,opt,name=description,proto3" json:"description,omitempty"`                      // 桶描述
+	SizeLimit     int64                  `protobuf:"varint,5,opt,name=size_limit,json=sizeLimit,proto3" json:"size_limit,omitempty"`        // 桶容量限制（字节）
+	UsedSize      int64                  `protobuf:"varint,6,opt,name=used_size,json=usedSize,proto3" json:"used_size,omitempty"`           // 已使用容量（字节）
+	Visibility    string                 `protobuf:"bytes,7,opt,name=visibility,proto3" json:"visibility,omitempty"`                        // 访问权限：private / internal / public
+	CreatedAt     string                 `protobuf:"bytes,8,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`         // 创建时间
+	UpdatedAt     string                 `protobuf:"bytes,9,opt,name=updated_at,json=updatedAt,proto3" json:"updated_at,omitempty"`         // 更新时间
+	FileCount     *int64                 `protobuf:"varint,10,opt,name=file_count,json=fileCount,proto3,oneof" json:"file_count,omitempty"` // 桶内文件数（列表接口聚合返回）
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -129,6 +130,13 @@ func (x *BucketMeta) GetUpdatedAt() string {
 		return x.UpdatedAt
 	}
 	return ""
+}
+
+func (x *BucketMeta) GetFileCount() int64 {
+	if x != nil && x.FileCount != nil {
+		return *x.FileCount
+	}
+	return 0
 }
 
 // ==========================================
@@ -662,7 +670,7 @@ var File_bucket_proto protoreflect.FileDescriptor
 
 const file_bucket_proto_rawDesc = "" +
 	"\n" +
-	"\fbucket.proto\x12\astorage\x1a\x0evalidate.proto\"\x92\x02\n" +
+	"\fbucket.proto\x12\astorage\x1a\x0evalidate.proto\"\xc5\x02\n" +
 	"\n" +
 	"BucketMeta\x12\x1b\n" +
 	"\tbucket_id\x18\x01 \x01(\tR\bbucketId\x12\x12\n" +
@@ -678,7 +686,11 @@ const file_bucket_proto_rawDesc = "" +
 	"\n" +
 	"created_at\x18\b \x01(\tR\tcreatedAt\x12\x1d\n" +
 	"\n" +
-	"updated_at\x18\t \x01(\tR\tupdatedAt\"\xcc\x01\n" +
+	"updated_at\x18\t \x01(\tR\tupdatedAt\x12\"\n" +
+	"\n" +
+	"file_count\x18\n" +
+	" \x01(\x03H\x00R\tfileCount\x88\x01\x01B\r\n" +
+	"\v_file_count\"\xcc\x01\n" +
 	"\x13CreateBucketRequest\x12\x1d\n" +
 	"\x04name\x18\x01 \x01(\tB\t\xfaB\x06r\x04\x10\x01\x18?R\x04name\x12%\n" +
 	"\vdescription\x18\x02 \x01(\tH\x00R\vdescription\x88\x01\x01\x12\x1d\n" +
@@ -761,6 +773,7 @@ func file_bucket_proto_init() {
 	if File_bucket_proto != nil {
 		return
 	}
+	file_bucket_proto_msgTypes[0].OneofWrappers = []any{}
 	file_bucket_proto_msgTypes[1].OneofWrappers = []any{}
 	file_bucket_proto_msgTypes[7].OneofWrappers = []any{}
 	type x struct{}

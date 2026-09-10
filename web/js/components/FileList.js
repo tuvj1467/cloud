@@ -70,16 +70,18 @@ export const FileList = {
     const keyword = ref('');
     const debouncedKw = ref('');
     let kwTimer = null;
+    // 搜索后端化（P14）：防抖 300ms → 回第 1 页带 name_keyword 重新查询
     watch(keyword, (v) => {
       clearTimeout(kwTimer);
-      kwTimer = setTimeout(() => { debouncedKw.value = v; }, 300);
+      kwTimer = setTimeout(() => {
+        debouncedKw.value = v.trim();
+        F.page = 1;
+        loadFiles();
+      }, 300);
     });
     onUnmounted(() => clearTimeout(kwTimer));
 
-    const displayList = computed(() => {
-      const kw = debouncedKw.value.trim();
-      return kw ? F.list.filter((f) => (f.name || '').includes(kw)) : F.list;
-    });
+    const displayList = computed(() => F.list);
 
     const totalPages = computed(() => Math.max(1, Math.ceil(F.total / F.pageSize)));
     const hasBuckets = computed(() => store.buckets.length > 0);
@@ -100,6 +102,7 @@ export const FileList = {
       F.loading = true;
       try {
         const params = { page: F.page, page_size: F.pageSize, sort_by: F.sortBy, sort_order: F.sortOrder };
+        if (debouncedKw.value) params.name_keyword = debouncedKw.value;
         const data = F.scope === 'bucket'
           ? await getBucketFileList({ ...params, bucket_id: F.bucketId })
           : await getFileList(params);
@@ -298,7 +301,7 @@ export const FileList = {
           <option value="desc">降序</option>
           <option value="asc">升序</option>
         </select>
-        <input v-model="keyword" type="text" placeholder="搜索当前页文件名">
+        <input v-model="keyword" type="text" placeholder="按文件名搜索">
       </div>
 
       <!-- 列表：loading 骨架 / 行 / 空状态 -->

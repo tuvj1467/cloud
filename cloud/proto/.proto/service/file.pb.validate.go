@@ -747,6 +747,21 @@ func (m *FileListRequest) validate(all bool) error {
 		errors = append(errors, err)
 	}
 
+	if m.NameKeyword != nil {
+
+		if utf8.RuneCountInString(m.GetNameKeyword()) > 50 {
+			err := FileListRequestValidationError{
+				field:  "NameKeyword",
+				reason: "value length must be at most 50 runes",
+			}
+			if !all {
+				return err
+			}
+			errors = append(errors, err)
+		}
+
+	}
+
 	if len(errors) > 0 {
 		return FileListRequestMultiError(errors)
 	}
@@ -912,6 +927,21 @@ func (m *BucketFileListRequest) validate(all bool) error {
 			return err
 		}
 		errors = append(errors, err)
+	}
+
+	if m.NameKeyword != nil {
+
+		if utf8.RuneCountInString(m.GetNameKeyword()) > 50 {
+			err := BucketFileListRequestValidationError{
+				field:  "NameKeyword",
+				reason: "value length must be at most 50 runes",
+			}
+			if !all {
+				return err
+			}
+			errors = append(errors, err)
+		}
+
 	}
 
 	if len(errors) > 0 {

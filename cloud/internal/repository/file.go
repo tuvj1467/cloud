@@ -76,8 +76,11 @@ func (l *FileRepository) GetPageFileList(ctx context.Context, userId string, in 
 	}
 	offset := (page - 1) * pageSize
 
-	// 基础查询条件：按用户隔离
+	// 基础查询条件：按用户隔离 + 可选文件名模糊过滤
 	basePredicates := []predicate.File{file.UserIDEQ(userId)}
+	if in.NameKeyword != nil && *in.NameKeyword != "" {
+		basePredicates = append(basePredicates, file.NameContains(*in.NameKeyword))
+	}
 
 	// 计算总数
 	count, err := l.client.File.Query().Where(basePredicates...).Count(ctx)
@@ -138,6 +141,9 @@ func (l *FileRepository) GetBucketFileList(ctx context.Context, userId, bucketId
 	basePredicates := []predicate.File{
 		file.UserIDEQ(userId),
 		file.BucketIDEQ(bucketId),
+	}
+	if in.NameKeyword != nil && *in.NameKeyword != "" {
+		basePredicates = append(basePredicates, file.NameContains(*in.NameKeyword))
 	}
 
 	count, err := l.client.File.Query().Where(basePredicates...).Count(ctx)

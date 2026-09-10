@@ -128,6 +128,27 @@ func (r *BucketRepository) CountFiles(ctx context.Context, bucketID string) (int
 	return r.client.File.Query().Where(file.BucketIDEQ(bucketID)).Count(ctx)
 }
 
+// CountFilesGroupByBucket 单条 GROUP BY 聚合用户各桶的文件数（bucket_id → count）
+func (r *BucketRepository) CountFilesGroupByBucket(ctx context.Context, userID string) (map[string]int64, error) {
+	var rows []struct {
+		BucketID string `json:"bucket_id"`
+		Count    int64  `json:"count"`
+	}
+	err := r.client.File.Query().
+		Where(file.UserIDEQ(userID)).
+		GroupBy(file.FieldBucketID).
+		Aggregate(ent.Count()).
+		Scan(ctx, &rows)
+	if err != nil {
+		return nil, err
+	}
+	res := make(map[string]int64, len(rows))
+	for _, row := range rows {
+		res[row.BucketID] = row.Count
+	}
+	return res, nil
+}
+
 // TryIncUsedSize 原子增加桶已用容量：单条 UPDATE 内联配额条件，杜绝并发超卖
 // delta 必须为正；返回 false 表示配额不足或桶不存在
 func (r *BucketRepository) TryIncUsedSize(ctx context.Context, bucketID string, delta int64) (bool, error) {

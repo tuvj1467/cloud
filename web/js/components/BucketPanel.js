@@ -204,7 +204,7 @@ export const BucketPanel = {
                 {{ formatSize(Number(b.usedSize)) }} / {{ formatSize(Number(b.sizeLimit)) }}（{{ usedPct(b).toFixed(1) }}%）
               </span>
             </div>
-            <div class="p8-bk-time">创建于 {{ formatTime(b.createdAt || b.created_at) }}</div>
+            <div class="p8-bk-time">创建于 {{ formatTime(b.createdAt || b.created_at) }}<span v-if="b.fileCount != null"> · {{ b.fileCount }} 个文件</span></div>
           </div>
           <div class="p8-actions">
             <button @click="openEdit(b)">编辑</button>

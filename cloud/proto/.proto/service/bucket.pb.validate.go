@@ -75,6 +75,10 @@ func (m *BucketMeta) validate(all bool) error {
 
 	// no validation rules for UpdatedAt
 
+	if m.FileCount != nil {
+		// no validation rules for FileCount
+	}
+
 	if len(errors) > 0 {
 		return BucketMetaMultiError(errors)
 	}

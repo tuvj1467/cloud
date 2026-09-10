@@ -19,6 +19,7 @@ message BucketMeta {
   string visibility = 7;         // 访问权限：private / internal / public
   string created_at = 8;         // 创建时间
   string updated_at = 9;         // 更新时间
+  optional int64 file_count = 10; // 桶内文件数（列表接口聚合返回）
 }
 
 // ==========================================
