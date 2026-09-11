@@ -96,6 +96,39 @@ export const FileList = {
 
     const displayList = computed(() => F.list);
 
+    // ===== 类型过滤 + 批量删除（P17-M9）=====
+    const typeFilter = ref('all');
+    const TYPE_RULES = {
+      image: ['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp'],
+      video: ['mp4', 'avi', 'mkv', 'mov'],
+      doc: ['pdf', 'doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx', 'txt', 'md'],
+      archive: ['zip', 'rar', '7z', 'gz', 'tar'],
+    };
+    const filteredList = computed(() =>
+      typeFilter.value === 'all' ? displayList.value : displayList.value.filter((f) => {
+        const rules = TYPE_RULES[typeFilter.value];
+        return !rules || rules.includes(extOf(f).toLowerCase());
+      })
+    );
+    const checked = ref({});
+    const checkedCount = computed(() => Object.values(checked.value).filter(Boolean).length);
+    function toggleAll(e) {
+      const on = e.target.checked;
+      for (const f of filteredList.value) checked.value[f.fileId || f.file_id] = on;
+    }
+    async function batchDelete() {
+      const ids = Object.keys(checked.value).filter((k) => checked.value[k]);
+      if (!ids.length) return toast('请先勾选要删除的文件', 'error');
+      if (!window.confirm(`确定删除选中的 ${ids.length} 个文件？（进入回收站）`)) return;
+      let ok = 0;
+      for (const id of ids) {
+        try { await deleteFile({ fileId: id }); ok++; } catch (e) { toast(`删除失败: ${e.message}`, 'error'); }
+      }
+      checked.value = {};
+      toast(`批量删除完成：成功 ${ok}/${ids.length}`, ok === ids.length ? 'success' : 'error');
+      loadFiles();
+    }
+
     const totalPages = computed(() => Math.max(1, Math.ceil(F.total / F.pageSize)));
     const hasBuckets = computed(() => store.buckets.length > 0);
 
@@ -419,7 +452,7 @@ export const FileList = {
     return {
       store, keyword, displayList, totalPages, hasBuckets, stats,
       formatSize, formatTime, fileIcon, extOf,
-      doDownload, isImage, openPreview, closePreview, preview, myShares, openMyShares, loadMyShares, doRevoke, thumbs, loadThumbs, trend, openTrend, maxTrendSize, recycle, openRecycle, loadRecycle, doRestore, doPurge, accessLogs, openAccessLogs, loadAccessLogs, doRename, openCopy, copyModal, targetBuckets, doCopy, doDelete,
+      doDownload, isImage, openPreview, closePreview, preview, myShares, openMyShares, loadMyShares, doRevoke, thumbs, loadThumbs, trend, openTrend, maxTrendSize, recycle, openRecycle, loadRecycle, doRestore, doPurge, typeFilter, filteredList, checked, checkedCount, toggleAll, batchDelete, accessLogs, openAccessLogs, loadAccessLogs, doRename, openCopy, copyModal, targetBuckets, doCopy, doDelete,
       bucketIdOf,
     };
   },
@@ -461,6 +494,13 @@ export const FileList = {
           <option value="asc">升序</option>
         </select>
         <input v-model="keyword" type="text" placeholder="按文件名搜索">
+        <select v-model="typeFilter" style="max-width:110px">
+          <option value="all">全部类型</option>
+          <option value="image">图片</option>
+          <option value="video">视频</option>
+          <option value="doc">文档</option>
+          <option value="archive">压缩包</option>
+        </select>
       </div>
 
       <!-- 列表：loading 骨架 / 行 / 空状态 -->
@@ -473,8 +513,13 @@ export const FileList = {
           <div class="empty-state">请先在上方选择一个桶</div>
         </template>
 
+        <div v-if="checkedCount > 0" style="margin:8px 0">
+          <button style="background:#e74c3c;border:none;color:#fff;padding:8px 14px;border-radius:8px;cursor:pointer"
+                  @click="batchDelete">删除选中的 {{ checkedCount }} 个文件</button>
+        </div>
         <template v-else-if="displayList.length">
-          <div class="file-item" v-for="f in displayList" :key="f.fileId || f.file_id">
+          <div class="file-item" v-for="f in filteredList" :key="f.fileId || f.file_id">
+            <input type="checkbox" style="margin-right:8px" v-model="checked[f.fileId || f.file_id]">
             <div class="p8-item-main">
               <img v-if="thumbs[f.fileId || f.file_id]" class="p8-item-thumb" :src="thumbs[f.fileId || f.file_id]" alt="">
               <span v-else class="p8-item-icon">{{ fileIcon(extOf(f)) }}</span>
