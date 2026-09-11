@@ -13,6 +13,15 @@ type Config struct {
 	RedisConf RedisConf
 	Storage   storage.Config // 存储驱动配置
 	JWT       JWTConf        // JWT 鉴权配置
+	RateLimit RateLimitConf  `json:",optional"` // 用户级 API 限流（缺省关闭）
+}
+
+// RateLimitConf 用户级 API 限流配置
+type RateLimitConf struct {
+	Enabled       bool    `json:",optional"`   // 是否启用（缺省关闭）
+	QPS           float64 `json:",default=10"` // 每身份每秒请求数
+	Burst         int     `json:",default=20"` // 令牌桶突发容量
+	SendCodeEvery int     `json:",default=20"` // 发送验证码最小间隔（秒），约 3/min
 }
 
 // DB MySQL 数据库配置

@@ -71,6 +71,12 @@ func main() {
 	})
 	defer s.Stop()
 
+	// 用户级限流（须在 JWT 之前：匿名也按 IP 限流）
+	middleware.SetupRateLimit(c.RateLimit.Enabled, c.RateLimit.QPS, c.RateLimit.Burst, c.RateLimit.SendCodeEvery)
+	if c.RateLimit.Enabled {
+		s.AddUnaryInterceptors(middleware.RateLimitUnaryInterceptor())
+	}
+
 	// 添加 JWT 拦截器（Unary + Stream：流式方法如 DownloadStream 需单独鉴权）
 	s.AddUnaryInterceptors(middleware.JwtInterceptor())
 	s.AddStreamInterceptors(middleware.JwtStreamInterceptor())
