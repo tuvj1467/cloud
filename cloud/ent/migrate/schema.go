@@ -113,6 +113,31 @@ var (
 		Columns:    FileSharesColumns,
 		PrimaryKey: []*schema.Column{FileSharesColumns[0]},
 	}
+	// ShareAccessLogsColumns holds the columns for the "share_access_logs" table.
+	ShareAccessLogsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeString, Unique: true, Comment: "雪花ID"},
+		{Name: "created_at", Type: field.TypeTime},
+		{Name: "updated_at", Type: field.TypeTime},
+		{Name: "version", Type: field.TypeInt, Default: 1},
+		{Name: "share_id", Type: field.TypeString, Comment: "分享记录ID"},
+		{Name: "share_code", Type: field.TypeString, Comment: "提取码"},
+		{Name: "action", Type: field.TypeString, Comment: "动作：access 查看 / download 下载"},
+		{Name: "ip", Type: field.TypeString, Nullable: true, Comment: "客户端 IP（X-Forwarded-For 优先，回退 gRPC 对端）", Default: ""},
+		{Name: "user_agent", Type: field.TypeString, Nullable: true, Comment: "客户端 UA", Default: ""},
+	}
+	// ShareAccessLogsTable holds the schema information for the "share_access_logs" table.
+	ShareAccessLogsTable = &schema.Table{
+		Name:       "share_access_logs",
+		Columns:    ShareAccessLogsColumns,
+		PrimaryKey: []*schema.Column{ShareAccessLogsColumns[0]},
+		Indexes: []*schema.Index{
+			{
+				Name:    "shareaccesslog_share_code_created_at",
+				Unique:  false,
+				Columns: []*schema.Column{ShareAccessLogsColumns[5], ShareAccessLogsColumns[1]},
+			},
+		},
+	}
 	// StorageSnapshotsColumns holds the columns for the "storage_snapshots" table.
 	StorageSnapshotsColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeString, Unique: true, Comment: "雪花ID"},
@@ -171,6 +196,7 @@ var (
 		FilesTable,
 		FilePartsTable,
 		FileSharesTable,
+		ShareAccessLogsTable,
 		StorageSnapshotsTable,
 		UsersTable,
 	}

@@ -4,7 +4,7 @@
 // Vue 为全量版全局变量（index.html 先以非 module 方式加载），模块内直接解构
 const { ref, computed, watch, onMounted, onUnmounted } = Vue;
 import {
-  getFileList, getBucketFileList, renameFile, deleteFile, copyFile, downloadBlob, downloadData, getStorageStats, getPresignedURL, getMyShares, revokeShare, streamDownload, getThumb, getStorageTrend, listDeletedFiles, restoreFiles, purgeFiles,
+  getFileList, getBucketFileList, renameFile, deleteFile, copyFile, downloadBlob, downloadData, getStorageStats, getPresignedURL, getMyShares, revokeShare, streamDownload, getThumb, getStorageTrend, listDeletedFiles, restoreFiles, purgeFiles, getShareAccessLogs,
 } from '../api.js';
 import { store } from '../store.js';
 import { formatSize, formatTime, fileIcon, toast, confirmBox, saveBlob } from '../common.js';
@@ -45,6 +45,7 @@ if (!document.getElementById('p8-filelist-style')) {
     .p8-trend-col:hover .p8-trend-bar { background:#5563d8; }
     .p8-trend-tip { font-size:11px; color:#666; margin-top:4px; transform:rotate(-45deg); white-space:nowrap; }
     .p8-recycle-restore { border:none; background:none; color:#667eea; cursor:pointer; padding:2px 6px; }
+    .p8-logs-modal .modal-content { max-width:680px; width:94%; }
     .p8-recycle-purge { border:none; background:none; color:#e74c3c; cursor:pointer; padding:2px 6px; }
     .p8-pagination { display:flex; justify-content:space-between; align-items:center; margin-top:20px;
       color:#666; font-size:14px; }
@@ -281,6 +282,29 @@ export const FileList = {
       loadMyShares();
     }
 
+    // ===== 分享访问审计 =====
+    const accessLogs = ref({ show: false, list: [], total: 0, page: 1, pageSize: 10, code: '', loading: false });
+
+    async function loadAccessLogs() {
+      accessLogs.value.loading = true;
+      try {
+        const data = await getShareAccessLogs({ share_code: accessLogs.value.code, page: accessLogs.value.page, page_size: accessLogs.value.pageSize });
+        accessLogs.value.list = data.logs || [];
+        accessLogs.value.total = data.total || 0;
+      } catch (e) {
+        toast(e.message, 'error');
+      } finally {
+        accessLogs.value.loading = false;
+      }
+    }
+
+    function openAccessLogs(item) {
+      accessLogs.value.code = item.shareCode;
+      accessLogs.value.page = 1;
+      accessLogs.value.show = true;
+      loadAccessLogs();
+    }
+
     async function doRevoke(item) {
       if (!window.confirm(`确定撤销分享「${item.shareCode}」？撤销后链接立即失效`)) return;
       try {
@@ -395,7 +419,7 @@ export const FileList = {
     return {
       store, keyword, displayList, totalPages, hasBuckets, stats,
       formatSize, formatTime, fileIcon, extOf,
-      doDownload, isImage, openPreview, closePreview, preview, myShares, openMyShares, loadMyShares, doRevoke, thumbs, loadThumbs, trend, openTrend, maxTrendSize, recycle, openRecycle, loadRecycle, doRestore, doPurge, doRename, openCopy, copyModal, targetBuckets, doCopy, doDelete,
+      doDownload, isImage, openPreview, closePreview, preview, myShares, openMyShares, loadMyShares, doRevoke, thumbs, loadThumbs, trend, openTrend, maxTrendSize, recycle, openRecycle, loadRecycle, doRestore, doPurge, accessLogs, openAccessLogs, loadAccessLogs, doRename, openCopy, copyModal, targetBuckets, doCopy, doDelete,
       bucketIdOf,
     };
   },
@@ -524,7 +548,10 @@ export const FileList = {
                 <td>{{ it.permission === 'download' ? '下载' : '查看' }}</td>
                 <td>{{ it.usedCount }} / {{ it.maxCount != null ? it.maxCount : '∞' }}</td>
                 <td>{{ it.expireAt || '永久' }}</td>
-                <td><button class="p8-share-revoke" @click="doRevoke(it)">撤销</button></td>
+                <td>
+                  <button class="p8-share-revoke" style="color:#667eea" @click="openAccessLogs(it)">记录</button>
+                  <button class="p8-share-revoke" @click="doRevoke(it)">撤销</button>
+                </td>
               </tr>
             </tbody>
           </table>
@@ -557,6 +584,32 @@ export const FileList = {
           </template>
           <div class="modal-actions">
             <button class="btn btn-primary" @click="trend.show=false">关闭</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- 分享访问审计弹层 -->
+      <div v-if="accessLogs.show" class="modal p8-logs-modal" @click.self="accessLogs.show=false">
+        <div class="modal-content">
+          <h3>访问记录（{{ accessLogs.code }}）</h3>
+          <div v-if="accessLogs.loading" class="empty-state">加载中…</div>
+          <div v-else-if="!accessLogs.list.length" class="empty-state">暂无访问记录</div>
+          <table v-else class="p8-share-table">
+            <thead><tr><th>动作</th><th>IP</th><th>UA</th><th>时间</th></tr></thead>
+            <tbody>
+              <tr v-for="(lg, i) in accessLogs.list" :key="i">
+                <td>{{ lg.action === 'download' ? '下载' : (lg.action === 'access' ? '查看' : lg.action) }}</td>
+                <td>{{ lg.ip || '-' }}</td>
+                <td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" :title="lg.userAgent">{{ lg.userAgent || '-' }}</td>
+                <td>{{ lg.createdAt }}</td>
+              </tr>
+            </tbody>
+          </table>
+          <div class="modal-actions">
+            <span style="margin-right:auto;color:#999;font-size:12px;align-self:center">共 {{ accessLogs.total }} 条</span>
+            <button class="btn btn-secondary" @click="accessLogs.page>1 && (accessLogs.page--, loadAccessLogs())" :disabled="accessLogs.page<=1">上一页</button>
+            <button class="btn btn-secondary" @click="accessLogs.page < Math.ceil(accessLogs.total/accessLogs.pageSize) && (accessLogs.page++, loadAccessLogs())" :disabled="accessLogs.page >= Math.ceil(accessLogs.total/accessLogs.pageSize)">下一页</button>
+            <button class="btn btn-primary" @click="accessLogs.show=false">关闭</button>
           </div>
         </div>
       </div>

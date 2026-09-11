@@ -8,6 +8,7 @@ import (
 	"onecloud/ent/filepart"
 	"onecloud/ent/fileshare"
 	"onecloud/ent/schema"
+	"onecloud/ent/shareaccesslog"
 	"onecloud/ent/storagesnapshot"
 	"onecloud/ent/user"
 	"time"
@@ -165,6 +166,49 @@ func init() {
 	fileshareDescID := fileshareFields[0].Descriptor()
 	// fileshare.IDValidator is a validator for the "id" field. It is called by the builders before save.
 	fileshare.IDValidator = fileshareDescID.Validators[0].(func(string) error)
+	shareaccesslogMixin := schema.ShareAccessLog{}.Mixin()
+	shareaccesslogMixinFields0 := shareaccesslogMixin[0].Fields()
+	_ = shareaccesslogMixinFields0
+	shareaccesslogFields := schema.ShareAccessLog{}.Fields()
+	_ = shareaccesslogFields
+	// shareaccesslogDescCreatedAt is the schema descriptor for created_at field.
+	shareaccesslogDescCreatedAt := shareaccesslogMixinFields0[0].Descriptor()
+	// shareaccesslog.DefaultCreatedAt holds the default value on creation for the created_at field.
+	shareaccesslog.DefaultCreatedAt = shareaccesslogDescCreatedAt.Default.(func() time.Time)
+	// shareaccesslogDescUpdatedAt is the schema descriptor for updated_at field.
+	shareaccesslogDescUpdatedAt := shareaccesslogMixinFields0[1].Descriptor()
+	// shareaccesslog.DefaultUpdatedAt holds the default value on creation for the updated_at field.
+	shareaccesslog.DefaultUpdatedAt = shareaccesslogDescUpdatedAt.Default.(func() time.Time)
+	// shareaccesslog.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
+	shareaccesslog.UpdateDefaultUpdatedAt = shareaccesslogDescUpdatedAt.UpdateDefault.(func() time.Time)
+	// shareaccesslogDescVersion is the schema descriptor for version field.
+	shareaccesslogDescVersion := shareaccesslogMixinFields0[2].Descriptor()
+	// shareaccesslog.DefaultVersion holds the default value on creation for the version field.
+	shareaccesslog.DefaultVersion = shareaccesslogDescVersion.Default.(int)
+	// shareaccesslogDescShareID is the schema descriptor for share_id field.
+	shareaccesslogDescShareID := shareaccesslogFields[1].Descriptor()
+	// shareaccesslog.ShareIDValidator is a validator for the "share_id" field. It is called by the builders before save.
+	shareaccesslog.ShareIDValidator = shareaccesslogDescShareID.Validators[0].(func(string) error)
+	// shareaccesslogDescShareCode is the schema descriptor for share_code field.
+	shareaccesslogDescShareCode := shareaccesslogFields[2].Descriptor()
+	// shareaccesslog.ShareCodeValidator is a validator for the "share_code" field. It is called by the builders before save.
+	shareaccesslog.ShareCodeValidator = shareaccesslogDescShareCode.Validators[0].(func(string) error)
+	// shareaccesslogDescAction is the schema descriptor for action field.
+	shareaccesslogDescAction := shareaccesslogFields[3].Descriptor()
+	// shareaccesslog.ActionValidator is a validator for the "action" field. It is called by the builders before save.
+	shareaccesslog.ActionValidator = shareaccesslogDescAction.Validators[0].(func(string) error)
+	// shareaccesslogDescIP is the schema descriptor for ip field.
+	shareaccesslogDescIP := shareaccesslogFields[4].Descriptor()
+	// shareaccesslog.DefaultIP holds the default value on creation for the ip field.
+	shareaccesslog.DefaultIP = shareaccesslogDescIP.Default.(string)
+	// shareaccesslogDescUserAgent is the schema descriptor for user_agent field.
+	shareaccesslogDescUserAgent := shareaccesslogFields[5].Descriptor()
+	// shareaccesslog.DefaultUserAgent holds the default value on creation for the user_agent field.
+	shareaccesslog.DefaultUserAgent = shareaccesslogDescUserAgent.Default.(string)
+	// shareaccesslogDescID is the schema descriptor for id field.
+	shareaccesslogDescID := shareaccesslogFields[0].Descriptor()
+	// shareaccesslog.IDValidator is a validator for the "id" field. It is called by the builders before save.
+	shareaccesslog.IDValidator = shareaccesslogDescID.Validators[0].(func(string) error)
 	storagesnapshotFields := schema.StorageSnapshot{}.Fields()
 	_ = storagesnapshotFields
 	// storagesnapshotDescDate is the schema descriptor for date field.

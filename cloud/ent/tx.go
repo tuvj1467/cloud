@@ -20,6 +20,8 @@ type Tx struct {
 	FilePart *FilePartClient
 	// FileShare is the client for interacting with the FileShare builders.
 	FileShare *FileShareClient
+	// ShareAccessLog is the client for interacting with the ShareAccessLog builders.
+	ShareAccessLog *ShareAccessLogClient
 	// StorageSnapshot is the client for interacting with the StorageSnapshot builders.
 	StorageSnapshot *StorageSnapshotClient
 	// User is the client for interacting with the User builders.
@@ -159,6 +161,7 @@ func (tx *Tx) init() {
 	tx.File = NewFileClient(tx.config)
 	tx.FilePart = NewFilePartClient(tx.config)
 	tx.FileShare = NewFileShareClient(tx.config)
+	tx.ShareAccessLog = NewShareAccessLogClient(tx.config)
 	tx.StorageSnapshot = NewStorageSnapshotClient(tx.config)
 	tx.User = NewUserClient(tx.config)
 }

@@ -10,6 +10,7 @@ import (
 	"onecloud/ent/file"
 	"onecloud/ent/filepart"
 	"onecloud/ent/fileshare"
+	"onecloud/ent/shareaccesslog"
 	"onecloud/ent/storagesnapshot"
 	"onecloud/ent/user"
 	"reflect"
@@ -82,6 +83,7 @@ func checkColumn(t, c string) error {
 			file.Table:            file.ValidColumn,
 			filepart.Table:        filepart.ValidColumn,
 			fileshare.Table:       fileshare.ValidColumn,
+			shareaccesslog.Table:  shareaccesslog.ValidColumn,
 			storagesnapshot.Table: storagesnapshot.ValidColumn,
 			user.Table:            user.ValidColumn,
 		})

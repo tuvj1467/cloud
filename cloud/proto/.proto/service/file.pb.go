@@ -2974,6 +2974,189 @@ func (x *PurgeFilesResponse) GetPurgedCount() int32 {
 	return 0
 }
 
+// ==========================================
+// 22. 分享访问审计查询（仅限本人分享）
+// ==========================================
+type GetShareAccessLogsRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	ShareCode     string                 `protobuf:"bytes,1,opt,name=share_code,json=shareCode,proto3" json:"share_code,omitempty"`
+	Page          int32                  `protobuf:"varint,2,opt,name=page,proto3" json:"page,omitempty"`
+	PageSize      int32                  `protobuf:"varint,3,opt,name=page_size,json=pageSize,proto3" json:"page_size,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetShareAccessLogsRequest) Reset() {
+	*x = GetShareAccessLogsRequest{}
+	mi := &file_file_proto_msgTypes[52]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetShareAccessLogsRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetShareAccessLogsRequest) ProtoMessage() {}
+
+func (x *GetShareAccessLogsRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_file_proto_msgTypes[52]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetShareAccessLogsRequest.ProtoReflect.Descriptor instead.
+func (*GetShareAccessLogsRequest) Descriptor() ([]byte, []int) {
+	return file_file_proto_rawDescGZIP(), []int{52}
+}
+
+func (x *GetShareAccessLogsRequest) GetShareCode() string {
+	if x != nil {
+		return x.ShareCode
+	}
+	return ""
+}
+
+func (x *GetShareAccessLogsRequest) GetPage() int32 {
+	if x != nil {
+		return x.Page
+	}
+	return 0
+}
+
+func (x *GetShareAccessLogsRequest) GetPageSize() int32 {
+	if x != nil {
+		return x.PageSize
+	}
+	return 0
+}
+
+type ShareAccessLogItem struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Action        string                 `protobuf:"bytes,1,opt,name=action,proto3" json:"action,omitempty"`                        // access / download
+	Ip            string                 `protobuf:"bytes,2,opt,name=ip,proto3" json:"ip,omitempty"`                                // 客户端 IP
+	UserAgent     string                 `protobuf:"bytes,3,opt,name=user_agent,json=userAgent,proto3" json:"user_agent,omitempty"` // 客户端 UA
+	CreatedAt     string                 `protobuf:"bytes,4,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"` // 时间
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ShareAccessLogItem) Reset() {
+	*x = ShareAccessLogItem{}
+	mi := &file_file_proto_msgTypes[53]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ShareAccessLogItem) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ShareAccessLogItem) ProtoMessage() {}
+
+func (x *ShareAccessLogItem) ProtoReflect() protoreflect.Message {
+	mi := &file_file_proto_msgTypes[53]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ShareAccessLogItem.ProtoReflect.Descriptor instead.
+func (*ShareAccessLogItem) Descriptor() ([]byte, []int) {
+	return file_file_proto_rawDescGZIP(), []int{53}
+}
+
+func (x *ShareAccessLogItem) GetAction() string {
+	if x != nil {
+		return x.Action
+	}
+	return ""
+}
+
+func (x *ShareAccessLogItem) GetIp() string {
+	if x != nil {
+		return x.Ip
+	}
+	return ""
+}
+
+func (x *ShareAccessLogItem) GetUserAgent() string {
+	if x != nil {
+		return x.UserAgent
+	}
+	return ""
+}
+
+func (x *ShareAccessLogItem) GetCreatedAt() string {
+	if x != nil {
+		return x.CreatedAt
+	}
+	return ""
+}
+
+type GetShareAccessLogsResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Logs          []*ShareAccessLogItem  `protobuf:"bytes,1,rep,name=logs,proto3" json:"logs,omitempty"`
+	Total         int32                  `protobuf:"varint,2,opt,name=total,proto3" json:"total,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetShareAccessLogsResponse) Reset() {
+	*x = GetShareAccessLogsResponse{}
+	mi := &file_file_proto_msgTypes[54]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetShareAccessLogsResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetShareAccessLogsResponse) ProtoMessage() {}
+
+func (x *GetShareAccessLogsResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_file_proto_msgTypes[54]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetShareAccessLogsResponse.ProtoReflect.Descriptor instead.
+func (*GetShareAccessLogsResponse) Descriptor() ([]byte, []int) {
+	return file_file_proto_rawDescGZIP(), []int{54}
+}
+
+func (x *GetShareAccessLogsResponse) GetLogs() []*ShareAccessLogItem {
+	if x != nil {
+		return x.Logs
+	}
+	return nil
+}
+
+func (x *GetShareAccessLogsResponse) GetTotal() int32 {
+	if x != nil {
+		return x.Total
+	}
+	return 0
+}
+
 var File_file_proto protoreflect.FileDescriptor
 
 const file_file_proto_rawDesc = "" +
@@ -3201,7 +3384,22 @@ const file_file_proto_rawDesc = "" +
 	"\bfile_ids\x18\x01 \x03(\tB\n" +
 	"\xfaB\a\x92\x01\x04\b\x01\x10dR\afileIds\"7\n" +
 	"\x12PurgeFilesResponse\x12!\n" +
-	"\fpurged_count\x18\x01 \x01(\x05R\vpurgedCountB\x10Z\x0e.proto/serviceb\x06proto3"
+	"\fpurged_count\x18\x01 \x01(\x05R\vpurgedCount\"\x88\x01\n" +
+	"\x19GetShareAccessLogsRequest\x12&\n" +
+	"\n" +
+	"share_code\x18\x01 \x01(\tB\a\xfaB\x04r\x02\x10\x01R\tshareCode\x12\x1b\n" +
+	"\x04page\x18\x02 \x01(\x05B\a\xfaB\x04\x1a\x02(\x01R\x04page\x12&\n" +
+	"\tpage_size\x18\x03 \x01(\x05B\t\xfaB\x06\x1a\x04\x182(\x01R\bpageSize\"z\n" +
+	"\x12ShareAccessLogItem\x12\x16\n" +
+	"\x06action\x18\x01 \x01(\tR\x06action\x12\x0e\n" +
+	"\x02ip\x18\x02 \x01(\tR\x02ip\x12\x1d\n" +
+	"\n" +
+	"user_agent\x18\x03 \x01(\tR\tuserAgent\x12\x1d\n" +
+	"\n" +
+	"created_at\x18\x04 \x01(\tR\tcreatedAt\"c\n" +
+	"\x1aGetShareAccessLogsResponse\x12/\n" +
+	"\x04logs\x18\x01 \x03(\v2\x1b.storage.ShareAccessLogItemR\x04logs\x12\x14\n" +
+	"\x05total\x18\x02 \x01(\x05R\x05totalB\x10Z\x0e.proto/serviceb\x06proto3"
 
 var (
 	file_file_proto_rawDescOnce sync.Once
@@ -3215,7 +3413,7 @@ func file_file_proto_rawDescGZIP() []byte {
 	return file_file_proto_rawDescData
 }
 
-var file_file_proto_msgTypes = make([]protoimpl.MessageInfo, 52)
+var file_file_proto_msgTypes = make([]protoimpl.MessageInfo, 55)
 var file_file_proto_goTypes = []any{
 	(*FileMeta)(nil),                        // 0: storage.FileMeta
 	(*FileInfoRequest)(nil),                 // 1: storage.FileInfoRequest
@@ -3269,6 +3467,9 @@ var file_file_proto_goTypes = []any{
 	(*RestoreFilesResponse)(nil),            // 49: storage.RestoreFilesResponse
 	(*PurgeFilesRequest)(nil),               // 50: storage.PurgeFilesRequest
 	(*PurgeFilesResponse)(nil),              // 51: storage.PurgeFilesResponse
+	(*GetShareAccessLogsRequest)(nil),       // 52: storage.GetShareAccessLogsRequest
+	(*ShareAccessLogItem)(nil),              // 53: storage.ShareAccessLogItem
+	(*GetShareAccessLogsResponse)(nil),      // 54: storage.GetShareAccessLogsResponse
 }
 var file_file_proto_depIdxs = []int32{
 	0,  // 0: storage.FileInfoResponse.file:type_name -> storage.FileMeta
@@ -3283,11 +3484,12 @@ var file_file_proto_depIdxs = []int32{
 	36, // 9: storage.GetMySharesResponse.shares:type_name -> storage.ShareItem
 	43, // 10: storage.GetStorageTrendResponse.points:type_name -> storage.TrendPoint
 	46, // 11: storage.ListDeletedFilesResponse.files:type_name -> storage.DeletedFileItem
-	12, // [12:12] is the sub-list for method output_type
-	12, // [12:12] is the sub-list for method input_type
-	12, // [12:12] is the sub-list for extension type_name
-	12, // [12:12] is the sub-list for extension extendee
-	0,  // [0:12] is the sub-list for field type_name
+	53, // 12: storage.GetShareAccessLogsResponse.logs:type_name -> storage.ShareAccessLogItem
+	13, // [13:13] is the sub-list for method output_type
+	13, // [13:13] is the sub-list for method input_type
+	13, // [13:13] is the sub-list for extension type_name
+	13, // [13:13] is the sub-list for extension extendee
+	0,  // [0:13] is the sub-list for field type_name
 }
 
 func init() { file_file_proto_init() }
@@ -3309,7 +3511,7 @@ func file_file_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_file_proto_rawDesc), len(file_file_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   52,
+			NumMessages:   55,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

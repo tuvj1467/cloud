@@ -110,4 +110,7 @@ service File {
 
   // 回收站：彻底删除（需登录，仅限本人；级联分享/归还配额/删物理文件）
   rpc PurgeFiles(PurgeFilesRequest) returns (Response);
+
+  // 分享访问审计查询（需登录，仅限本人分享）
+  rpc GetShareAccessLogs(GetShareAccessLogsRequest) returns (Response);
 }

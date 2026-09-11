@@ -11,6 +11,7 @@ import (
 	"onecloud/ent/filepart"
 	"onecloud/ent/fileshare"
 	"onecloud/ent/predicate"
+	"onecloud/ent/shareaccesslog"
 	"onecloud/ent/storagesnapshot"
 	"onecloud/ent/user"
 	"sync"
@@ -33,6 +34,7 @@ const (
 	TypeFile            = "File"
 	TypeFilePart        = "FilePart"
 	TypeFileShare       = "FileShare"
+	TypeShareAccessLog  = "ShareAccessLog"
 	TypeStorageSnapshot = "StorageSnapshot"
 	TypeUser            = "User"
 )
@@ -4218,6 +4220,793 @@ func (m *FileShareMutation) ClearEdge(name string) error {
 // It returns an error if the edge is not defined in the schema.
 func (m *FileShareMutation) ResetEdge(name string) error {
 	return fmt.Errorf("unknown FileShare edge %s", name)
+}
+
+// ShareAccessLogMutation represents an operation that mutates the ShareAccessLog nodes in the graph.
+type ShareAccessLogMutation struct {
+	config
+	op            Op
+	typ           string
+	id            *string
+	created_at    *time.Time
+	updated_at    *time.Time
+	version       *int
+	addversion    *int
+	share_id      *string
+	share_code    *string
+	action        *string
+	ip            *string
+	user_agent    *string
+	clearedFields map[string]struct{}
+	done          bool
+	oldValue      func(context.Context) (*ShareAccessLog, error)
+	predicates    []predicate.ShareAccessLog
+}
+
+var _ ent.Mutation = (*ShareAccessLogMutation)(nil)
+
+// shareaccesslogOption allows management of the mutation configuration using functional options.
+type shareaccesslogOption func(*ShareAccessLogMutation)
+
+// newShareAccessLogMutation creates new mutation for the ShareAccessLog entity.
+func newShareAccessLogMutation(c config, op Op, opts ...shareaccesslogOption) *ShareAccessLogMutation {
+	m := &ShareAccessLogMutation{
+		config:        c,
+		op:            op,
+		typ:           TypeShareAccessLog,
+		clearedFields: make(map[string]struct{}),
+	}
+	for _, opt := range opts {
+		opt(m)
+	}
+	return m
+}
+
+// withShareAccessLogID sets the ID field of the mutation.
+func withShareAccessLogID(id string) shareaccesslogOption {
+	return func(m *ShareAccessLogMutation) {
+		var (
+			err   error
+			once  sync.Once
+			value *ShareAccessLog
+		)
+		m.oldValue = func(ctx context.Context) (*ShareAccessLog, error) {
+			once.Do(func() {
+				if m.done {
+					err = errors.New("querying old values post mutation is not allowed")
+				} else {
+					value, err = m.Client().ShareAccessLog.Get(ctx, id)
+				}
+			})
+			return value, err
+		}
+		m.id = &id
+	}
+}
+
+// withShareAccessLog sets the old ShareAccessLog of the mutation.
+func withShareAccessLog(node *ShareAccessLog) shareaccesslogOption {
+	return func(m *ShareAccessLogMutation) {
+		m.oldValue = func(context.Context) (*ShareAccessLog, error) {
+			return node, nil
+		}
+		m.id = &node.ID
+	}
+}
+
+// Client returns a new `ent.Client` from the mutation. If the mutation was
+// executed in a transaction (ent.Tx), a transactional client is returned.
+func (m ShareAccessLogMutation) Client() *Client {
+	client := &Client{config: m.config}
+	client.init()
+	return client
+}
+
+// Tx returns an `ent.Tx` for mutations that were executed in transactions;
+// it returns an error otherwise.
+func (m ShareAccessLogMutation) Tx() (*Tx, error) {
+	if _, ok := m.driver.(*txDriver); !ok {
+		return nil, errors.New("ent: mutation is not running in a transaction")
+	}
+	tx := &Tx{config: m.config}
+	tx.init()
+	return tx, nil
+}
+
+// SetID sets the value of the id field. Note that this
+// operation is only accepted on creation of ShareAccessLog entities.
+func (m *ShareAccessLogMutation) SetID(id string) {
+	m.id = &id
+}
+
+// ID returns the ID value in the mutation. Note that the ID is only available
+// if it was provided to the builder or after it was returned from the database.
+func (m *ShareAccessLogMutation) ID() (id string, exists bool) {
+	if m.id == nil {
+		return
+	}
+	return *m.id, true
+}
+
+// IDs queries the database and returns the entity ids that match the mutation's predicate.
+// That means, if the mutation is applied within a transaction with an isolation level such
+// as sql.LevelSerializable, the returned ids match the ids of the rows that will be updated
+// or updated by the mutation.
+func (m *ShareAccessLogMutation) IDs(ctx context.Context) ([]string, error) {
+	switch {
+	case m.op.Is(OpUpdateOne | OpDeleteOne):
+		id, exists := m.ID()
+		if exists {
+			return []string{id}, nil
+		}
+		fallthrough
+	case m.op.Is(OpUpdate | OpDelete):
+		return m.Client().ShareAccessLog.Query().Where(m.predicates...).IDs(ctx)
+	default:
+		return nil, fmt.Errorf("IDs is not allowed on %s operations", m.op)
+	}
+}
+
+// SetCreatedAt sets the "created_at" field.
+func (m *ShareAccessLogMutation) SetCreatedAt(t time.Time) {
+	m.created_at = &t
+}
+
+// CreatedAt returns the value of the "created_at" field in the mutation.
+func (m *ShareAccessLogMutation) CreatedAt() (r time.Time, exists bool) {
+	v := m.created_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCreatedAt returns the old "created_at" field's value of the ShareAccessLog entity.
+// If the ShareAccessLog object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ShareAccessLogMutation) OldCreatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCreatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCreatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCreatedAt: %w", err)
+	}
+	return oldValue.CreatedAt, nil
+}
+
+// ResetCreatedAt resets all changes to the "created_at" field.
+func (m *ShareAccessLogMutation) ResetCreatedAt() {
+	m.created_at = nil
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (m *ShareAccessLogMutation) SetUpdatedAt(t time.Time) {
+	m.updated_at = &t
+}
+
+// UpdatedAt returns the value of the "updated_at" field in the mutation.
+func (m *ShareAccessLogMutation) UpdatedAt() (r time.Time, exists bool) {
+	v := m.updated_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldUpdatedAt returns the old "updated_at" field's value of the ShareAccessLog entity.
+// If the ShareAccessLog object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ShareAccessLogMutation) OldUpdatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldUpdatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldUpdatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldUpdatedAt: %w", err)
+	}
+	return oldValue.UpdatedAt, nil
+}
+
+// ResetUpdatedAt resets all changes to the "updated_at" field.
+func (m *ShareAccessLogMutation) ResetUpdatedAt() {
+	m.updated_at = nil
+}
+
+// SetVersion sets the "version" field.
+func (m *ShareAccessLogMutation) SetVersion(i int) {
+	m.version = &i
+	m.addversion = nil
+}
+
+// Version returns the value of the "version" field in the mutation.
+func (m *ShareAccessLogMutation) Version() (r int, exists bool) {
+	v := m.version
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldVersion returns the old "version" field's value of the ShareAccessLog entity.
+// If the ShareAccessLog object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ShareAccessLogMutation) OldVersion(ctx context.Context) (v int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldVersion is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldVersion requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldVersion: %w", err)
+	}
+	return oldValue.Version, nil
+}
+
+// AddVersion adds i to the "version" field.
+func (m *ShareAccessLogMutation) AddVersion(i int) {
+	if m.addversion != nil {
+		*m.addversion += i
+	} else {
+		m.addversion = &i
+	}
+}
+
+// AddedVersion returns the value that was added to the "version" field in this mutation.
+func (m *ShareAccessLogMutation) AddedVersion() (r int, exists bool) {
+	v := m.addversion
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetVersion resets all changes to the "version" field.
+func (m *ShareAccessLogMutation) ResetVersion() {
+	m.version = nil
+	m.addversion = nil
+}
+
+// SetShareID sets the "share_id" field.
+func (m *ShareAccessLogMutation) SetShareID(s string) {
+	m.share_id = &s
+}
+
+// ShareID returns the value of the "share_id" field in the mutation.
+func (m *ShareAccessLogMutation) ShareID() (r string, exists bool) {
+	v := m.share_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldShareID returns the old "share_id" field's value of the ShareAccessLog entity.
+// If the ShareAccessLog object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ShareAccessLogMutation) OldShareID(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldShareID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldShareID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldShareID: %w", err)
+	}
+	return oldValue.ShareID, nil
+}
+
+// ResetShareID resets all changes to the "share_id" field.
+func (m *ShareAccessLogMutation) ResetShareID() {
+	m.share_id = nil
+}
+
+// SetShareCode sets the "share_code" field.
+func (m *ShareAccessLogMutation) SetShareCode(s string) {
+	m.share_code = &s
+}
+
+// ShareCode returns the value of the "share_code" field in the mutation.
+func (m *ShareAccessLogMutation) ShareCode() (r string, exists bool) {
+	v := m.share_code
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldShareCode returns the old "share_code" field's value of the ShareAccessLog entity.
+// If the ShareAccessLog object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ShareAccessLogMutation) OldShareCode(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldShareCode is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldShareCode requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldShareCode: %w", err)
+	}
+	return oldValue.ShareCode, nil
+}
+
+// ResetShareCode resets all changes to the "share_code" field.
+func (m *ShareAccessLogMutation) ResetShareCode() {
+	m.share_code = nil
+}
+
+// SetAction sets the "action" field.
+func (m *ShareAccessLogMutation) SetAction(s string) {
+	m.action = &s
+}
+
+// Action returns the value of the "action" field in the mutation.
+func (m *ShareAccessLogMutation) Action() (r string, exists bool) {
+	v := m.action
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldAction returns the old "action" field's value of the ShareAccessLog entity.
+// If the ShareAccessLog object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ShareAccessLogMutation) OldAction(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldAction is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldAction requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldAction: %w", err)
+	}
+	return oldValue.Action, nil
+}
+
+// ResetAction resets all changes to the "action" field.
+func (m *ShareAccessLogMutation) ResetAction() {
+	m.action = nil
+}
+
+// SetIP sets the "ip" field.
+func (m *ShareAccessLogMutation) SetIP(s string) {
+	m.ip = &s
+}
+
+// IP returns the value of the "ip" field in the mutation.
+func (m *ShareAccessLogMutation) IP() (r string, exists bool) {
+	v := m.ip
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldIP returns the old "ip" field's value of the ShareAccessLog entity.
+// If the ShareAccessLog object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ShareAccessLogMutation) OldIP(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldIP is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldIP requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldIP: %w", err)
+	}
+	return oldValue.IP, nil
+}
+
+// ClearIP clears the value of the "ip" field.
+func (m *ShareAccessLogMutation) ClearIP() {
+	m.ip = nil
+	m.clearedFields[shareaccesslog.FieldIP] = struct{}{}
+}
+
+// IPCleared returns if the "ip" field was cleared in this mutation.
+func (m *ShareAccessLogMutation) IPCleared() bool {
+	_, ok := m.clearedFields[shareaccesslog.FieldIP]
+	return ok
+}
+
+// ResetIP resets all changes to the "ip" field.
+func (m *ShareAccessLogMutation) ResetIP() {
+	m.ip = nil
+	delete(m.clearedFields, shareaccesslog.FieldIP)
+}
+
+// SetUserAgent sets the "user_agent" field.
+func (m *ShareAccessLogMutation) SetUserAgent(s string) {
+	m.user_agent = &s
+}
+
+// UserAgent returns the value of the "user_agent" field in the mutation.
+func (m *ShareAccessLogMutation) UserAgent() (r string, exists bool) {
+	v := m.user_agent
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldUserAgent returns the old "user_agent" field's value of the ShareAccessLog entity.
+// If the ShareAccessLog object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ShareAccessLogMutation) OldUserAgent(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldUserAgent is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldUserAgent requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldUserAgent: %w", err)
+	}
+	return oldValue.UserAgent, nil
+}
+
+// ClearUserAgent clears the value of the "user_agent" field.
+func (m *ShareAccessLogMutation) ClearUserAgent() {
+	m.user_agent = nil
+	m.clearedFields[shareaccesslog.FieldUserAgent] = struct{}{}
+}
+
+// UserAgentCleared returns if the "user_agent" field was cleared in this mutation.
+func (m *ShareAccessLogMutation) UserAgentCleared() bool {
+	_, ok := m.clearedFields[shareaccesslog.FieldUserAgent]
+	return ok
+}
+
+// ResetUserAgent resets all changes to the "user_agent" field.
+func (m *ShareAccessLogMutation) ResetUserAgent() {
+	m.user_agent = nil
+	delete(m.clearedFields, shareaccesslog.FieldUserAgent)
+}
+
+// Where appends a list predicates to the ShareAccessLogMutation builder.
+func (m *ShareAccessLogMutation) Where(ps ...predicate.ShareAccessLog) {
+	m.predicates = append(m.predicates, ps...)
+}
+
+// WhereP appends storage-level predicates to the ShareAccessLogMutation builder. Using this method,
+// users can use type-assertion to append predicates that do not depend on any generated package.
+func (m *ShareAccessLogMutation) WhereP(ps ...func(*sql.Selector)) {
+	p := make([]predicate.ShareAccessLog, len(ps))
+	for i := range ps {
+		p[i] = ps[i]
+	}
+	m.Where(p...)
+}
+
+// Op returns the operation name.
+func (m *ShareAccessLogMutation) Op() Op {
+	return m.op
+}
+
+// SetOp allows setting the mutation operation.
+func (m *ShareAccessLogMutation) SetOp(op Op) {
+	m.op = op
+}
+
+// Type returns the node type of this mutation (ShareAccessLog).
+func (m *ShareAccessLogMutation) Type() string {
+	return m.typ
+}
+
+// Fields returns all fields that were changed during this mutation. Note that in
+// order to get all numeric fields that were incremented/decremented, call
+// AddedFields().
+func (m *ShareAccessLogMutation) Fields() []string {
+	fields := make([]string, 0, 8)
+	if m.created_at != nil {
+		fields = append(fields, shareaccesslog.FieldCreatedAt)
+	}
+	if m.updated_at != nil {
+		fields = append(fields, shareaccesslog.FieldUpdatedAt)
+	}
+	if m.version != nil {
+		fields = append(fields, shareaccesslog.FieldVersion)
+	}
+	if m.share_id != nil {
+		fields = append(fields, shareaccesslog.FieldShareID)
+	}
+	if m.share_code != nil {
+		fields = append(fields, shareaccesslog.FieldShareCode)
+	}
+	if m.action != nil {
+		fields = append(fields, shareaccesslog.FieldAction)
+	}
+	if m.ip != nil {
+		fields = append(fields, shareaccesslog.FieldIP)
+	}
+	if m.user_agent != nil {
+		fields = append(fields, shareaccesslog.FieldUserAgent)
+	}
+	return fields
+}
+
+// Field returns the value of a field with the given name. The second boolean
+// return value indicates that this field was not set, or was not defined in the
+// schema.
+func (m *ShareAccessLogMutation) Field(name string) (ent.Value, bool) {
+	switch name {
+	case shareaccesslog.FieldCreatedAt:
+		return m.CreatedAt()
+	case shareaccesslog.FieldUpdatedAt:
+		return m.UpdatedAt()
+	case shareaccesslog.FieldVersion:
+		return m.Version()
+	case shareaccesslog.FieldShareID:
+		return m.ShareID()
+	case shareaccesslog.FieldShareCode:
+		return m.ShareCode()
+	case shareaccesslog.FieldAction:
+		return m.Action()
+	case shareaccesslog.FieldIP:
+		return m.IP()
+	case shareaccesslog.FieldUserAgent:
+		return m.UserAgent()
+	}
+	return nil, false
+}
+
+// OldField returns the old value of the field from the database. An error is
+// returned if the mutation operation is not UpdateOne, or the query to the
+// database failed.
+func (m *ShareAccessLogMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
+	switch name {
+	case shareaccesslog.FieldCreatedAt:
+		return m.OldCreatedAt(ctx)
+	case shareaccesslog.FieldUpdatedAt:
+		return m.OldUpdatedAt(ctx)
+	case shareaccesslog.FieldVersion:
+		return m.OldVersion(ctx)
+	case shareaccesslog.FieldShareID:
+		return m.OldShareID(ctx)
+	case shareaccesslog.FieldShareCode:
+		return m.OldShareCode(ctx)
+	case shareaccesslog.FieldAction:
+		return m.OldAction(ctx)
+	case shareaccesslog.FieldIP:
+		return m.OldIP(ctx)
+	case shareaccesslog.FieldUserAgent:
+		return m.OldUserAgent(ctx)
+	}
+	return nil, fmt.Errorf("unknown ShareAccessLog field %s", name)
+}
+
+// SetField sets the value of a field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *ShareAccessLogMutation) SetField(name string, value ent.Value) error {
+	switch name {
+	case shareaccesslog.FieldCreatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCreatedAt(v)
+		return nil
+	case shareaccesslog.FieldUpdatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetUpdatedAt(v)
+		return nil
+	case shareaccesslog.FieldVersion:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetVersion(v)
+		return nil
+	case shareaccesslog.FieldShareID:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetShareID(v)
+		return nil
+	case shareaccesslog.FieldShareCode:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetShareCode(v)
+		return nil
+	case shareaccesslog.FieldAction:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetAction(v)
+		return nil
+	case shareaccesslog.FieldIP:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetIP(v)
+		return nil
+	case shareaccesslog.FieldUserAgent:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetUserAgent(v)
+		return nil
+	}
+	return fmt.Errorf("unknown ShareAccessLog field %s", name)
+}
+
+// AddedFields returns all numeric fields that were incremented/decremented during
+// this mutation.
+func (m *ShareAccessLogMutation) AddedFields() []string {
+	var fields []string
+	if m.addversion != nil {
+		fields = append(fields, shareaccesslog.FieldVersion)
+	}
+	return fields
+}
+
+// AddedField returns the numeric value that was incremented/decremented on a field
+// with the given name. The second boolean return value indicates that this field
+// was not set, or was not defined in the schema.
+func (m *ShareAccessLogMutation) AddedField(name string) (ent.Value, bool) {
+	switch name {
+	case shareaccesslog.FieldVersion:
+		return m.AddedVersion()
+	}
+	return nil, false
+}
+
+// AddField adds the value to the field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *ShareAccessLogMutation) AddField(name string, value ent.Value) error {
+	switch name {
+	case shareaccesslog.FieldVersion:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddVersion(v)
+		return nil
+	}
+	return fmt.Errorf("unknown ShareAccessLog numeric field %s", name)
+}
+
+// ClearedFields returns all nullable fields that were cleared during this
+// mutation.
+func (m *ShareAccessLogMutation) ClearedFields() []string {
+	var fields []string
+	if m.FieldCleared(shareaccesslog.FieldIP) {
+		fields = append(fields, shareaccesslog.FieldIP)
+	}
+	if m.FieldCleared(shareaccesslog.FieldUserAgent) {
+		fields = append(fields, shareaccesslog.FieldUserAgent)
+	}
+	return fields
+}
+
+// FieldCleared returns a boolean indicating if a field with the given name was
+// cleared in this mutation.
+func (m *ShareAccessLogMutation) FieldCleared(name string) bool {
+	_, ok := m.clearedFields[name]
+	return ok
+}
+
+// ClearField clears the value of the field with the given name. It returns an
+// error if the field is not defined in the schema.
+func (m *ShareAccessLogMutation) ClearField(name string) error {
+	switch name {
+	case shareaccesslog.FieldIP:
+		m.ClearIP()
+		return nil
+	case shareaccesslog.FieldUserAgent:
+		m.ClearUserAgent()
+		return nil
+	}
+	return fmt.Errorf("unknown ShareAccessLog nullable field %s", name)
+}
+
+// ResetField resets all changes in the mutation for the field with the given name.
+// It returns an error if the field is not defined in the schema.
+func (m *ShareAccessLogMutation) ResetField(name string) error {
+	switch name {
+	case shareaccesslog.FieldCreatedAt:
+		m.ResetCreatedAt()
+		return nil
+	case shareaccesslog.FieldUpdatedAt:
+		m.ResetUpdatedAt()
+		return nil
+	case shareaccesslog.FieldVersion:
+		m.ResetVersion()
+		return nil
+	case shareaccesslog.FieldShareID:
+		m.ResetShareID()
+		return nil
+	case shareaccesslog.FieldShareCode:
+		m.ResetShareCode()
+		return nil
+	case shareaccesslog.FieldAction:
+		m.ResetAction()
+		return nil
+	case shareaccesslog.FieldIP:
+		m.ResetIP()
+		return nil
+	case shareaccesslog.FieldUserAgent:
+		m.ResetUserAgent()
+		return nil
+	}
+	return fmt.Errorf("unknown ShareAccessLog field %s", name)
+}
+
+// AddedEdges returns all edge names that were set/added in this mutation.
+func (m *ShareAccessLogMutation) AddedEdges() []string {
+	edges := make([]string, 0, 0)
+	return edges
+}
+
+// AddedIDs returns all IDs (to other nodes) that were added for the given edge
+// name in this mutation.
+func (m *ShareAccessLogMutation) AddedIDs(name string) []ent.Value {
+	return nil
+}
+
+// RemovedEdges returns all edge names that were removed in this mutation.
+func (m *ShareAccessLogMutation) RemovedEdges() []string {
+	edges := make([]string, 0, 0)
+	return edges
+}
+
+// RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
+// the given name in this mutation.
+func (m *ShareAccessLogMutation) RemovedIDs(name string) []ent.Value {
+	return nil
+}
+
+// ClearedEdges returns all edge names that were cleared in this mutation.
+func (m *ShareAccessLogMutation) ClearedEdges() []string {
+	edges := make([]string, 0, 0)
+	return edges
+}
+
+// EdgeCleared returns a boolean which indicates if the edge with the given name
+// was cleared in this mutation.
+func (m *ShareAccessLogMutation) EdgeCleared(name string) bool {
+	return false
+}
+
+// ClearEdge clears the value of the edge with the given name. It returns an error
+// if that edge is not defined in the schema.
+func (m *ShareAccessLogMutation) ClearEdge(name string) error {
+	return fmt.Errorf("unknown ShareAccessLog unique edge %s", name)
+}
+
+// ResetEdge resets all changes to the edge with the given name in this mutation.
+// It returns an error if the edge is not defined in the schema.
+func (m *ShareAccessLogMutation) ResetEdge(name string) error {
+	return fmt.Errorf("unknown ShareAccessLog edge %s", name)
 }
 
 // StorageSnapshotMutation represents an operation that mutates the StorageSnapshot nodes in the graph.

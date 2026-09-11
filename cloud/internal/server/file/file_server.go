@@ -108,6 +108,11 @@ func (s *FileServer) AccessShare(ctx context.Context, in *service.AccessShareReq
 }
 
 // 分享下载（匿名）
+func (s *FileServer) GetShareAccessLogs(ctx context.Context, in *service.GetShareAccessLogsRequest) (*service.Response, error) {
+	l := filelogic.NewGetShareAccessLogsLogic(ctx, s.svcCtx)
+	return l.GetShareAccessLogs(in)
+}
+
 func (s *FileServer) ListDeletedFiles(ctx context.Context, in *service.ListDeletedFilesRequest) (*service.Response, error) {
 	l := filelogic.NewListDeletedFilesLogic(ctx, s.svcCtx)
 	return l.ListDeletedFiles(in)

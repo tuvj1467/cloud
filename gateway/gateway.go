@@ -45,6 +45,13 @@ func main() {
 			for _, v := range header.Values("Authorization") {
 				vals = append(vals, "gateway-authorization:"+v) // 原样转发，Bearer 前缀由 jwt_middleware 统一剥离
 			}
+			// 审计用：转发客户端 IP 与 UA（share 访问/下载日志记录来源）
+			if xff := header.Values("X-Forwarded-For"); len(xff) > 0 {
+				vals = append(vals, "gateway-x-forwarded-for:"+xff[0])
+			}
+			if ua := header.Values("User-Agent"); len(ua) > 0 {
+				vals = append(vals, "gateway-user-agent:"+ua[0])
+			}
 			return vals
 		}),
 		// 放宽网关内部 gRPC 客户端的消息上限（go-zero 默认接收 4MB，导致 >4MB 下载 429），

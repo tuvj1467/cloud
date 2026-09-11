@@ -89,6 +89,7 @@ export const revokeShare = (body) => request('/file/share/revoke', { body });
 export const listDeletedFiles = (params) => request('/file/recycle/list', { method: 'GET', params });
 export const restoreFiles = (body) => request('/file/recycle/restore', { body });
 export const purgeFiles = (body) => request('/file/recycle/purge', { body });
+export const getShareAccessLogs = (params) => request('/file/share/logs', { method: 'GET', params });
 
 // 流式下载：POST /file/download_stream（server-streaming）。
 // 线格式为串联 JSON（每个 64KB 块一个 DownloadChunk 对象），

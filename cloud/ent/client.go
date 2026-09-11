@@ -15,6 +15,7 @@ import (
 	"onecloud/ent/file"
 	"onecloud/ent/filepart"
 	"onecloud/ent/fileshare"
+	"onecloud/ent/shareaccesslog"
 	"onecloud/ent/storagesnapshot"
 	"onecloud/ent/user"
 
@@ -36,6 +37,8 @@ type Client struct {
 	FilePart *FilePartClient
 	// FileShare is the client for interacting with the FileShare builders.
 	FileShare *FileShareClient
+	// ShareAccessLog is the client for interacting with the ShareAccessLog builders.
+	ShareAccessLog *ShareAccessLogClient
 	// StorageSnapshot is the client for interacting with the StorageSnapshot builders.
 	StorageSnapshot *StorageSnapshotClient
 	// User is the client for interacting with the User builders.
@@ -55,6 +58,7 @@ func (c *Client) init() {
 	c.File = NewFileClient(c.config)
 	c.FilePart = NewFilePartClient(c.config)
 	c.FileShare = NewFileShareClient(c.config)
+	c.ShareAccessLog = NewShareAccessLogClient(c.config)
 	c.StorageSnapshot = NewStorageSnapshotClient(c.config)
 	c.User = NewUserClient(c.config)
 }
@@ -153,6 +157,7 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 		File:            NewFileClient(cfg),
 		FilePart:        NewFilePartClient(cfg),
 		FileShare:       NewFileShareClient(cfg),
+		ShareAccessLog:  NewShareAccessLogClient(cfg),
 		StorageSnapshot: NewStorageSnapshotClient(cfg),
 		User:            NewUserClient(cfg),
 	}, nil
@@ -178,6 +183,7 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 		File:            NewFileClient(cfg),
 		FilePart:        NewFilePartClient(cfg),
 		FileShare:       NewFileShareClient(cfg),
+		ShareAccessLog:  NewShareAccessLogClient(cfg),
 		StorageSnapshot: NewStorageSnapshotClient(cfg),
 		User:            NewUserClient(cfg),
 	}, nil
@@ -209,7 +215,8 @@ func (c *Client) Close() error {
 // In order to add hooks to a specific client, call: `client.Node.Use(...)`.
 func (c *Client) Use(hooks ...Hook) {
 	for _, n := range []interface{ Use(...Hook) }{
-		c.Bucket, c.File, c.FilePart, c.FileShare, c.StorageSnapshot, c.User,
+		c.Bucket, c.File, c.FilePart, c.FileShare, c.ShareAccessLog, c.StorageSnapshot,
+		c.User,
 	} {
 		n.Use(hooks...)
 	}
@@ -219,7 +226,8 @@ func (c *Client) Use(hooks ...Hook) {
 // In order to add interceptors to a specific client, call: `client.Node.Intercept(...)`.
 func (c *Client) Intercept(interceptors ...Interceptor) {
 	for _, n := range []interface{ Intercept(...Interceptor) }{
-		c.Bucket, c.File, c.FilePart, c.FileShare, c.StorageSnapshot, c.User,
+		c.Bucket, c.File, c.FilePart, c.FileShare, c.ShareAccessLog, c.StorageSnapshot,
+		c.User,
 	} {
 		n.Intercept(interceptors...)
 	}
@@ -236,6 +244,8 @@ func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 		return c.FilePart.mutate(ctx, m)
 	case *FileShareMutation:
 		return c.FileShare.mutate(ctx, m)
+	case *ShareAccessLogMutation:
+		return c.ShareAccessLog.mutate(ctx, m)
 	case *StorageSnapshotMutation:
 		return c.StorageSnapshot.mutate(ctx, m)
 	case *UserMutation:
@@ -777,6 +787,139 @@ func (c *FileShareClient) mutate(ctx context.Context, m *FileShareMutation) (Val
 	}
 }
 
+// ShareAccessLogClient is a client for the ShareAccessLog schema.
+type ShareAccessLogClient struct {
+	config
+}
+
+// NewShareAccessLogClient returns a client for the ShareAccessLog from the given config.
+func NewShareAccessLogClient(c config) *ShareAccessLogClient {
+	return &ShareAccessLogClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `shareaccesslog.Hooks(f(g(h())))`.
+func (c *ShareAccessLogClient) Use(hooks ...Hook) {
+	c.hooks.ShareAccessLog = append(c.hooks.ShareAccessLog, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `shareaccesslog.Intercept(f(g(h())))`.
+func (c *ShareAccessLogClient) Intercept(interceptors ...Interceptor) {
+	c.inters.ShareAccessLog = append(c.inters.ShareAccessLog, interceptors...)
+}
+
+// Create returns a builder for creating a ShareAccessLog entity.
+func (c *ShareAccessLogClient) Create() *ShareAccessLogCreate {
+	mutation := newShareAccessLogMutation(c.config, OpCreate)
+	return &ShareAccessLogCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of ShareAccessLog entities.
+func (c *ShareAccessLogClient) CreateBulk(builders ...*ShareAccessLogCreate) *ShareAccessLogCreateBulk {
+	return &ShareAccessLogCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *ShareAccessLogClient) MapCreateBulk(slice any, setFunc func(*ShareAccessLogCreate, int)) *ShareAccessLogCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &ShareAccessLogCreateBulk{err: fmt.Errorf("calling to ShareAccessLogClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*ShareAccessLogCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &ShareAccessLogCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for ShareAccessLog.
+func (c *ShareAccessLogClient) Update() *ShareAccessLogUpdate {
+	mutation := newShareAccessLogMutation(c.config, OpUpdate)
+	return &ShareAccessLogUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *ShareAccessLogClient) UpdateOne(_m *ShareAccessLog) *ShareAccessLogUpdateOne {
+	mutation := newShareAccessLogMutation(c.config, OpUpdateOne, withShareAccessLog(_m))
+	return &ShareAccessLogUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *ShareAccessLogClient) UpdateOneID(id string) *ShareAccessLogUpdateOne {
+	mutation := newShareAccessLogMutation(c.config, OpUpdateOne, withShareAccessLogID(id))
+	return &ShareAccessLogUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for ShareAccessLog.
+func (c *ShareAccessLogClient) Delete() *ShareAccessLogDelete {
+	mutation := newShareAccessLogMutation(c.config, OpDelete)
+	return &ShareAccessLogDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *ShareAccessLogClient) DeleteOne(_m *ShareAccessLog) *ShareAccessLogDeleteOne {
+	return c.DeleteOneID(_m.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *ShareAccessLogClient) DeleteOneID(id string) *ShareAccessLogDeleteOne {
+	builder := c.Delete().Where(shareaccesslog.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &ShareAccessLogDeleteOne{builder}
+}
+
+// Query returns a query builder for ShareAccessLog.
+func (c *ShareAccessLogClient) Query() *ShareAccessLogQuery {
+	return &ShareAccessLogQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeShareAccessLog},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a ShareAccessLog entity by its id.
+func (c *ShareAccessLogClient) Get(ctx context.Context, id string) (*ShareAccessLog, error) {
+	return c.Query().Where(shareaccesslog.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *ShareAccessLogClient) GetX(ctx context.Context, id string) *ShareAccessLog {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// Hooks returns the client hooks.
+func (c *ShareAccessLogClient) Hooks() []Hook {
+	return c.hooks.ShareAccessLog
+}
+
+// Interceptors returns the client interceptors.
+func (c *ShareAccessLogClient) Interceptors() []Interceptor {
+	return c.inters.ShareAccessLog
+}
+
+func (c *ShareAccessLogClient) mutate(ctx context.Context, m *ShareAccessLogMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&ShareAccessLogCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&ShareAccessLogUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&ShareAccessLogUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&ShareAccessLogDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown ShareAccessLog mutation op: %q", m.Op())
+	}
+}
+
 // StorageSnapshotClient is a client for the StorageSnapshot schema.
 type StorageSnapshotClient struct {
 	config
@@ -1046,9 +1189,11 @@ func (c *UserClient) mutate(ctx context.Context, m *UserMutation) (Value, error)
 // hooks and interceptors per client, for fast access.
 type (
 	hooks struct {
-		Bucket, File, FilePart, FileShare, StorageSnapshot, User []ent.Hook
+		Bucket, File, FilePart, FileShare, ShareAccessLog, StorageSnapshot,
+		User []ent.Hook
 	}
 	inters struct {
-		Bucket, File, FilePart, FileShare, StorageSnapshot, User []ent.Interceptor
+		Bucket, File, FilePart, FileShare, ShareAccessLog, StorageSnapshot,
+		User []ent.Interceptor
 	}
 )

@@ -63,6 +63,9 @@ upstreams:                  # 0空格
         Path: /file/recycle/purge
         RpcPath: storage.File/PurgeFiles
       - Method: GET
+        Path: /file/share/logs
+        RpcPath: storage.File/GetShareAccessLogs
+      - Method: GET
         Path: /file/share/my
         RpcPath: storage.File/GetMyShares
       - Method: POST

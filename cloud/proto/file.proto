@@ -356,3 +356,24 @@ message PurgeFilesRequest {
 message PurgeFilesResponse {
   int32 purged_count = 1;   // 实际彻底删除数
 }
+
+// ==========================================
+// 22. 分享访问审计查询（仅限本人分享）
+// ==========================================
+message GetShareAccessLogsRequest {
+  string share_code = 1 [(validate.rules).string = {min_len: 1}];
+  int32 page = 2 [(validate.rules).int32 = {gte: 1}];
+  int32 page_size = 3 [(validate.rules).int32 = {gte:1, lte:50}];
+}
+
+message ShareAccessLogItem {
+  string action = 1;      // access / download
+  string ip = 2;          // 客户端 IP
+  string user_agent = 3;  // 客户端 UA
+  string created_at = 4;  // 时间
+}
+
+message GetShareAccessLogsResponse {
+  repeated ShareAccessLogItem logs = 1;
+  int32 total = 2;
+}

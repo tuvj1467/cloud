@@ -6403,3 +6403,386 @@ var _ interface {
 	Cause() error
 	ErrorName() string
 } = PurgeFilesResponseValidationError{}
+
+// Validate checks the field values on GetShareAccessLogsRequest with the rules
+// defined in the proto definition for this message. If any rules are
+// violated, the first error encountered is returned, or nil if there are no violations.
+func (m *GetShareAccessLogsRequest) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on GetShareAccessLogsRequest with the
+// rules defined in the proto definition for this message. If any rules are
+// violated, the result is a list of violation errors wrapped in
+// GetShareAccessLogsRequestMultiError, or nil if none found.
+func (m *GetShareAccessLogsRequest) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *GetShareAccessLogsRequest) validate(all bool) error {
+	if m == nil {
+		return nil
+	}
+
+	var errors []error
+
+	if utf8.RuneCountInString(m.GetShareCode()) < 1 {
+		err := GetShareAccessLogsRequestValidationError{
+			field:  "ShareCode",
+			reason: "value length must be at least 1 runes",
+		}
+		if !all {
+			return err
+		}
+		errors = append(errors, err)
+	}
+
+	if m.GetPage() < 1 {
+		err := GetShareAccessLogsRequestValidationError{
+			field:  "Page",
+			reason: "value must be greater than or equal to 1",
+		}
+		if !all {
+			return err
+		}
+		errors = append(errors, err)
+	}
+
+	if val := m.GetPageSize(); val < 1 || val > 50 {
+		err := GetShareAccessLogsRequestValidationError{
+			field:  "PageSize",
+			reason: "value must be inside range [1, 50]",
+		}
+		if !all {
+			return err
+		}
+		errors = append(errors, err)
+	}
+
+	if len(errors) > 0 {
+		return GetShareAccessLogsRequestMultiError(errors)
+	}
+
+	return nil
+}
+
+// GetShareAccessLogsRequestMultiError is an error wrapping multiple validation
+// errors returned by GetShareAccessLogsRequest.ValidateAll() if the
+// designated constraints aren't met.
+type GetShareAccessLogsRequestMultiError []error
+
+// Error returns a concatenation of all the error messages it wraps.
+func (m GetShareAccessLogsRequestMultiError) Error() string {
+	msgs := make([]string, 0, len(m))
+	for _, err := range m {
+		msgs = append(msgs, err.Error())
+	}
+	return strings.Join(msgs, "; ")
+}
+
+// AllErrors returns a list of validation violation errors.
+func (m GetShareAccessLogsRequestMultiError) AllErrors() []error { return m }
+
+// GetShareAccessLogsRequestValidationError is the validation error returned by
+// GetShareAccessLogsRequest.Validate if the designated constraints aren't met.
+type GetShareAccessLogsRequestValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e GetShareAccessLogsRequestValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e GetShareAccessLogsRequestValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e GetShareAccessLogsRequestValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e GetShareAccessLogsRequestValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e GetShareAccessLogsRequestValidationError) ErrorName() string {
+	return "GetShareAccessLogsRequestValidationError"
+}
+
+// Error satisfies the builtin error interface
+func (e GetShareAccessLogsRequestValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sGetShareAccessLogsRequest.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = GetShareAccessLogsRequestValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = GetShareAccessLogsRequestValidationError{}
+
+// Validate checks the field values on ShareAccessLogItem with the rules
+// defined in the proto definition for this message. If any rules are
+// violated, the first error encountered is returned, or nil if there are no violations.
+func (m *ShareAccessLogItem) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on ShareAccessLogItem with the rules
+// defined in the proto definition for this message. If any rules are
+// violated, the result is a list of violation errors wrapped in
+// ShareAccessLogItemMultiError, or nil if none found.
+func (m *ShareAccessLogItem) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *ShareAccessLogItem) validate(all bool) error {
+	if m == nil {
+		return nil
+	}
+
+	var errors []error
+
+	// no validation rules for Action
+
+	// no validation rules for Ip
+
+	// no validation rules for UserAgent
+
+	// no validation rules for CreatedAt
+
+	if len(errors) > 0 {
+		return ShareAccessLogItemMultiError(errors)
+	}
+
+	return nil
+}
+
+// ShareAccessLogItemMultiError is an error wrapping multiple validation errors
+// returned by ShareAccessLogItem.ValidateAll() if the designated constraints
+// aren't met.
+type ShareAccessLogItemMultiError []error
+
+// Error returns a concatenation of all the error messages it wraps.
+func (m ShareAccessLogItemMultiError) Error() string {
+	msgs := make([]string, 0, len(m))
+	for _, err := range m {
+		msgs = append(msgs, err.Error())
+	}
+	return strings.Join(msgs, "; ")
+}
+
+// AllErrors returns a list of validation violation errors.
+func (m ShareAccessLogItemMultiError) AllErrors() []error { return m }
+
+// ShareAccessLogItemValidationError is the validation error returned by
+// ShareAccessLogItem.Validate if the designated constraints aren't met.
+type ShareAccessLogItemValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e ShareAccessLogItemValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e ShareAccessLogItemValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e ShareAccessLogItemValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e ShareAccessLogItemValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e ShareAccessLogItemValidationError) ErrorName() string {
+	return "ShareAccessLogItemValidationError"
+}
+
+// Error satisfies the builtin error interface
+func (e ShareAccessLogItemValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sShareAccessLogItem.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = ShareAccessLogItemValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = ShareAccessLogItemValidationError{}
+
+// Validate checks the field values on GetShareAccessLogsResponse with the
+// rules defined in the proto definition for this message. If any rules are
+// violated, the first error encountered is returned, or nil if there are no violations.
+func (m *GetShareAccessLogsResponse) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on GetShareAccessLogsResponse with the
+// rules defined in the proto definition for this message. If any rules are
+// violated, the result is a list of violation errors wrapped in
+// GetShareAccessLogsResponseMultiError, or nil if none found.
+func (m *GetShareAccessLogsResponse) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *GetShareAccessLogsResponse) validate(all bool) error {
+	if m == nil {
+		return nil
+	}
+
+	var errors []error
+
+	for idx, item := range m.GetLogs() {
+		_, _ = idx, item
+
+		if all {
+			switch v := interface{}(item).(type) {
+			case interface{ ValidateAll() error }:
+				if err := v.ValidateAll(); err != nil {
+					errors = append(errors, GetShareAccessLogsResponseValidationError{
+						field:  fmt.Sprintf("Logs[%v]", idx),
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			case interface{ Validate() error }:
+				if err := v.Validate(); err != nil {
+					errors = append(errors, GetShareAccessLogsResponseValidationError{
+						field:  fmt.Sprintf("Logs[%v]", idx),
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			}
+		} else if v, ok := interface{}(item).(interface{ Validate() error }); ok {
+			if err := v.Validate(); err != nil {
+				return GetShareAccessLogsResponseValidationError{
+					field:  fmt.Sprintf("Logs[%v]", idx),
+					reason: "embedded message failed validation",
+					cause:  err,
+				}
+			}
+		}
+
+	}
+
+	// no validation rules for Total
+
+	if len(errors) > 0 {
+		return GetShareAccessLogsResponseMultiError(errors)
+	}
+
+	return nil
+}
+
+// GetShareAccessLogsResponseMultiError is an error wrapping multiple
+// validation errors returned by GetShareAccessLogsResponse.ValidateAll() if
+// the designated constraints aren't met.
+type GetShareAccessLogsResponseMultiError []error
+
+// Error returns a concatenation of all the error messages it wraps.
+func (m GetShareAccessLogsResponseMultiError) Error() string {
+	msgs := make([]string, 0, len(m))
+	for _, err := range m {
+		msgs = append(msgs, err.Error())
+	}
+	return strings.Join(msgs, "; ")
+}
+
+// AllErrors returns a list of validation violation errors.
+func (m GetShareAccessLogsResponseMultiError) AllErrors() []error { return m }
+
+// GetShareAccessLogsResponseValidationError is the validation error returned
+// by GetShareAccessLogsResponse.Validate if the designated constraints aren't met.
+type GetShareAccessLogsResponseValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e GetShareAccessLogsResponseValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e GetShareAccessLogsResponseValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e GetShareAccessLogsResponseValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e GetShareAccessLogsResponseValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e GetShareAccessLogsResponseValidationError) ErrorName() string {
+	return "GetShareAccessLogsResponseValidationError"
+}
+
+// Error satisfies the builtin error interface
+func (e GetShareAccessLogsResponseValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sGetShareAccessLogsResponse.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = GetShareAccessLogsResponseValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = GetShareAccessLogsResponseValidationError{}

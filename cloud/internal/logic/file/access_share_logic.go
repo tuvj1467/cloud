@@ -97,6 +97,14 @@ func (l *AccessShareLogic) AccessShare(in *service.AccessShareRequest) (*service
 	l.Infof("access share code=%s file=%s permission=%s",
 		in.GetShareCode(), data.FileID, data.Permission)
 
+	// 审计：记录访问（次数上限仅约束下载，access 不扣减）
+	if logRepo := repository.NewShareAccessLogRepository(l.svcCtx.EntClient); logRepo != nil {
+		ip, ua := clientInfo(l.ctx)
+		if err := logRepo.Create(l.ctx, data.ID, data.ShareCode, "access", ip, ua); err != nil {
+			l.Errorf("写入分享访问审计失败 code=%s: %v", data.ShareCode, err)
+		}
+	}
+
 	return response.Success(&service.AccessShareResponse{
 		File:       anonymizeFileMeta(toFileMeta(f)),
 		Permission: data.Permission,

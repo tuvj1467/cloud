@@ -139,6 +139,14 @@ func (l *DownloadByShareLogic) DownloadByShare(in *service.DownloadByShareReques
 	l.Infof("download by share success code=%s file=%s size=%d used=%d",
 		in.GetShareCode(), f.ID, f.Size, newCount)
 
+	// 审计：记录下载（次数上限仅约束下载，此处已扣减）
+	if logRepo := repository.NewShareAccessLogRepository(l.svcCtx.EntClient); logRepo != nil {
+		ip, ua := clientInfo(l.ctx)
+		if err := logRepo.Create(l.ctx, data.ID, data.ShareCode, "download", ip, ua); err != nil {
+			l.Errorf("写入分享下载审计失败 code=%s: %v", data.ShareCode, err)
+		}
+	}
+
 	return response.Success(&service.DownloadByShareResponse{
 		Content: content,
 		File:    anonymizeFileMeta(toFileMeta(f)),
