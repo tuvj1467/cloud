@@ -23,6 +23,7 @@ const (
 	CodeTokenMissing        = 10103 // 缺少 token
 	CodeUserSmsCodeFrequent = 10006 // 验证码发送过于频繁
 	CodeUserSmsCodeService  = 10007 // 验证码服务不可用
+	CodeUserDisabled        = 10008 // 账号已被禁用
 
 	// ====== 桶服务 20000-20999 ======
 	CodeBucketNotFound     = 20001 // 桶不存在

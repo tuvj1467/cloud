@@ -61,7 +61,11 @@ func (l *LoginByEmailSmsLogic) LoginByEmailSms(in *service.LoginByEmailSmsReq) (
 	if err != nil {
 		return response.Err(err)
 	}
-	//分发token
+
+	// 禁用账号拒绝登录
+	if res.Disabled {
+		return response.ErrWithCode(response.CodeUserDisabled, "账号已被禁用")
+	}
 	token, err := jwt.GenerateToken(res.ID)
 	if err != nil {
 		return response.Err(errors.New("生成 token 失败: " + err.Error()))

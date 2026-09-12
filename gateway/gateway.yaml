@@ -65,6 +65,18 @@ upstreams:                  # 0空格
       - Method: GET
         Path: /file/share/logs
         RpcPath: storage.File/GetShareAccessLogs
+      - Method: GET
+        Path: /admin/users
+        RpcPath: storage.User/AdminListUsers
+      - Method: POST
+        Path: /admin/users/role
+        RpcPath: storage.User/AdminSetUserRole
+      - Method: POST
+        Path: /admin/users/disabled
+        RpcPath: storage.User/AdminSetUserDisabled
+      - Method: GET
+        Path: /admin/stats
+        RpcPath: storage.User/AdminGetGlobalStats
 
       - Method: GET
         Path: /file/share/my

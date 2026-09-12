@@ -27,7 +27,7 @@ const file_service_proto_rawDesc = "" +
 	"\rservice.proto\x12\astorage\x1a\n" +
 	"file.proto\x1a\n" +
 	"user.proto\x1a\n" +
-	"base.proto\x1a\fbucket.proto2\xc9\x03\n" +
+	"base.proto\x1a\fbucket.proto2\xf4\x05\n" +
 	"\x04User\x123\n" +
 	"\bRegister\x12\x14.storage.RegisterReq\x1a\x11.storage.Response\x12?\n" +
 	"\x0eLoginByAccount\x12\x1a.storage.LoginByAccountReq\x1a\x11.storage.Response\x12A\n" +
@@ -35,13 +35,17 @@ const file_service_proto_rawDesc = "" +
 	"\x0fLoginByEmailSms\x12\x1b.storage.LoginByEmailSmsReq\x1a\x11.storage.Response\x12K\n" +
 	"\x14SendVerificationCode\x12 .storage.SendVerificationCodeReq\x1a\x11.storage.Response\x12=\n" +
 	"\rResetPassword\x12\x19.storage.ResetPasswordReq\x1a\x11.storage.Response\x129\n" +
-	"\vFindAccount\x12\x17.storage.FindAccountReq\x1a\x11.storage.Response2\xcb\x02\n" +
+	"\vFindAccount\x12\x17.storage.FindAccountReq\x1a\x11.storage.Response\x12C\n" +
+	"\x0eAdminListUsers\x12\x1e.storage.AdminListUsersRequest\x1a\x11.storage.Response\x12G\n" +
+	"\x10AdminSetUserRole\x12 .storage.AdminSetUserRoleRequest\x1a\x11.storage.Response\x12O\n" +
+	"\x14AdminSetUserDisabled\x12$.storage.AdminSetUserDisabledRequest\x1a\x11.storage.Response\x12J\n" +
+	"\x13AdminGetGlobalStats\x12 .storage.AdminGlobalStatsRequest\x1a\x11.storage.Response2\xcb\x02\n" +
 	"\x06Bucket\x12?\n" +
 	"\fCreateBucket\x12\x1c.storage.CreateBucketRequest\x1a\x11.storage.Response\x12>\n" +
 	"\rGetBucketList\x12\x1a.storage.BucketListRequest\x1a\x11.storage.Response\x12>\n" +
 	"\rGetBucketInfo\x12\x1a.storage.BucketInfoRequest\x1a\x11.storage.Response\x12?\n" +
 	"\fUpdateBucket\x12\x1c.storage.UpdateBucketRequest\x1a\x11.storage.Response\x12?\n" +
-	"\fDeleteBucket\x12\x1c.storage.DeleteBucketRequest\x1a\x11.storage.Response2\x8a\x10\n" +
+	"\fDeleteBucket\x12\x1c.storage.DeleteBucketRequest\x1a\x11.storage.Response2\xdf\r\n" +
 	"\x04File\x12:\n" +
 	"\vGetFileInfo\x12\x18.storage.FileInfoRequest\x1a\x11.storage.Response\x12;\n" +
 	"\n" +
@@ -73,11 +77,7 @@ const file_service_proto_rawDesc = "" +
 	"\fRestoreFiles\x12\x1c.storage.RestoreFilesRequest\x1a\x11.storage.Response\x12;\n" +
 	"\n" +
 	"PurgeFiles\x12\x1a.storage.PurgeFilesRequest\x1a\x11.storage.Response\x12K\n" +
-	"\x12GetShareAccessLogs\x12\".storage.GetShareAccessLogsRequest\x1a\x11.storage.Response\x12C\n" +
-	"\x0eAdminListUsers\x12\x1e.storage.AdminListUsersRequest\x1a\x11.storage.Response\x12G\n" +
-	"\x10AdminSetUserRole\x12 .storage.AdminSetUserRoleRequest\x1a\x11.storage.Response\x12O\n" +
-	"\x14AdminSetUserDisabled\x12$.storage.AdminSetUserDisabledRequest\x1a\x11.storage.Response\x12J\n" +
-	"\x13AdminGetGlobalStats\x12 .storage.AdminGlobalStatsRequest\x1a\x11.storage.ResponseB\x10Z\x0e.proto/serviceb\x06proto3"
+	"\x12GetShareAccessLogs\x12\".storage.GetShareAccessLogsRequest\x1a\x11.storage.ResponseB\x10Z\x0e.proto/serviceb\x06proto3"
 
 var file_service_proto_goTypes = []any{
 	(*RegisterReq)(nil),                    // 0: storage.RegisterReq
@@ -87,40 +87,40 @@ var file_service_proto_goTypes = []any{
 	(*SendVerificationCodeReq)(nil),        // 4: storage.SendVerificationCodeReq
 	(*ResetPasswordReq)(nil),               // 5: storage.ResetPasswordReq
 	(*FindAccountReq)(nil),                 // 6: storage.FindAccountReq
-	(*CreateBucketRequest)(nil),            // 7: storage.CreateBucketRequest
-	(*BucketListRequest)(nil),              // 8: storage.BucketListRequest
-	(*BucketInfoRequest)(nil),              // 9: storage.BucketInfoRequest
-	(*UpdateBucketRequest)(nil),            // 10: storage.UpdateBucketRequest
-	(*DeleteBucketRequest)(nil),            // 11: storage.DeleteBucketRequest
-	(*FileInfoRequest)(nil),                // 12: storage.FileInfoRequest
-	(*UploadFileRequest)(nil),              // 13: storage.UploadFileRequest
-	(*FileListRequest)(nil),                // 14: storage.FileListRequest
-	(*BucketFileListRequest)(nil),          // 15: storage.BucketFileListRequest
-	(*RenameFileRequest)(nil),              // 16: storage.RenameFileRequest
-	(*DeleteFileRequest)(nil),              // 17: storage.DeleteFileRequest
-	(*DownloadFileRequest)(nil),            // 18: storage.DownloadFileRequest
-	(*CopyFileRequest)(nil),                // 19: storage.CopyFileRequest
-	(*InitMultipartUploadRequest)(nil),     // 20: storage.InitMultipartUploadRequest
-	(*UploadPartRequest)(nil),              // 21: storage.UploadPartRequest
-	(*CompleteMultipartUploadRequest)(nil), // 22: storage.CompleteMultipartUploadRequest
-	(*AbortMultipartUploadRequest)(nil),    // 23: storage.AbortMultipartUploadRequest
-	(*CreateShareRequest)(nil),             // 24: storage.CreateShareRequest
-	(*AccessShareRequest)(nil),             // 25: storage.AccessShareRequest
-	(*DownloadByShareRequest)(nil),         // 26: storage.DownloadByShareRequest
-	(*GetStorageStatsRequest)(nil),         // 27: storage.GetStorageStatsRequest
-	(*GetPresignedURLRequest)(nil),         // 28: storage.GetPresignedURLRequest
-	(*GetMySharesRequest)(nil),             // 29: storage.GetMySharesRequest
-	(*RevokeShareRequest)(nil),             // 30: storage.RevokeShareRequest
-	(*FileThumbRequest)(nil),               // 31: storage.FileThumbRequest
-	(*GetStorageTrendRequest)(nil),         // 32: storage.GetStorageTrendRequest
-	(*ListDeletedFilesRequest)(nil),        // 33: storage.ListDeletedFilesRequest
-	(*RestoreFilesRequest)(nil),            // 34: storage.RestoreFilesRequest
-	(*PurgeFilesRequest)(nil),              // 35: storage.PurgeFilesRequest
-	(*GetShareAccessLogsRequest)(nil),      // 36: storage.GetShareAccessLogsRequest
-	(*AdminListUsersRequest)(nil),          // 37: storage.AdminListUsersRequest
-	(*AdminSetUserRoleRequest)(nil),        // 38: storage.AdminSetUserRoleRequest
-	(*AdminSetUserDisabledRequest)(nil),    // 39: storage.AdminSetUserDisabledRequest
-	(*AdminGlobalStatsRequest)(nil),        // 40: storage.AdminGlobalStatsRequest
+	(*AdminListUsersRequest)(nil),          // 7: storage.AdminListUsersRequest
+	(*AdminSetUserRoleRequest)(nil),        // 8: storage.AdminSetUserRoleRequest
+	(*AdminSetUserDisabledRequest)(nil),    // 9: storage.AdminSetUserDisabledRequest
+	(*AdminGlobalStatsRequest)(nil),        // 10: storage.AdminGlobalStatsRequest
+	(*CreateBucketRequest)(nil),            // 11: storage.CreateBucketRequest
+	(*BucketListRequest)(nil),              // 12: storage.BucketListRequest
+	(*BucketInfoRequest)(nil),              // 13: storage.BucketInfoRequest
+	(*UpdateBucketRequest)(nil),            // 14: storage.UpdateBucketRequest
+	(*DeleteBucketRequest)(nil),            // 15: storage.DeleteBucketRequest
+	(*FileInfoRequest)(nil),                // 16: storage.FileInfoRequest
+	(*UploadFileRequest)(nil),              // 17: storage.UploadFileRequest
+	(*FileListRequest)(nil),                // 18: storage.FileListRequest
+	(*BucketFileListRequest)(nil),          // 19: storage.BucketFileListRequest
+	(*RenameFileRequest)(nil),              // 20: storage.RenameFileRequest
+	(*DeleteFileRequest)(nil),              // 21: storage.DeleteFileRequest
+	(*DownloadFileRequest)(nil),            // 22: storage.DownloadFileRequest
+	(*CopyFileRequest)(nil),                // 23: storage.CopyFileRequest
+	(*InitMultipartUploadRequest)(nil),     // 24: storage.InitMultipartUploadRequest
+	(*UploadPartRequest)(nil),              // 25: storage.UploadPartRequest
+	(*CompleteMultipartUploadRequest)(nil), // 26: storage.CompleteMultipartUploadRequest
+	(*AbortMultipartUploadRequest)(nil),    // 27: storage.AbortMultipartUploadRequest
+	(*CreateShareRequest)(nil),             // 28: storage.CreateShareRequest
+	(*AccessShareRequest)(nil),             // 29: storage.AccessShareRequest
+	(*DownloadByShareRequest)(nil),         // 30: storage.DownloadByShareRequest
+	(*GetStorageStatsRequest)(nil),         // 31: storage.GetStorageStatsRequest
+	(*GetPresignedURLRequest)(nil),         // 32: storage.GetPresignedURLRequest
+	(*GetMySharesRequest)(nil),             // 33: storage.GetMySharesRequest
+	(*RevokeShareRequest)(nil),             // 34: storage.RevokeShareRequest
+	(*FileThumbRequest)(nil),               // 35: storage.FileThumbRequest
+	(*GetStorageTrendRequest)(nil),         // 36: storage.GetStorageTrendRequest
+	(*ListDeletedFilesRequest)(nil),        // 37: storage.ListDeletedFilesRequest
+	(*RestoreFilesRequest)(nil),            // 38: storage.RestoreFilesRequest
+	(*PurgeFilesRequest)(nil),              // 39: storage.PurgeFilesRequest
+	(*GetShareAccessLogsRequest)(nil),      // 40: storage.GetShareAccessLogsRequest
 	(*Response)(nil),                       // 41: storage.Response
 	(*DownloadChunk)(nil),                  // 42: storage.DownloadChunk
 }
@@ -132,41 +132,41 @@ var file_service_proto_depIdxs = []int32{
 	4,  // 4: storage.User.SendVerificationCode:input_type -> storage.SendVerificationCodeReq
 	5,  // 5: storage.User.ResetPassword:input_type -> storage.ResetPasswordReq
 	6,  // 6: storage.User.FindAccount:input_type -> storage.FindAccountReq
-	7,  // 7: storage.Bucket.CreateBucket:input_type -> storage.CreateBucketRequest
-	8,  // 8: storage.Bucket.GetBucketList:input_type -> storage.BucketListRequest
-	9,  // 9: storage.Bucket.GetBucketInfo:input_type -> storage.BucketInfoRequest
-	10, // 10: storage.Bucket.UpdateBucket:input_type -> storage.UpdateBucketRequest
-	11, // 11: storage.Bucket.DeleteBucket:input_type -> storage.DeleteBucketRequest
-	12, // 12: storage.File.GetFileInfo:input_type -> storage.FileInfoRequest
-	13, // 13: storage.File.UploadFile:input_type -> storage.UploadFileRequest
-	14, // 14: storage.File.GetFileList:input_type -> storage.FileListRequest
-	15, // 15: storage.File.GetBucketFileList:input_type -> storage.BucketFileListRequest
-	16, // 16: storage.File.RenameFile:input_type -> storage.RenameFileRequest
-	17, // 17: storage.File.DeleteFile:input_type -> storage.DeleteFileRequest
-	18, // 18: storage.File.DownloadFile:input_type -> storage.DownloadFileRequest
-	19, // 19: storage.File.CopyFile:input_type -> storage.CopyFileRequest
-	20, // 20: storage.File.InitMultipartUpload:input_type -> storage.InitMultipartUploadRequest
-	21, // 21: storage.File.UploadPart:input_type -> storage.UploadPartRequest
-	22, // 22: storage.File.CompleteMultipartUpload:input_type -> storage.CompleteMultipartUploadRequest
-	23, // 23: storage.File.AbortMultipartUpload:input_type -> storage.AbortMultipartUploadRequest
-	24, // 24: storage.File.CreateShare:input_type -> storage.CreateShareRequest
-	25, // 25: storage.File.AccessShare:input_type -> storage.AccessShareRequest
-	26, // 26: storage.File.DownloadByShare:input_type -> storage.DownloadByShareRequest
-	27, // 27: storage.File.GetStorageStats:input_type -> storage.GetStorageStatsRequest
-	28, // 28: storage.File.GetPresignedURL:input_type -> storage.GetPresignedURLRequest
-	29, // 29: storage.File.GetMyShares:input_type -> storage.GetMySharesRequest
-	30, // 30: storage.File.RevokeShare:input_type -> storage.RevokeShareRequest
-	18, // 31: storage.File.DownloadStream:input_type -> storage.DownloadFileRequest
-	31, // 32: storage.File.GetFileThumb:input_type -> storage.FileThumbRequest
-	32, // 33: storage.File.GetStorageTrend:input_type -> storage.GetStorageTrendRequest
-	33, // 34: storage.File.ListDeletedFiles:input_type -> storage.ListDeletedFilesRequest
-	34, // 35: storage.File.RestoreFiles:input_type -> storage.RestoreFilesRequest
-	35, // 36: storage.File.PurgeFiles:input_type -> storage.PurgeFilesRequest
-	36, // 37: storage.File.GetShareAccessLogs:input_type -> storage.GetShareAccessLogsRequest
-	37, // 38: storage.File.AdminListUsers:input_type -> storage.AdminListUsersRequest
-	38, // 39: storage.File.AdminSetUserRole:input_type -> storage.AdminSetUserRoleRequest
-	39, // 40: storage.File.AdminSetUserDisabled:input_type -> storage.AdminSetUserDisabledRequest
-	40, // 41: storage.File.AdminGetGlobalStats:input_type -> storage.AdminGlobalStatsRequest
+	7,  // 7: storage.User.AdminListUsers:input_type -> storage.AdminListUsersRequest
+	8,  // 8: storage.User.AdminSetUserRole:input_type -> storage.AdminSetUserRoleRequest
+	9,  // 9: storage.User.AdminSetUserDisabled:input_type -> storage.AdminSetUserDisabledRequest
+	10, // 10: storage.User.AdminGetGlobalStats:input_type -> storage.AdminGlobalStatsRequest
+	11, // 11: storage.Bucket.CreateBucket:input_type -> storage.CreateBucketRequest
+	12, // 12: storage.Bucket.GetBucketList:input_type -> storage.BucketListRequest
+	13, // 13: storage.Bucket.GetBucketInfo:input_type -> storage.BucketInfoRequest
+	14, // 14: storage.Bucket.UpdateBucket:input_type -> storage.UpdateBucketRequest
+	15, // 15: storage.Bucket.DeleteBucket:input_type -> storage.DeleteBucketRequest
+	16, // 16: storage.File.GetFileInfo:input_type -> storage.FileInfoRequest
+	17, // 17: storage.File.UploadFile:input_type -> storage.UploadFileRequest
+	18, // 18: storage.File.GetFileList:input_type -> storage.FileListRequest
+	19, // 19: storage.File.GetBucketFileList:input_type -> storage.BucketFileListRequest
+	20, // 20: storage.File.RenameFile:input_type -> storage.RenameFileRequest
+	21, // 21: storage.File.DeleteFile:input_type -> storage.DeleteFileRequest
+	22, // 22: storage.File.DownloadFile:input_type -> storage.DownloadFileRequest
+	23, // 23: storage.File.CopyFile:input_type -> storage.CopyFileRequest
+	24, // 24: storage.File.InitMultipartUpload:input_type -> storage.InitMultipartUploadRequest
+	25, // 25: storage.File.UploadPart:input_type -> storage.UploadPartRequest
+	26, // 26: storage.File.CompleteMultipartUpload:input_type -> storage.CompleteMultipartUploadRequest
+	27, // 27: storage.File.AbortMultipartUpload:input_type -> storage.AbortMultipartUploadRequest
+	28, // 28: storage.File.CreateShare:input_type -> storage.CreateShareRequest
+	29, // 29: storage.File.AccessShare:input_type -> storage.AccessShareRequest
+	30, // 30: storage.File.DownloadByShare:input_type -> storage.DownloadByShareRequest
+	31, // 31: storage.File.GetStorageStats:input_type -> storage.GetStorageStatsRequest
+	32, // 32: storage.File.GetPresignedURL:input_type -> storage.GetPresignedURLRequest
+	33, // 33: storage.File.GetMyShares:input_type -> storage.GetMySharesRequest
+	34, // 34: storage.File.RevokeShare:input_type -> storage.RevokeShareRequest
+	22, // 35: storage.File.DownloadStream:input_type -> storage.DownloadFileRequest
+	35, // 36: storage.File.GetFileThumb:input_type -> storage.FileThumbRequest
+	36, // 37: storage.File.GetStorageTrend:input_type -> storage.GetStorageTrendRequest
+	37, // 38: storage.File.ListDeletedFiles:input_type -> storage.ListDeletedFilesRequest
+	38, // 39: storage.File.RestoreFiles:input_type -> storage.RestoreFilesRequest
+	39, // 40: storage.File.PurgeFiles:input_type -> storage.PurgeFilesRequest
+	40, // 41: storage.File.GetShareAccessLogs:input_type -> storage.GetShareAccessLogsRequest
 	41, // 42: storage.User.Register:output_type -> storage.Response
 	41, // 43: storage.User.LoginByAccount:output_type -> storage.Response
 	41, // 44: storage.User.LoginByPhoneSms:output_type -> storage.Response
@@ -174,41 +174,41 @@ var file_service_proto_depIdxs = []int32{
 	41, // 46: storage.User.SendVerificationCode:output_type -> storage.Response
 	41, // 47: storage.User.ResetPassword:output_type -> storage.Response
 	41, // 48: storage.User.FindAccount:output_type -> storage.Response
-	41, // 49: storage.Bucket.CreateBucket:output_type -> storage.Response
-	41, // 50: storage.Bucket.GetBucketList:output_type -> storage.Response
-	41, // 51: storage.Bucket.GetBucketInfo:output_type -> storage.Response
-	41, // 52: storage.Bucket.UpdateBucket:output_type -> storage.Response
-	41, // 53: storage.Bucket.DeleteBucket:output_type -> storage.Response
-	41, // 54: storage.File.GetFileInfo:output_type -> storage.Response
-	41, // 55: storage.File.UploadFile:output_type -> storage.Response
-	41, // 56: storage.File.GetFileList:output_type -> storage.Response
-	41, // 57: storage.File.GetBucketFileList:output_type -> storage.Response
-	41, // 58: storage.File.RenameFile:output_type -> storage.Response
-	41, // 59: storage.File.DeleteFile:output_type -> storage.Response
-	41, // 60: storage.File.DownloadFile:output_type -> storage.Response
-	41, // 61: storage.File.CopyFile:output_type -> storage.Response
-	41, // 62: storage.File.InitMultipartUpload:output_type -> storage.Response
-	41, // 63: storage.File.UploadPart:output_type -> storage.Response
-	41, // 64: storage.File.CompleteMultipartUpload:output_type -> storage.Response
-	41, // 65: storage.File.AbortMultipartUpload:output_type -> storage.Response
-	41, // 66: storage.File.CreateShare:output_type -> storage.Response
-	41, // 67: storage.File.AccessShare:output_type -> storage.Response
-	41, // 68: storage.File.DownloadByShare:output_type -> storage.Response
-	41, // 69: storage.File.GetStorageStats:output_type -> storage.Response
-	41, // 70: storage.File.GetPresignedURL:output_type -> storage.Response
-	41, // 71: storage.File.GetMyShares:output_type -> storage.Response
-	41, // 72: storage.File.RevokeShare:output_type -> storage.Response
-	42, // 73: storage.File.DownloadStream:output_type -> storage.DownloadChunk
-	41, // 74: storage.File.GetFileThumb:output_type -> storage.Response
-	41, // 75: storage.File.GetStorageTrend:output_type -> storage.Response
-	41, // 76: storage.File.ListDeletedFiles:output_type -> storage.Response
-	41, // 77: storage.File.RestoreFiles:output_type -> storage.Response
-	41, // 78: storage.File.PurgeFiles:output_type -> storage.Response
-	41, // 79: storage.File.GetShareAccessLogs:output_type -> storage.Response
-	41, // 80: storage.File.AdminListUsers:output_type -> storage.Response
-	41, // 81: storage.File.AdminSetUserRole:output_type -> storage.Response
-	41, // 82: storage.File.AdminSetUserDisabled:output_type -> storage.Response
-	41, // 83: storage.File.AdminGetGlobalStats:output_type -> storage.Response
+	41, // 49: storage.User.AdminListUsers:output_type -> storage.Response
+	41, // 50: storage.User.AdminSetUserRole:output_type -> storage.Response
+	41, // 51: storage.User.AdminSetUserDisabled:output_type -> storage.Response
+	41, // 52: storage.User.AdminGetGlobalStats:output_type -> storage.Response
+	41, // 53: storage.Bucket.CreateBucket:output_type -> storage.Response
+	41, // 54: storage.Bucket.GetBucketList:output_type -> storage.Response
+	41, // 55: storage.Bucket.GetBucketInfo:output_type -> storage.Response
+	41, // 56: storage.Bucket.UpdateBucket:output_type -> storage.Response
+	41, // 57: storage.Bucket.DeleteBucket:output_type -> storage.Response
+	41, // 58: storage.File.GetFileInfo:output_type -> storage.Response
+	41, // 59: storage.File.UploadFile:output_type -> storage.Response
+	41, // 60: storage.File.GetFileList:output_type -> storage.Response
+	41, // 61: storage.File.GetBucketFileList:output_type -> storage.Response
+	41, // 62: storage.File.RenameFile:output_type -> storage.Response
+	41, // 63: storage.File.DeleteFile:output_type -> storage.Response
+	41, // 64: storage.File.DownloadFile:output_type -> storage.Response
+	41, // 65: storage.File.CopyFile:output_type -> storage.Response
+	41, // 66: storage.File.InitMultipartUpload:output_type -> storage.Response
+	41, // 67: storage.File.UploadPart:output_type -> storage.Response
+	41, // 68: storage.File.CompleteMultipartUpload:output_type -> storage.Response
+	41, // 69: storage.File.AbortMultipartUpload:output_type -> storage.Response
+	41, // 70: storage.File.CreateShare:output_type -> storage.Response
+	41, // 71: storage.File.AccessShare:output_type -> storage.Response
+	41, // 72: storage.File.DownloadByShare:output_type -> storage.Response
+	41, // 73: storage.File.GetStorageStats:output_type -> storage.Response
+	41, // 74: storage.File.GetPresignedURL:output_type -> storage.Response
+	41, // 75: storage.File.GetMyShares:output_type -> storage.Response
+	41, // 76: storage.File.RevokeShare:output_type -> storage.Response
+	42, // 77: storage.File.DownloadStream:output_type -> storage.DownloadChunk
+	41, // 78: storage.File.GetFileThumb:output_type -> storage.Response
+	41, // 79: storage.File.GetStorageTrend:output_type -> storage.Response
+	41, // 80: storage.File.ListDeletedFiles:output_type -> storage.Response
+	41, // 81: storage.File.RestoreFiles:output_type -> storage.Response
+	41, // 82: storage.File.PurgeFiles:output_type -> storage.Response
+	41, // 83: storage.File.GetShareAccessLogs:output_type -> storage.Response
 	42, // [42:84] is the sub-list for method output_type
 	0,  // [0:42] is the sub-list for method input_type
 	0,  // [0:0] is the sub-list for extension type_name

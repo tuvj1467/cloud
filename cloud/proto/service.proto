@@ -27,6 +27,12 @@ service User {
 
   // 账号找回
   rpc FindAccount(FindAccountReq) returns (Response);
+
+  // ===== 管理后台（需 admin 角色）=====
+  rpc AdminListUsers(AdminListUsersRequest) returns (Response);
+  rpc AdminSetUserRole(AdminSetUserRoleRequest) returns (Response);
+  rpc AdminSetUserDisabled(AdminSetUserDisabledRequest) returns (Response);
+  rpc AdminGetGlobalStats(AdminGlobalStatsRequest) returns (Response);
 }
 
 // 存储桶服务定义
@@ -114,9 +120,4 @@ service File {
   // 分享访问审计查询（需登录，仅限本人分享）
   rpc GetShareAccessLogs(GetShareAccessLogsRequest) returns (Response);
 
-  // ===== 管理后台（需 admin 角色）=====
-  rpc AdminListUsers(AdminListUsersRequest) returns (Response);
-  rpc AdminSetUserRole(AdminSetUserRoleRequest) returns (Response);
-  rpc AdminSetUserDisabled(AdminSetUserDisabledRequest) returns (Response);
-  rpc AdminGetGlobalStats(AdminGlobalStatsRequest) returns (Response);
 }
