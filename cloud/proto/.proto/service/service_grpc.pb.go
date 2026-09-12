@@ -653,6 +653,10 @@ const (
 	File_RestoreFiles_FullMethodName            = "/storage.File/RestoreFiles"
 	File_PurgeFiles_FullMethodName              = "/storage.File/PurgeFiles"
 	File_GetShareAccessLogs_FullMethodName      = "/storage.File/GetShareAccessLogs"
+	File_AdminListUsers_FullMethodName          = "/storage.File/AdminListUsers"
+	File_AdminSetUserRole_FullMethodName        = "/storage.File/AdminSetUserRole"
+	File_AdminSetUserDisabled_FullMethodName    = "/storage.File/AdminSetUserDisabled"
+	File_AdminGetGlobalStats_FullMethodName     = "/storage.File/AdminGetGlobalStats"
 )
 
 // FileClient is the client API for File service.
@@ -716,6 +720,11 @@ type FileClient interface {
 	PurgeFiles(ctx context.Context, in *PurgeFilesRequest, opts ...grpc.CallOption) (*Response, error)
 	// 分享访问审计查询（需登录，仅限本人分享）
 	GetShareAccessLogs(ctx context.Context, in *GetShareAccessLogsRequest, opts ...grpc.CallOption) (*Response, error)
+	// ===== 管理后台（需 admin 角色）=====
+	AdminListUsers(ctx context.Context, in *AdminListUsersRequest, opts ...grpc.CallOption) (*Response, error)
+	AdminSetUserRole(ctx context.Context, in *AdminSetUserRoleRequest, opts ...grpc.CallOption) (*Response, error)
+	AdminSetUserDisabled(ctx context.Context, in *AdminSetUserDisabledRequest, opts ...grpc.CallOption) (*Response, error)
+	AdminGetGlobalStats(ctx context.Context, in *AdminGlobalStatsRequest, opts ...grpc.CallOption) (*Response, error)
 }
 
 type fileClient struct {
@@ -995,6 +1004,46 @@ func (c *fileClient) GetShareAccessLogs(ctx context.Context, in *GetShareAccessL
 	return out, nil
 }
 
+func (c *fileClient) AdminListUsers(ctx context.Context, in *AdminListUsersRequest, opts ...grpc.CallOption) (*Response, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(Response)
+	err := c.cc.Invoke(ctx, File_AdminListUsers_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *fileClient) AdminSetUserRole(ctx context.Context, in *AdminSetUserRoleRequest, opts ...grpc.CallOption) (*Response, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(Response)
+	err := c.cc.Invoke(ctx, File_AdminSetUserRole_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *fileClient) AdminSetUserDisabled(ctx context.Context, in *AdminSetUserDisabledRequest, opts ...grpc.CallOption) (*Response, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(Response)
+	err := c.cc.Invoke(ctx, File_AdminSetUserDisabled_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *fileClient) AdminGetGlobalStats(ctx context.Context, in *AdminGlobalStatsRequest, opts ...grpc.CallOption) (*Response, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(Response)
+	err := c.cc.Invoke(ctx, File_AdminGetGlobalStats_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // FileServer is the server API for File service.
 // All implementations must embed UnimplementedFileServer
 // for forward compatibility.
@@ -1056,6 +1105,11 @@ type FileServer interface {
 	PurgeFiles(context.Context, *PurgeFilesRequest) (*Response, error)
 	// 分享访问审计查询（需登录，仅限本人分享）
 	GetShareAccessLogs(context.Context, *GetShareAccessLogsRequest) (*Response, error)
+	// ===== 管理后台（需 admin 角色）=====
+	AdminListUsers(context.Context, *AdminListUsersRequest) (*Response, error)
+	AdminSetUserRole(context.Context, *AdminSetUserRoleRequest) (*Response, error)
+	AdminSetUserDisabled(context.Context, *AdminSetUserDisabledRequest) (*Response, error)
+	AdminGetGlobalStats(context.Context, *AdminGlobalStatsRequest) (*Response, error)
 	mustEmbedUnimplementedFileServer()
 }
 
@@ -1143,6 +1197,18 @@ func (UnimplementedFileServer) PurgeFiles(context.Context, *PurgeFilesRequest) (
 }
 func (UnimplementedFileServer) GetShareAccessLogs(context.Context, *GetShareAccessLogsRequest) (*Response, error) {
 	return nil, status.Error(codes.Unimplemented, "method GetShareAccessLogs not implemented")
+}
+func (UnimplementedFileServer) AdminListUsers(context.Context, *AdminListUsersRequest) (*Response, error) {
+	return nil, status.Error(codes.Unimplemented, "method AdminListUsers not implemented")
+}
+func (UnimplementedFileServer) AdminSetUserRole(context.Context, *AdminSetUserRoleRequest) (*Response, error) {
+	return nil, status.Error(codes.Unimplemented, "method AdminSetUserRole not implemented")
+}
+func (UnimplementedFileServer) AdminSetUserDisabled(context.Context, *AdminSetUserDisabledRequest) (*Response, error) {
+	return nil, status.Error(codes.Unimplemented, "method AdminSetUserDisabled not implemented")
+}
+func (UnimplementedFileServer) AdminGetGlobalStats(context.Context, *AdminGlobalStatsRequest) (*Response, error) {
+	return nil, status.Error(codes.Unimplemented, "method AdminGetGlobalStats not implemented")
 }
 func (UnimplementedFileServer) mustEmbedUnimplementedFileServer() {}
 func (UnimplementedFileServer) testEmbeddedByValue()              {}
@@ -1626,6 +1692,78 @@ func _File_GetShareAccessLogs_Handler(srv interface{}, ctx context.Context, dec 
 	return interceptor(ctx, in, info, handler)
 }
 
+func _File_AdminListUsers_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(AdminListUsersRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(FileServer).AdminListUsers(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: File_AdminListUsers_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(FileServer).AdminListUsers(ctx, req.(*AdminListUsersRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _File_AdminSetUserRole_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(AdminSetUserRoleRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(FileServer).AdminSetUserRole(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: File_AdminSetUserRole_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(FileServer).AdminSetUserRole(ctx, req.(*AdminSetUserRoleRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _File_AdminSetUserDisabled_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(AdminSetUserDisabledRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(FileServer).AdminSetUserDisabled(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: File_AdminSetUserDisabled_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(FileServer).AdminSetUserDisabled(ctx, req.(*AdminSetUserDisabledRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _File_AdminGetGlobalStats_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(AdminGlobalStatsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(FileServer).AdminGetGlobalStats(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: File_AdminGetGlobalStats_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(FileServer).AdminGetGlobalStats(ctx, req.(*AdminGlobalStatsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // File_ServiceDesc is the grpc.ServiceDesc for File service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -1732,6 +1870,22 @@ var File_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetShareAccessLogs",
 			Handler:    _File_GetShareAccessLogs_Handler,
+		},
+		{
+			MethodName: "AdminListUsers",
+			Handler:    _File_AdminListUsers_Handler,
+		},
+		{
+			MethodName: "AdminSetUserRole",
+			Handler:    _File_AdminSetUserRole_Handler,
+		},
+		{
+			MethodName: "AdminSetUserDisabled",
+			Handler:    _File_AdminSetUserDisabled_Handler,
+		},
+		{
+			MethodName: "AdminGetGlobalStats",
+			Handler:    _File_AdminGetGlobalStats_Handler,
 		},
 	},
 	Streams: []grpc.StreamDesc{

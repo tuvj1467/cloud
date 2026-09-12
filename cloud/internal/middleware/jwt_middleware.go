@@ -5,6 +5,9 @@ import (
 	"onecloud/internal/pkg/jwt"
 	"strings"
 
+	"sync"
+	"time"
+
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
@@ -51,6 +54,10 @@ func JwtInterceptor() grpc.UnaryServerInterceptor {
 			return nil, status.Error(codes.Unauthenticated, "token 无效或已过期")
 		}
 
+		newCtx, err = injectUserState(newCtx)
+		if err != nil {
+			return nil, status.Error(codes.Unauthenticated, err.Error())
+		}
 		// 使用新的 context（包含 user_id）调用 handler
 		return handler(newCtx, req)
 	}
@@ -80,6 +87,10 @@ func JwtStreamInterceptor() grpc.StreamServerInterceptor {
 		if err != nil {
 			return status.Error(codes.Unauthenticated, "token 无效或已过期")
 		}
+		newCtx, err = injectUserState(newCtx)
+		if err != nil {
+			return status.Error(codes.Unauthenticated, "账号状态异常")
+		}
 		wrapped := &authenticatedStream{ServerStream: ss, ctx: newCtx}
 		return handler(srv, wrapped)
 	}
@@ -92,6 +103,61 @@ type authenticatedStream struct {
 }
 
 func (w *authenticatedStream) Context() context.Context { return w.ctx }
+
+// ===== 用户状态注入（禁用拒绝 + 角色上下文，60s 缓存）=====
+
+type userState struct {
+	role     string
+	disabled bool
+}
+
+var (
+	usMu    sync.Mutex
+	usCache = map[string]struct {
+		state userState
+		exp   time.Time
+	}{}
+)
+
+const userStateTTL = 60 * time.Second
+
+// userStateLookup 由外部注入（避免 middleware → repository 依赖）：userID → role/disabled
+var userStateLookup func(ctx context.Context, userID string) (role string, disabled bool, err error)
+
+// SetUserStateLookup 注册用户状态查询函数（main.go 启动时调用）
+func SetUserStateLookup(fn func(ctx context.Context, userID string) (string, bool, error)) {
+	userStateLookup = fn
+}
+
+// injectUserState 校验禁用状态并将角色注入 context
+func injectUserState(ctx context.Context) (context.Context, error) {
+	userID, err := jwt.GetUserIdFromCtx(ctx)
+	if err != nil || userID == "" || userStateLookup == nil {
+		return ctx, nil // 无状态查询能力时保持原样（如无 token 的公开流）
+	}
+	now := time.Now()
+	usMu.Lock()
+	cached, ok := usCache[userID]
+	valid := ok && now.Before(cached.exp)
+	usMu.Unlock()
+	if !valid {
+		role, disabled, err := userStateLookup(ctx, userID)
+		if err != nil {
+			return nil, status.Error(codes.Unauthenticated, "账号状态查询失败")
+		}
+		cached = struct {
+			state userState
+			exp   time.Time
+		}{userState{role: role, disabled: disabled}, now.Add(userStateTTL)}
+		usMu.Lock()
+		usCache[userID] = cached
+		usMu.Unlock()
+	}
+	if cached.state.disabled {
+		return nil, status.Error(codes.Unauthenticated, "账号已被禁用")
+	}
+	return jwt.NewRoleContext(ctx, cached.state.role), nil
+}
 
 // isPublicMethod 判断是否是公开方法（不需要认证）
 // 注意：方法名必须与 service.proto 中定义的 rpc 方法名完全一致

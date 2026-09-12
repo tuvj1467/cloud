@@ -67,6 +67,7 @@ upstreams:
       - Method: GET
         Path: /file/share/logs
         RpcPath: storage.File/GetShareAccessLogs
+
       - Method: GET
         Path: /file/share/my
         RpcPath: storage.File/GetMyShares

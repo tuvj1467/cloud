@@ -171,6 +171,8 @@ var (
 		{Name: "email", Type: field.TypeString, Unique: true, Nullable: true, Comment: "邮箱地址"},
 		{Name: "password", Type: field.TypeString, Comment: "密码"},
 		{Name: "phone", Type: field.TypeString, Unique: true, Nullable: true, Comment: "电话号码"},
+		{Name: "role", Type: field.TypeEnum, Comment: "角色：user 普通用户 / admin 管理员", Enums: []string{"user", "admin"}, Default: "user"},
+		{Name: "disabled", Type: field.TypeBool, Comment: "是否被禁用（禁用后拒绝登录与既有 token）", Default: false},
 	}
 	// UsersTable holds the schema information for the "users" table.
 	UsersTable = &schema.Table{

@@ -88,10 +88,24 @@ func ParseToken(tokenString string) (*jwt.Token, *Claims, error) {
 type contextKey string
 
 const userIdKey = contextKey("user_id")
+const roleKey = contextKey("role")
 
 // NewContext 将 user_id 注入到 context 中
 func NewContext(ctx context.Context, userId string) context.Context {
 	return context.WithValue(ctx, userIdKey, userId)
+}
+
+// NewRoleContext 将角色注入到 context 中（"user" / "admin"）
+func NewRoleContext(ctx context.Context, role string) context.Context {
+	return context.WithValue(ctx, roleKey, role)
+}
+
+// GetRoleFromCtx 从 context 读取角色（未注入视为 "user"）
+func GetRoleFromCtx(ctx context.Context) string {
+	if v, ok := ctx.Value(roleKey).(string); ok && v != "" {
+		return v
+	}
+	return "user"
 }
 
 // GetUserIdFromCtx 从 context 中获取 user_id

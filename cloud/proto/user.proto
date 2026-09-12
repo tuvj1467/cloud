@@ -144,3 +144,57 @@ message FindAccountRes {
    UserInfo user = 1;  // 找回的用户 一机一号
 }
 
+// ==========================================
+// 6. 管理后台（需 admin 角色）
+// ==========================================
+message AdminListUsersRequest {
+  int32 page = 1 [(validate.rules).int32 = {gte: 1}];
+  int32 page_size = 2 [(validate.rules).int32 = {gte:1, lte:50}];
+  optional string keyword = 3 [(validate.rules).string = {max_len: 50}]; // 搜索 username/nickname/phone
+}
+
+message AdminUserItem {
+  string user_id = 1;
+  string username = 2;
+  string nickname = 3;
+  optional string phone = 4;
+  optional string email = 5;
+  string role = 6;         // user / admin
+  bool disabled = 7;
+  int64 file_count = 8;    // 用户文件总数
+  int64 total_size = 9;    // 用户文件总大小（字节）
+  string created_at = 10;
+}
+
+message AdminListUsersResponse {
+  repeated AdminUserItem users = 1;
+  int32 total = 2;
+}
+
+message AdminSetUserRoleRequest {
+  string user_id = 1 [(validate.rules).string = {min_len: 1}];
+  string role = 2 [(validate.rules).string = {in: ["user", "admin"]}];
+}
+
+message AdminSetUserRoleResponse {
+  bool success = 1;
+}
+
+message AdminSetUserDisabledRequest {
+  string user_id = 1 [(validate.rules).string = {min_len: 1}];
+  bool disabled = 2;
+}
+
+message AdminSetUserDisabledResponse {
+  bool success = 1;
+}
+
+message AdminGlobalStatsRequest {
+  // 空：返回全局计数
+}
+
+message AdminGlobalStatsResponse {
+  int64 user_count = 1;
+  int64 file_count = 2;
+  int64 total_size = 3;
+}

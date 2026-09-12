@@ -48,6 +48,15 @@ func (User) Fields() []ent.Field {
 			Optional().
 			Comment("电话号码").
 			Annotations(entsql.Annotation{WithComments: &withComments}),
+		field.Enum("role").
+			Values("user", "admin").
+			Default("user").
+			Comment("角色：user 普通用户 / admin 管理员").
+			Annotations(entsql.Annotation{WithComments: &withComments}),
+		field.Bool("disabled").
+			Default(false).
+			Comment("是否被禁用（禁用后拒绝登录与既有 token）").
+			Annotations(entsql.Annotation{WithComments: &withComments}),
 	}
 }
 

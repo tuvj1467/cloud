@@ -50,6 +50,9 @@ const (
 	CodeStorageNotImpl     = 40005 // 不支持的操作（如本地驱动预签名）
 	CodeStoragePathInvalid = 40006 // 存储路径非法（防穿越）
 
+	// ====== 管理后台 40300-40399 ======
+	CodeAdminDenied = 40300 // 需要管理员权限
+
 	// ====== 限流 42000-42999 ======
 	CodeTooManyRequests = 42900 // 请求过于频繁（业务层限流；gRPC 层为 HTTP 429）
 

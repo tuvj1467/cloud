@@ -35,7 +35,11 @@ type User struct {
 	// 密码
 	Password string `json:"password,omitempty"`
 	// 电话号码
-	Phone        string `json:"phone,omitempty"`
+	Phone string `json:"phone,omitempty"`
+	// 角色：user 普通用户 / admin 管理员
+	Role user.Role `json:"role,omitempty"`
+	// 是否被禁用（禁用后拒绝登录与既有 token）
+	Disabled     bool `json:"disabled,omitempty"`
 	selectValues sql.SelectValues
 }
 
@@ -44,9 +48,11 @@ func (*User) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
+		case user.FieldDisabled:
+			values[i] = new(sql.NullBool)
 		case user.FieldVersion:
 			values[i] = new(sql.NullInt64)
-		case user.FieldID, user.FieldUsername, user.FieldNickname, user.FieldAvatar, user.FieldEmail, user.FieldPassword, user.FieldPhone:
+		case user.FieldID, user.FieldUsername, user.FieldNickname, user.FieldAvatar, user.FieldEmail, user.FieldPassword, user.FieldPhone, user.FieldRole:
 			values[i] = new(sql.NullString)
 		case user.FieldCreatedAt, user.FieldUpdatedAt:
 			values[i] = new(sql.NullTime)
@@ -125,6 +131,18 @@ func (_m *User) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				_m.Phone = value.String
 			}
+		case user.FieldRole:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field role", values[i])
+			} else if value.Valid {
+				_m.Role = user.Role(value.String)
+			}
+		case user.FieldDisabled:
+			if value, ok := values[i].(*sql.NullBool); !ok {
+				return fmt.Errorf("unexpected type %T for field disabled", values[i])
+			} else if value.Valid {
+				_m.Disabled = value.Bool
+			}
 		default:
 			_m.selectValues.Set(columns[i], values[i])
 		}
@@ -187,6 +205,12 @@ func (_m *User) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("phone=")
 	builder.WriteString(_m.Phone)
+	builder.WriteString(", ")
+	builder.WriteString("role=")
+	builder.WriteString(fmt.Sprintf("%v", _m.Role))
+	builder.WriteString(", ")
+	builder.WriteString("disabled=")
+	builder.WriteString(fmt.Sprintf("%v", _m.Disabled))
 	builder.WriteByte(')')
 	return builder.String()
 }

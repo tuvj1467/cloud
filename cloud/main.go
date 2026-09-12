@@ -4,6 +4,7 @@ import (
 	"context"
 	"flag"
 	"fmt"
+	"onecloud/ent"
 	"onecloud/internal/config"
 	"onecloud/internal/middleware"
 	"onecloud/internal/pkg/cleanup"
@@ -70,6 +71,18 @@ func main() {
 
 	})
 	defer s.Stop()
+
+	// 用户状态查询注入（JWT 拦截器禁用检查与角色注入的数据源）
+	middleware.SetUserStateLookup(func(rctx context.Context, userID string) (string, bool, error) {
+		u, err := ctx.EntClient.User.Get(rctx, userID)
+		if err != nil {
+			if ent.IsNotFound(err) {
+				return "user", false, nil // 用户已删除：按普通用户放行（文件归属校验兜底）
+			}
+			return "", false, err
+		}
+		return string(u.Role), u.Disabled, nil
+	})
 
 	// 用户级限流（须在 JWT 之前：匿名也按 IP 限流）
 	middleware.SetupRateLimit(c.RateLimit.Enabled, c.RateLimit.QPS, c.RateLimit.Burst, c.RateLimit.SendCodeEvery)

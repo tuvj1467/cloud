@@ -62,3 +62,23 @@ func (s *UserServer) FindAccount(ctx context.Context, in *service.FindAccountReq
 	l := userlogic.NewFindAccountLogic(ctx, s.svcCtx)
 	return l.FindAccount(in)
 }
+
+func (s *UserServer) AdminListUsers(ctx context.Context, in *service.AdminListUsersRequest) (*service.Response, error) {
+	l := userlogic.NewAdminListUsersLogic(ctx, s.svcCtx)
+	return l.AdminListUsers(in)
+}
+
+func (s *UserServer) AdminSetUserRole(ctx context.Context, in *service.AdminSetUserRoleRequest) (*service.Response, error) {
+	l := userlogic.NewAdminSetUserRoleLogic(ctx, s.svcCtx)
+	return l.AdminSetUserRole(in)
+}
+
+func (s *UserServer) AdminSetUserDisabled(ctx context.Context, in *service.AdminSetUserDisabledRequest) (*service.Response, error) {
+	l := userlogic.NewAdminSetUserDisabledLogic(ctx, s.svcCtx)
+	return l.AdminSetUserDisabled(in)
+}
+
+func (s *UserServer) AdminGetGlobalStats(ctx context.Context, in *service.AdminGlobalStatsRequest) (*service.Response, error) {
+	l := userlogic.NewAdminGetGlobalStatsLogic(ctx, s.svcCtx)
+	return l.AdminGetGlobalStats(in)
+}

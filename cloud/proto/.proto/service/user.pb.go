@@ -951,6 +951,525 @@ func (x *FindAccountRes) GetUser() *UserInfo {
 	return nil
 }
 
+// ==========================================
+// 6. 管理后台（需 admin 角色）
+// ==========================================
+type AdminListUsersRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Page          int32                  `protobuf:"varint,1,opt,name=page,proto3" json:"page,omitempty"`
+	PageSize      int32                  `protobuf:"varint,2,opt,name=page_size,json=pageSize,proto3" json:"page_size,omitempty"`
+	Keyword       *string                `protobuf:"bytes,3,opt,name=keyword,proto3,oneof" json:"keyword,omitempty"` // 搜索 username/nickname/phone
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *AdminListUsersRequest) Reset() {
+	*x = AdminListUsersRequest{}
+	mi := &file_user_proto_msgTypes[13]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *AdminListUsersRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*AdminListUsersRequest) ProtoMessage() {}
+
+func (x *AdminListUsersRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_user_proto_msgTypes[13]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use AdminListUsersRequest.ProtoReflect.Descriptor instead.
+func (*AdminListUsersRequest) Descriptor() ([]byte, []int) {
+	return file_user_proto_rawDescGZIP(), []int{13}
+}
+
+func (x *AdminListUsersRequest) GetPage() int32 {
+	if x != nil {
+		return x.Page
+	}
+	return 0
+}
+
+func (x *AdminListUsersRequest) GetPageSize() int32 {
+	if x != nil {
+		return x.PageSize
+	}
+	return 0
+}
+
+func (x *AdminListUsersRequest) GetKeyword() string {
+	if x != nil && x.Keyword != nil {
+		return *x.Keyword
+	}
+	return ""
+}
+
+type AdminUserItem struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	UserId        string                 `protobuf:"bytes,1,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
+	Username      string                 `protobuf:"bytes,2,opt,name=username,proto3" json:"username,omitempty"`
+	Nickname      string                 `protobuf:"bytes,3,opt,name=nickname,proto3" json:"nickname,omitempty"`
+	Phone         *string                `protobuf:"bytes,4,opt,name=phone,proto3,oneof" json:"phone,omitempty"`
+	Email         *string                `protobuf:"bytes,5,opt,name=email,proto3,oneof" json:"email,omitempty"`
+	Role          string                 `protobuf:"bytes,6,opt,name=role,proto3" json:"role,omitempty"` // user / admin
+	Disabled      bool                   `protobuf:"varint,7,opt,name=disabled,proto3" json:"disabled,omitempty"`
+	FileCount     int64                  `protobuf:"varint,8,opt,name=file_count,json=fileCount,proto3" json:"file_count,omitempty"` // 用户文件总数
+	TotalSize     int64                  `protobuf:"varint,9,opt,name=total_size,json=totalSize,proto3" json:"total_size,omitempty"` // 用户文件总大小（字节）
+	CreatedAt     string                 `protobuf:"bytes,10,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *AdminUserItem) Reset() {
+	*x = AdminUserItem{}
+	mi := &file_user_proto_msgTypes[14]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *AdminUserItem) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*AdminUserItem) ProtoMessage() {}
+
+func (x *AdminUserItem) ProtoReflect() protoreflect.Message {
+	mi := &file_user_proto_msgTypes[14]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use AdminUserItem.ProtoReflect.Descriptor instead.
+func (*AdminUserItem) Descriptor() ([]byte, []int) {
+	return file_user_proto_rawDescGZIP(), []int{14}
+}
+
+func (x *AdminUserItem) GetUserId() string {
+	if x != nil {
+		return x.UserId
+	}
+	return ""
+}
+
+func (x *AdminUserItem) GetUsername() string {
+	if x != nil {
+		return x.Username
+	}
+	return ""
+}
+
+func (x *AdminUserItem) GetNickname() string {
+	if x != nil {
+		return x.Nickname
+	}
+	return ""
+}
+
+func (x *AdminUserItem) GetPhone() string {
+	if x != nil && x.Phone != nil {
+		return *x.Phone
+	}
+	return ""
+}
+
+func (x *AdminUserItem) GetEmail() string {
+	if x != nil && x.Email != nil {
+		return *x.Email
+	}
+	return ""
+}
+
+func (x *AdminUserItem) GetRole() string {
+	if x != nil {
+		return x.Role
+	}
+	return ""
+}
+
+func (x *AdminUserItem) GetDisabled() bool {
+	if x != nil {
+		return x.Disabled
+	}
+	return false
+}
+
+func (x *AdminUserItem) GetFileCount() int64 {
+	if x != nil {
+		return x.FileCount
+	}
+	return 0
+}
+
+func (x *AdminUserItem) GetTotalSize() int64 {
+	if x != nil {
+		return x.TotalSize
+	}
+	return 0
+}
+
+func (x *AdminUserItem) GetCreatedAt() string {
+	if x != nil {
+		return x.CreatedAt
+	}
+	return ""
+}
+
+type AdminListUsersResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Users         []*AdminUserItem       `protobuf:"bytes,1,rep,name=users,proto3" json:"users,omitempty"`
+	Total         int32                  `protobuf:"varint,2,opt,name=total,proto3" json:"total,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *AdminListUsersResponse) Reset() {
+	*x = AdminListUsersResponse{}
+	mi := &file_user_proto_msgTypes[15]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *AdminListUsersResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*AdminListUsersResponse) ProtoMessage() {}
+
+func (x *AdminListUsersResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_user_proto_msgTypes[15]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use AdminListUsersResponse.ProtoReflect.Descriptor instead.
+func (*AdminListUsersResponse) Descriptor() ([]byte, []int) {
+	return file_user_proto_rawDescGZIP(), []int{15}
+}
+
+func (x *AdminListUsersResponse) GetUsers() []*AdminUserItem {
+	if x != nil {
+		return x.Users
+	}
+	return nil
+}
+
+func (x *AdminListUsersResponse) GetTotal() int32 {
+	if x != nil {
+		return x.Total
+	}
+	return 0
+}
+
+type AdminSetUserRoleRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	UserId        string                 `protobuf:"bytes,1,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
+	Role          string                 `protobuf:"bytes,2,opt,name=role,proto3" json:"role,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *AdminSetUserRoleRequest) Reset() {
+	*x = AdminSetUserRoleRequest{}
+	mi := &file_user_proto_msgTypes[16]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *AdminSetUserRoleRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*AdminSetUserRoleRequest) ProtoMessage() {}
+
+func (x *AdminSetUserRoleRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_user_proto_msgTypes[16]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use AdminSetUserRoleRequest.ProtoReflect.Descriptor instead.
+func (*AdminSetUserRoleRequest) Descriptor() ([]byte, []int) {
+	return file_user_proto_rawDescGZIP(), []int{16}
+}
+
+func (x *AdminSetUserRoleRequest) GetUserId() string {
+	if x != nil {
+		return x.UserId
+	}
+	return ""
+}
+
+func (x *AdminSetUserRoleRequest) GetRole() string {
+	if x != nil {
+		return x.Role
+	}
+	return ""
+}
+
+type AdminSetUserRoleResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Success       bool                   `protobuf:"varint,1,opt,name=success,proto3" json:"success,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *AdminSetUserRoleResponse) Reset() {
+	*x = AdminSetUserRoleResponse{}
+	mi := &file_user_proto_msgTypes[17]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *AdminSetUserRoleResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*AdminSetUserRoleResponse) ProtoMessage() {}
+
+func (x *AdminSetUserRoleResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_user_proto_msgTypes[17]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use AdminSetUserRoleResponse.ProtoReflect.Descriptor instead.
+func (*AdminSetUserRoleResponse) Descriptor() ([]byte, []int) {
+	return file_user_proto_rawDescGZIP(), []int{17}
+}
+
+func (x *AdminSetUserRoleResponse) GetSuccess() bool {
+	if x != nil {
+		return x.Success
+	}
+	return false
+}
+
+type AdminSetUserDisabledRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	UserId        string                 `protobuf:"bytes,1,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
+	Disabled      bool                   `protobuf:"varint,2,opt,name=disabled,proto3" json:"disabled,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *AdminSetUserDisabledRequest) Reset() {
+	*x = AdminSetUserDisabledRequest{}
+	mi := &file_user_proto_msgTypes[18]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *AdminSetUserDisabledRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*AdminSetUserDisabledRequest) ProtoMessage() {}
+
+func (x *AdminSetUserDisabledRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_user_proto_msgTypes[18]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use AdminSetUserDisabledRequest.ProtoReflect.Descriptor instead.
+func (*AdminSetUserDisabledRequest) Descriptor() ([]byte, []int) {
+	return file_user_proto_rawDescGZIP(), []int{18}
+}
+
+func (x *AdminSetUserDisabledRequest) GetUserId() string {
+	if x != nil {
+		return x.UserId
+	}
+	return ""
+}
+
+func (x *AdminSetUserDisabledRequest) GetDisabled() bool {
+	if x != nil {
+		return x.Disabled
+	}
+	return false
+}
+
+type AdminSetUserDisabledResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Success       bool                   `protobuf:"varint,1,opt,name=success,proto3" json:"success,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *AdminSetUserDisabledResponse) Reset() {
+	*x = AdminSetUserDisabledResponse{}
+	mi := &file_user_proto_msgTypes[19]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *AdminSetUserDisabledResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*AdminSetUserDisabledResponse) ProtoMessage() {}
+
+func (x *AdminSetUserDisabledResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_user_proto_msgTypes[19]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use AdminSetUserDisabledResponse.ProtoReflect.Descriptor instead.
+func (*AdminSetUserDisabledResponse) Descriptor() ([]byte, []int) {
+	return file_user_proto_rawDescGZIP(), []int{19}
+}
+
+func (x *AdminSetUserDisabledResponse) GetSuccess() bool {
+	if x != nil {
+		return x.Success
+	}
+	return false
+}
+
+type AdminGlobalStatsRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *AdminGlobalStatsRequest) Reset() {
+	*x = AdminGlobalStatsRequest{}
+	mi := &file_user_proto_msgTypes[20]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *AdminGlobalStatsRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*AdminGlobalStatsRequest) ProtoMessage() {}
+
+func (x *AdminGlobalStatsRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_user_proto_msgTypes[20]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use AdminGlobalStatsRequest.ProtoReflect.Descriptor instead.
+func (*AdminGlobalStatsRequest) Descriptor() ([]byte, []int) {
+	return file_user_proto_rawDescGZIP(), []int{20}
+}
+
+type AdminGlobalStatsResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	UserCount     int64                  `protobuf:"varint,1,opt,name=user_count,json=userCount,proto3" json:"user_count,omitempty"`
+	FileCount     int64                  `protobuf:"varint,2,opt,name=file_count,json=fileCount,proto3" json:"file_count,omitempty"`
+	TotalSize     int64                  `protobuf:"varint,3,opt,name=total_size,json=totalSize,proto3" json:"total_size,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *AdminGlobalStatsResponse) Reset() {
+	*x = AdminGlobalStatsResponse{}
+	mi := &file_user_proto_msgTypes[21]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *AdminGlobalStatsResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*AdminGlobalStatsResponse) ProtoMessage() {}
+
+func (x *AdminGlobalStatsResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_user_proto_msgTypes[21]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use AdminGlobalStatsResponse.ProtoReflect.Descriptor instead.
+func (*AdminGlobalStatsResponse) Descriptor() ([]byte, []int) {
+	return file_user_proto_rawDescGZIP(), []int{21}
+}
+
+func (x *AdminGlobalStatsResponse) GetUserCount() int64 {
+	if x != nil {
+		return x.UserCount
+	}
+	return 0
+}
+
+func (x *AdminGlobalStatsResponse) GetFileCount() int64 {
+	if x != nil {
+		return x.FileCount
+	}
+	return 0
+}
+
+func (x *AdminGlobalStatsResponse) GetTotalSize() int64 {
+	if x != nil {
+		return x.TotalSize
+	}
+	return 0
+}
+
 var File_user_proto protoreflect.FileDescriptor
 
 const file_user_proto_rawDesc = "" +
@@ -1011,7 +1530,51 @@ const file_user_proto_rawDesc = "" +
 	"\x11verification_code\x18\x03 \x01(\tB\b\xfaB\x05r\x03\x98\x01\x06R\x10verificationCodeB\t\n" +
 	"\acontact\"7\n" +
 	"\x0eFindAccountRes\x12%\n" +
-	"\x04user\x18\x01 \x01(\v2\x11.storage.UserInfoR\x04user*g\n" +
+	"\x04user\x18\x01 \x01(\v2\x11.storage.UserInfoR\x04user\"\x90\x01\n" +
+	"\x15AdminListUsersRequest\x12\x1b\n" +
+	"\x04page\x18\x01 \x01(\x05B\a\xfaB\x04\x1a\x02(\x01R\x04page\x12&\n" +
+	"\tpage_size\x18\x02 \x01(\x05B\t\xfaB\x06\x1a\x04\x182(\x01R\bpageSize\x12&\n" +
+	"\akeyword\x18\x03 \x01(\tB\a\xfaB\x04r\x02\x182H\x00R\akeyword\x88\x01\x01B\n" +
+	"\n" +
+	"\b_keyword\"\xb7\x02\n" +
+	"\rAdminUserItem\x12\x17\n" +
+	"\auser_id\x18\x01 \x01(\tR\x06userId\x12\x1a\n" +
+	"\busername\x18\x02 \x01(\tR\busername\x12\x1a\n" +
+	"\bnickname\x18\x03 \x01(\tR\bnickname\x12\x19\n" +
+	"\x05phone\x18\x04 \x01(\tH\x00R\x05phone\x88\x01\x01\x12\x19\n" +
+	"\x05email\x18\x05 \x01(\tH\x01R\x05email\x88\x01\x01\x12\x12\n" +
+	"\x04role\x18\x06 \x01(\tR\x04role\x12\x1a\n" +
+	"\bdisabled\x18\a \x01(\bR\bdisabled\x12\x1d\n" +
+	"\n" +
+	"file_count\x18\b \x01(\x03R\tfileCount\x12\x1d\n" +
+	"\n" +
+	"total_size\x18\t \x01(\x03R\ttotalSize\x12\x1d\n" +
+	"\n" +
+	"created_at\x18\n" +
+	" \x01(\tR\tcreatedAtB\b\n" +
+	"\x06_phoneB\b\n" +
+	"\x06_email\"\\\n" +
+	"\x16AdminListUsersResponse\x12,\n" +
+	"\x05users\x18\x01 \x03(\v2\x16.storage.AdminUserItemR\x05users\x12\x14\n" +
+	"\x05total\x18\x02 \x01(\x05R\x05total\"c\n" +
+	"\x17AdminSetUserRoleRequest\x12 \n" +
+	"\auser_id\x18\x01 \x01(\tB\a\xfaB\x04r\x02\x10\x01R\x06userId\x12&\n" +
+	"\x04role\x18\x02 \x01(\tB\x12\xfaB\x0fr\rR\x04userR\x05adminR\x04role\"4\n" +
+	"\x18AdminSetUserRoleResponse\x12\x18\n" +
+	"\asuccess\x18\x01 \x01(\bR\asuccess\"[\n" +
+	"\x1bAdminSetUserDisabledRequest\x12 \n" +
+	"\auser_id\x18\x01 \x01(\tB\a\xfaB\x04r\x02\x10\x01R\x06userId\x12\x1a\n" +
+	"\bdisabled\x18\x02 \x01(\bR\bdisabled\"8\n" +
+	"\x1cAdminSetUserDisabledResponse\x12\x18\n" +
+	"\asuccess\x18\x01 \x01(\bR\asuccess\"\x19\n" +
+	"\x17AdminGlobalStatsRequest\"w\n" +
+	"\x18AdminGlobalStatsResponse\x12\x1d\n" +
+	"\n" +
+	"user_count\x18\x01 \x01(\x03R\tuserCount\x12\x1d\n" +
+	"\n" +
+	"file_count\x18\x02 \x01(\x03R\tfileCount\x12\x1d\n" +
+	"\n" +
+	"total_size\x18\x03 \x01(\x03R\ttotalSize*g\n" +
 	"\aSmsType\x12\x14\n" +
 	"\x10SMS_TYPE_UNKNOWN\x10\x00\x12\x12\n" +
 	"\x0eSMS_TYPE_LOGIN\x10\x01\x12\x15\n" +
@@ -1031,33 +1594,43 @@ func file_user_proto_rawDescGZIP() []byte {
 }
 
 var file_user_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
-var file_user_proto_msgTypes = make([]protoimpl.MessageInfo, 13)
+var file_user_proto_msgTypes = make([]protoimpl.MessageInfo, 22)
 var file_user_proto_goTypes = []any{
-	(SmsType)(0),                    // 0: storage.SmsType
-	(*UserInfo)(nil),                // 1: storage.UserInfo
-	(*RegisterReq)(nil),             // 2: storage.RegisterReq
-	(*RegisterRes)(nil),             // 3: storage.RegisterRes
-	(*LoginRes)(nil),                // 4: storage.LoginRes
-	(*LoginByAccountReq)(nil),       // 5: storage.LoginByAccountReq
-	(*LoginByPhoneSmsReq)(nil),      // 6: storage.LoginByPhoneSmsReq
-	(*LoginByEmailSmsReq)(nil),      // 7: storage.LoginByEmailSmsReq
-	(*SendVerificationCodeReq)(nil), // 8: storage.SendVerificationCodeReq
-	(*SendVerificationCodeRes)(nil), // 9: storage.SendVerificationCodeRes
-	(*ResetPasswordReq)(nil),        // 10: storage.ResetPasswordReq
-	(*ResetPasswordRes)(nil),        // 11: storage.ResetPasswordRes
-	(*FindAccountReq)(nil),          // 12: storage.FindAccountReq
-	(*FindAccountRes)(nil),          // 13: storage.FindAccountRes
+	(SmsType)(0),                         // 0: storage.SmsType
+	(*UserInfo)(nil),                     // 1: storage.UserInfo
+	(*RegisterReq)(nil),                  // 2: storage.RegisterReq
+	(*RegisterRes)(nil),                  // 3: storage.RegisterRes
+	(*LoginRes)(nil),                     // 4: storage.LoginRes
+	(*LoginByAccountReq)(nil),            // 5: storage.LoginByAccountReq
+	(*LoginByPhoneSmsReq)(nil),           // 6: storage.LoginByPhoneSmsReq
+	(*LoginByEmailSmsReq)(nil),           // 7: storage.LoginByEmailSmsReq
+	(*SendVerificationCodeReq)(nil),      // 8: storage.SendVerificationCodeReq
+	(*SendVerificationCodeRes)(nil),      // 9: storage.SendVerificationCodeRes
+	(*ResetPasswordReq)(nil),             // 10: storage.ResetPasswordReq
+	(*ResetPasswordRes)(nil),             // 11: storage.ResetPasswordRes
+	(*FindAccountReq)(nil),               // 12: storage.FindAccountReq
+	(*FindAccountRes)(nil),               // 13: storage.FindAccountRes
+	(*AdminListUsersRequest)(nil),        // 14: storage.AdminListUsersRequest
+	(*AdminUserItem)(nil),                // 15: storage.AdminUserItem
+	(*AdminListUsersResponse)(nil),       // 16: storage.AdminListUsersResponse
+	(*AdminSetUserRoleRequest)(nil),      // 17: storage.AdminSetUserRoleRequest
+	(*AdminSetUserRoleResponse)(nil),     // 18: storage.AdminSetUserRoleResponse
+	(*AdminSetUserDisabledRequest)(nil),  // 19: storage.AdminSetUserDisabledRequest
+	(*AdminSetUserDisabledResponse)(nil), // 20: storage.AdminSetUserDisabledResponse
+	(*AdminGlobalStatsRequest)(nil),      // 21: storage.AdminGlobalStatsRequest
+	(*AdminGlobalStatsResponse)(nil),     // 22: storage.AdminGlobalStatsResponse
 }
 var file_user_proto_depIdxs = []int32{
-	1, // 0: storage.RegisterRes.user:type_name -> storage.UserInfo
-	1, // 1: storage.LoginRes.user:type_name -> storage.UserInfo
-	0, // 2: storage.SendVerificationCodeReq.type:type_name -> storage.SmsType
-	1, // 3: storage.FindAccountRes.user:type_name -> storage.UserInfo
-	4, // [4:4] is the sub-list for method output_type
-	4, // [4:4] is the sub-list for method input_type
-	4, // [4:4] is the sub-list for extension type_name
-	4, // [4:4] is the sub-list for extension extendee
-	0, // [0:4] is the sub-list for field type_name
+	1,  // 0: storage.RegisterRes.user:type_name -> storage.UserInfo
+	1,  // 1: storage.LoginRes.user:type_name -> storage.UserInfo
+	0,  // 2: storage.SendVerificationCodeReq.type:type_name -> storage.SmsType
+	1,  // 3: storage.FindAccountRes.user:type_name -> storage.UserInfo
+	15, // 4: storage.AdminListUsersResponse.users:type_name -> storage.AdminUserItem
+	5,  // [5:5] is the sub-list for method output_type
+	5,  // [5:5] is the sub-list for method input_type
+	5,  // [5:5] is the sub-list for extension type_name
+	5,  // [5:5] is the sub-list for extension extendee
+	0,  // [0:5] is the sub-list for field type_name
 }
 
 func init() { file_user_proto_init() }
@@ -1083,13 +1656,15 @@ func file_user_proto_init() {
 		(*FindAccountReq_Phone)(nil),
 		(*FindAccountReq_Email)(nil),
 	}
+	file_user_proto_msgTypes[13].OneofWrappers = []any{}
+	file_user_proto_msgTypes[14].OneofWrappers = []any{}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_user_proto_rawDesc), len(file_user_proto_rawDesc)),
 			NumEnums:      1,
-			NumMessages:   13,
+			NumMessages:   22,
 			NumExtensions: 0,
 			NumServices:   0,
 		},
