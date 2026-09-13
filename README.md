@@ -59,6 +59,7 @@ ONE CLOUD 是一个生产级的对象存储服务，采用 **gRPC 微服务 + HT
   - 分片上传 GC：启动 30s 后首扫 + 每 12h 周期清理孤儿 .tmp 目录与过期 pending 分片记录
   - 生产面收敛：gRPC reflection 仅 dev 模式开启
 - **用量统计与趋势**：文件数/总容量/分桶用量（/file/stats）+ 30 天趋势（/file/stats/trend，每日快照）+ 前端统计卡与趋势图
+- **管理后台**（[doc/14](doc/14_管理后台设计.md)）：角色模型（admin）+ 用户管理（搜索/改角色/禁用）+ 全局统计 + 管理操作审计 + 强制删除；前端管理面板按角色显隐
 - **MinIO/S3 驱动**（[doc/04](doc/04_存储引擎设计.md)）：S3 兼容端点读写、原生分片（ETag 校验/服务端拷贝就位）、预签名 URL——**已通过真实 MinIO 服务运行验证**（冒烟 + 端到端）
 - **预签名下载**：`GET /file/presign`（需登录）生成直连下载 URL——绕过网关体积限制；本地驱动自动回落普通下载（前端无感）
 - **P8 Web 前端完善**（[设计文档](doc/12_P8_前端完善设计.md)）：
@@ -339,6 +340,18 @@ curl -X POST http://127.0.0.1:8888/bucket/create \
 |------|------|------|------|
 | GetStorageStats | GET | ✅ | 用量统计（文件数/总容量/分桶明细） |
 | GetPresignedURL | GET | ✅ | 预签名下载 URL（本地驱动返回 40005，前端自动回落） |
+
+### 管理后台（`/storage.User`，需 admin 角色）
+
+| 接口 | 方法 | 说明 |
+|------|------|------|
+| AdminListUsers | GET | 用户列表（关键词搜索 + 文件用量聚合） |
+| AdminSetUserRole | POST | 设置角色（user/admin，禁改自己） |
+| AdminSetUserDisabled | POST | 禁用/启用（禁用后登录与既有 token 均被拒） |
+| AdminGetGlobalStats | GET | 全局统计（用户数/文件数/总容量） |
+| AdminRecentAccessLogs | GET | 全局分享访问/下载审计（倒序） |
+| AdminRecentOpLogs | GET | 管理操作审计（改角色/禁用/强制删除） |
+| AdminPurgeFile | POST | 强制彻底删除任意文件（写审计） |
 
 ## 数据库设计
 
