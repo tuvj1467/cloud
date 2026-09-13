@@ -90,6 +90,10 @@ export const listDeletedFiles = (params) => request('/file/recycle/list', { meth
 export const restoreFiles = (body) => request('/file/recycle/restore', { body });
 export const purgeFiles = (body) => request('/file/recycle/purge', { body });
 export const getShareAccessLogs = (params) => request('/file/share/logs', { method: 'GET', params });
+export const adminListUsers = (params) => request('/admin/users', { method: 'GET', params });
+export const adminSetUserRole = (body) => request('/admin/users/role', { body });
+export const adminSetUserDisabled = (body) => request('/admin/users/disabled', { body });
+export const adminGetGlobalStats = () => request('/admin/stats', { method: 'GET' });
 
 // 流式下载：POST /file/download_stream（server-streaming）。
 // 线格式为串联 JSON（每个 64KB 块一个 DownloadChunk 对象），

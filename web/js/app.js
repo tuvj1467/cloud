@@ -1,5 +1,5 @@
 // P8 渐进迁移：根组件 —— Task 7 已接入 BucketPanel / ShareDialog / SharePage，P8 前端闭环
-const { createApp } = Vue;
+const { createApp, computed, watch } = Vue;
 import { store } from './store.js';
 import { AuthPanel } from './components/AuthPanel.js';
 import { FileList } from './components/FileList.js';
@@ -7,22 +7,39 @@ import { UploadPanel } from './components/UploadPanel.js';
 import { BucketPanel } from './components/BucketPanel.js';
 import { ShareDialog } from './components/ShareDialog.js';
 import { SharePage } from './components/SharePage.js';
+import { AdminPanel } from './components/AdminPanel.js';
+import { adminGetGlobalStats } from './api.js';
 
-const NAVS = [
+const BASE_NAVS = [
   { key: 'files', label: '我的文件' },
   { key: 'upload', label: '上传' },
   { key: 'bucket', label: '桶管理' },
 ];
 
 const app = createApp({
-  components: { AuthPanel, FileList, UploadPanel, BucketPanel, ShareDialog, SharePage },
+  components: { AuthPanel, FileList, UploadPanel, BucketPanel, ShareDialog, SharePage, AdminPanel },
   setup() {
     window.addEventListener('hashchange', () => store.navigate(location.hash));
     store.navigate(location.hash || '#/login');
+    // 初始路由已是 app（如刷新）时立即探测管理角色
+    if (store.route === 'app' && store.token) probeAdmin();
     const userName = () => (store.user ? (store.user.name || store.user.username || store.user.nickname || '用户') : '未登录');
     // 分享创建成功后刷新文件列表（FileList 的「分享次数」无展示列，刷新仅保序列/状态一致，可选通知点）
     const onShareCreated = () => { if (store.refreshFiles) store.refreshFiles(); };
-    return { store, NAVS, userName, onShareCreated };
+
+    // 管理入口：登录后探测 /admin/stats（40300 = 普通用户，静默）
+    const adminNavs = computed(() =>
+      store.isAdmin ? [...BASE_NAVS, { key: 'admin', label: '管理后台' }] : BASE_NAVS
+    );
+    function probeAdmin() {
+      if (store.route === 'app' && !store.isAdmin) {
+        adminGetGlobalStats().then(() => { store.isAdmin = true; }).catch(() => {});
+      }
+    }
+    watch(() => store.route, (r) => { if (r === 'app') probeAdmin(); });
+    probeAdmin(); // 初始路由已是 app 时（如刷新）也要探测
+
+    return { store, NAVS: adminNavs, userName, onShareCreated };
   },
   template: `
     <auth-panel v-if="store.route==='login'"></auth-panel>
@@ -55,6 +72,9 @@ const app = createApp({
 
           <!-- 桶面板：Task 7 真组件 -->
           <bucket-panel v-show="store.activeNav==='bucket'"></bucket-panel>
+
+          <!-- 管理后台：仅 admin 角色可见入口 -->
+          <admin-panel v-show="store.activeNav==='admin'"></admin-panel>
         </div>
       </div>
     </div>

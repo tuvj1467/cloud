@@ -20,7 +20,8 @@ export const store = reactive({
       return null;
     }
   })(),
-  activeNav: 'files',       // files | upload | bucket
+  activeNav: 'files',       // files | upload | bucket | admin
+  isAdmin: false,           // 登录后经 /admin/stats 探测置位（40300 = 普通用户）
   buckets: [],
   // 统一拉桶列表：写回 store.buckets 并返回；失败非 silent 时 toast（silent 供轮询/后台刷新场景）
   loadBuckets(opts = {}) {
