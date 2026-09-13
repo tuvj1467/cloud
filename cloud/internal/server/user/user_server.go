@@ -78,6 +78,16 @@ func (s *UserServer) AdminSetUserDisabled(ctx context.Context, in *service.Admin
 	return l.AdminSetUserDisabled(in)
 }
 
+func (s *UserServer) AdminPurgeFile(ctx context.Context, in *service.AdminPurgeFileRequest) (*service.Response, error) {
+	l := userlogic.NewAdminPurgeFileLogic(ctx, s.svcCtx)
+	return l.AdminPurgeFile(in)
+}
+
+func (s *UserServer) AdminRecentOpLogs(ctx context.Context, in *service.AdminRecentOpLogsRequest) (*service.Response, error) {
+	l := userlogic.NewAdminRecentOpLogsLogic(ctx, s.svcCtx)
+	return l.AdminRecentOpLogs(in)
+}
+
 func (s *UserServer) AdminRecentAccessLogs(ctx context.Context, in *service.AdminRecentAccessLogsRequest) (*service.Response, error) {
 	l := userlogic.NewAdminRecentAccessLogsLogic(ctx, s.svcCtx)
 	return l.AdminRecentAccessLogs(in)

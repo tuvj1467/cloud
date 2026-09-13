@@ -121,6 +121,10 @@ func (l *AdminSetUserRoleLogic) AdminSetUserRole(in *service.AdminSetUserRoleReq
 		}
 		return response.Err(errors.New("设置角色失败: " + err.Error()))
 	}
+	if err := repository.NewAdminAuditLogRepository(l.svcCtx.EntClient).
+		Create(l.ctx, operatorID, "set_role", in.GetUserId(), in.GetRole()); err != nil {
+		l.Errorf("写管理审计失败: %v", err)
+	}
 	l.Infof("admin set role operator=%s target=%s role=%s", operatorID, in.GetUserId(), in.GetRole())
 	return response.Success(&service.AdminSetUserRoleResponse{Success: true})
 }
@@ -155,6 +159,10 @@ func (l *AdminSetUserDisabledLogic) AdminSetUserDisabled(in *service.AdminSetUse
 			return response.ErrWithCode(response.CodeUserNotFound, "用户不存在")
 		}
 		return response.Err(errors.New("设置禁用状态失败: " + err.Error()))
+	}
+	if err := repository.NewAdminAuditLogRepository(l.svcCtx.EntClient).
+		Create(l.ctx, operatorID, "set_disabled", in.GetUserId(), map[bool]string{true: "disable", false: "enable"}[in.GetDisabled()]); err != nil {
+		l.Errorf("写管理审计失败: %v", err)
 	}
 	l.Infof("admin set disabled operator=%s target=%s disabled=%v", operatorID, in.GetUserId(), in.GetDisabled())
 	return response.Success(&service.AdminSetUserDisabledResponse{Success: true})

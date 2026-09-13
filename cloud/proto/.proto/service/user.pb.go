@@ -1558,6 +1558,258 @@ func (x *AdminRecentAccessLogsResponse) GetLogs() []*ShareAccessLogItem {
 	return nil
 }
 
+type AdminPurgeFileRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	FileId        string                 `protobuf:"bytes,1,opt,name=file_id,json=fileId,proto3" json:"file_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *AdminPurgeFileRequest) Reset() {
+	*x = AdminPurgeFileRequest{}
+	mi := &file_user_proto_msgTypes[24]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *AdminPurgeFileRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*AdminPurgeFileRequest) ProtoMessage() {}
+
+func (x *AdminPurgeFileRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_user_proto_msgTypes[24]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use AdminPurgeFileRequest.ProtoReflect.Descriptor instead.
+func (*AdminPurgeFileRequest) Descriptor() ([]byte, []int) {
+	return file_user_proto_rawDescGZIP(), []int{24}
+}
+
+func (x *AdminPurgeFileRequest) GetFileId() string {
+	if x != nil {
+		return x.FileId
+	}
+	return ""
+}
+
+type AdminPurgeFileResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Success       bool                   `protobuf:"varint,1,opt,name=success,proto3" json:"success,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *AdminPurgeFileResponse) Reset() {
+	*x = AdminPurgeFileResponse{}
+	mi := &file_user_proto_msgTypes[25]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *AdminPurgeFileResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*AdminPurgeFileResponse) ProtoMessage() {}
+
+func (x *AdminPurgeFileResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_user_proto_msgTypes[25]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use AdminPurgeFileResponse.ProtoReflect.Descriptor instead.
+func (*AdminPurgeFileResponse) Descriptor() ([]byte, []int) {
+	return file_user_proto_rawDescGZIP(), []int{25}
+}
+
+func (x *AdminPurgeFileResponse) GetSuccess() bool {
+	if x != nil {
+		return x.Success
+	}
+	return false
+}
+
+type AdminRecentOpLogsRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Limit         int32                  `protobuf:"varint,1,opt,name=limit,proto3" json:"limit,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *AdminRecentOpLogsRequest) Reset() {
+	*x = AdminRecentOpLogsRequest{}
+	mi := &file_user_proto_msgTypes[26]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *AdminRecentOpLogsRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*AdminRecentOpLogsRequest) ProtoMessage() {}
+
+func (x *AdminRecentOpLogsRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_user_proto_msgTypes[26]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use AdminRecentOpLogsRequest.ProtoReflect.Descriptor instead.
+func (*AdminRecentOpLogsRequest) Descriptor() ([]byte, []int) {
+	return file_user_proto_rawDescGZIP(), []int{26}
+}
+
+func (x *AdminRecentOpLogsRequest) GetLimit() int32 {
+	if x != nil {
+		return x.Limit
+	}
+	return 0
+}
+
+type AdminOpLogItem struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	AdminId       string                 `protobuf:"bytes,1,opt,name=admin_id,json=adminId,proto3" json:"admin_id,omitempty"`       // 操作管理员
+	Action        string                 `protobuf:"bytes,2,opt,name=action,proto3" json:"action,omitempty"`                        // set_role / set_disabled / purge_file
+	TargetId      string                 `protobuf:"bytes,3,opt,name=target_id,json=targetId,proto3" json:"target_id,omitempty"`    // 目标对象 ID
+	Detail        string                 `protobuf:"bytes,4,opt,name=detail,proto3" json:"detail,omitempty"`                        // 详情
+	CreatedAt     string                 `protobuf:"bytes,5,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"` // 时间
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *AdminOpLogItem) Reset() {
+	*x = AdminOpLogItem{}
+	mi := &file_user_proto_msgTypes[27]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *AdminOpLogItem) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*AdminOpLogItem) ProtoMessage() {}
+
+func (x *AdminOpLogItem) ProtoReflect() protoreflect.Message {
+	mi := &file_user_proto_msgTypes[27]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use AdminOpLogItem.ProtoReflect.Descriptor instead.
+func (*AdminOpLogItem) Descriptor() ([]byte, []int) {
+	return file_user_proto_rawDescGZIP(), []int{27}
+}
+
+func (x *AdminOpLogItem) GetAdminId() string {
+	if x != nil {
+		return x.AdminId
+	}
+	return ""
+}
+
+func (x *AdminOpLogItem) GetAction() string {
+	if x != nil {
+		return x.Action
+	}
+	return ""
+}
+
+func (x *AdminOpLogItem) GetTargetId() string {
+	if x != nil {
+		return x.TargetId
+	}
+	return ""
+}
+
+func (x *AdminOpLogItem) GetDetail() string {
+	if x != nil {
+		return x.Detail
+	}
+	return ""
+}
+
+func (x *AdminOpLogItem) GetCreatedAt() string {
+	if x != nil {
+		return x.CreatedAt
+	}
+	return ""
+}
+
+type AdminRecentOpLogsResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Logs          []*AdminOpLogItem      `protobuf:"bytes,1,rep,name=logs,proto3" json:"logs,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *AdminRecentOpLogsResponse) Reset() {
+	*x = AdminRecentOpLogsResponse{}
+	mi := &file_user_proto_msgTypes[28]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *AdminRecentOpLogsResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*AdminRecentOpLogsResponse) ProtoMessage() {}
+
+func (x *AdminRecentOpLogsResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_user_proto_msgTypes[28]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use AdminRecentOpLogsResponse.ProtoReflect.Descriptor instead.
+func (*AdminRecentOpLogsResponse) Descriptor() ([]byte, []int) {
+	return file_user_proto_rawDescGZIP(), []int{28}
+}
+
+func (x *AdminRecentOpLogsResponse) GetLogs() []*AdminOpLogItem {
+	if x != nil {
+		return x.Logs
+	}
+	return nil
+}
+
 var File_user_proto protoreflect.FileDescriptor
 
 const file_user_proto_rawDesc = "" +
@@ -1668,7 +1920,23 @@ const file_user_proto_rawDesc = "" +
 	"\x05limit\x18\x01 \x01(\x05B\n" +
 	"\xfaB\a\x1a\x05\x18\xc8\x01(\x01R\x05limit\"P\n" +
 	"\x1dAdminRecentAccessLogsResponse\x12/\n" +
-	"\x04logs\x18\x01 \x03(\v2\x1b.storage.ShareAccessLogItemR\x04logs*g\n" +
+	"\x04logs\x18\x01 \x03(\v2\x1b.storage.ShareAccessLogItemR\x04logs\"9\n" +
+	"\x15AdminPurgeFileRequest\x12 \n" +
+	"\afile_id\x18\x01 \x01(\tB\a\xfaB\x04r\x02\x10\x01R\x06fileId\"2\n" +
+	"\x16AdminPurgeFileResponse\x12\x18\n" +
+	"\asuccess\x18\x01 \x01(\bR\asuccess\"<\n" +
+	"\x18AdminRecentOpLogsRequest\x12 \n" +
+	"\x05limit\x18\x01 \x01(\x05B\n" +
+	"\xfaB\a\x1a\x05\x18\xc8\x01(\x01R\x05limit\"\x97\x01\n" +
+	"\x0eAdminOpLogItem\x12\x19\n" +
+	"\badmin_id\x18\x01 \x01(\tR\aadminId\x12\x16\n" +
+	"\x06action\x18\x02 \x01(\tR\x06action\x12\x1b\n" +
+	"\ttarget_id\x18\x03 \x01(\tR\btargetId\x12\x16\n" +
+	"\x06detail\x18\x04 \x01(\tR\x06detail\x12\x1d\n" +
+	"\n" +
+	"created_at\x18\x05 \x01(\tR\tcreatedAt\"H\n" +
+	"\x19AdminRecentOpLogsResponse\x12+\n" +
+	"\x04logs\x18\x01 \x03(\v2\x17.storage.AdminOpLogItemR\x04logs*g\n" +
 	"\aSmsType\x12\x14\n" +
 	"\x10SMS_TYPE_UNKNOWN\x10\x00\x12\x12\n" +
 	"\x0eSMS_TYPE_LOGIN\x10\x01\x12\x15\n" +
@@ -1688,7 +1956,7 @@ func file_user_proto_rawDescGZIP() []byte {
 }
 
 var file_user_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
-var file_user_proto_msgTypes = make([]protoimpl.MessageInfo, 24)
+var file_user_proto_msgTypes = make([]protoimpl.MessageInfo, 29)
 var file_user_proto_goTypes = []any{
 	(SmsType)(0),                          // 0: storage.SmsType
 	(*UserInfo)(nil),                      // 1: storage.UserInfo
@@ -1715,7 +1983,12 @@ var file_user_proto_goTypes = []any{
 	(*AdminGlobalStatsResponse)(nil),      // 22: storage.AdminGlobalStatsResponse
 	(*AdminRecentAccessLogsRequest)(nil),  // 23: storage.AdminRecentAccessLogsRequest
 	(*AdminRecentAccessLogsResponse)(nil), // 24: storage.AdminRecentAccessLogsResponse
-	(*ShareAccessLogItem)(nil),            // 25: storage.ShareAccessLogItem
+	(*AdminPurgeFileRequest)(nil),         // 25: storage.AdminPurgeFileRequest
+	(*AdminPurgeFileResponse)(nil),        // 26: storage.AdminPurgeFileResponse
+	(*AdminRecentOpLogsRequest)(nil),      // 27: storage.AdminRecentOpLogsRequest
+	(*AdminOpLogItem)(nil),                // 28: storage.AdminOpLogItem
+	(*AdminRecentOpLogsResponse)(nil),     // 29: storage.AdminRecentOpLogsResponse
+	(*ShareAccessLogItem)(nil),            // 30: storage.ShareAccessLogItem
 }
 var file_user_proto_depIdxs = []int32{
 	1,  // 0: storage.RegisterRes.user:type_name -> storage.UserInfo
@@ -1723,12 +1996,13 @@ var file_user_proto_depIdxs = []int32{
 	0,  // 2: storage.SendVerificationCodeReq.type:type_name -> storage.SmsType
 	1,  // 3: storage.FindAccountRes.user:type_name -> storage.UserInfo
 	15, // 4: storage.AdminListUsersResponse.users:type_name -> storage.AdminUserItem
-	25, // 5: storage.AdminRecentAccessLogsResponse.logs:type_name -> storage.ShareAccessLogItem
-	6,  // [6:6] is the sub-list for method output_type
-	6,  // [6:6] is the sub-list for method input_type
-	6,  // [6:6] is the sub-list for extension type_name
-	6,  // [6:6] is the sub-list for extension extendee
-	0,  // [0:6] is the sub-list for field type_name
+	30, // 5: storage.AdminRecentAccessLogsResponse.logs:type_name -> storage.ShareAccessLogItem
+	28, // 6: storage.AdminRecentOpLogsResponse.logs:type_name -> storage.AdminOpLogItem
+	7,  // [7:7] is the sub-list for method output_type
+	7,  // [7:7] is the sub-list for method input_type
+	7,  // [7:7] is the sub-list for extension type_name
+	7,  // [7:7] is the sub-list for extension extendee
+	0,  // [0:7] is the sub-list for field type_name
 }
 
 func init() { file_user_proto_init() }
@@ -1763,7 +2037,7 @@ func file_user_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_user_proto_rawDesc), len(file_user_proto_rawDesc)),
 			NumEnums:      1,
-			NumMessages:   24,
+			NumMessages:   29,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

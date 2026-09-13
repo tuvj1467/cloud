@@ -82,6 +82,12 @@ upstreams:
       - Method: GET
         Path: /admin/share-access-logs
         RpcPath: storage.User/AdminRecentAccessLogs
+      - Method: POST
+        Path: /admin/files/purge
+        RpcPath: storage.User/AdminPurgeFile
+      - Method: GET
+        Path: /admin/op-logs
+        RpcPath: storage.User/AdminRecentOpLogs
 
       - Method: GET
         Path: /file/share/my

@@ -3,6 +3,7 @@
 package ent
 
 import (
+	"onecloud/ent/adminauditlog"
 	"onecloud/ent/bucket"
 	"onecloud/ent/file"
 	"onecloud/ent/filepart"
@@ -18,6 +19,45 @@ import (
 // (default values, validators, hooks and policies) and stitches it
 // to their package variables.
 func init() {
+	adminauditlogMixin := schema.AdminAuditLog{}.Mixin()
+	adminauditlogMixinFields0 := adminauditlogMixin[0].Fields()
+	_ = adminauditlogMixinFields0
+	adminauditlogFields := schema.AdminAuditLog{}.Fields()
+	_ = adminauditlogFields
+	// adminauditlogDescCreatedAt is the schema descriptor for created_at field.
+	adminauditlogDescCreatedAt := adminauditlogMixinFields0[0].Descriptor()
+	// adminauditlog.DefaultCreatedAt holds the default value on creation for the created_at field.
+	adminauditlog.DefaultCreatedAt = adminauditlogDescCreatedAt.Default.(func() time.Time)
+	// adminauditlogDescUpdatedAt is the schema descriptor for updated_at field.
+	adminauditlogDescUpdatedAt := adminauditlogMixinFields0[1].Descriptor()
+	// adminauditlog.DefaultUpdatedAt holds the default value on creation for the updated_at field.
+	adminauditlog.DefaultUpdatedAt = adminauditlogDescUpdatedAt.Default.(func() time.Time)
+	// adminauditlog.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
+	adminauditlog.UpdateDefaultUpdatedAt = adminauditlogDescUpdatedAt.UpdateDefault.(func() time.Time)
+	// adminauditlogDescVersion is the schema descriptor for version field.
+	adminauditlogDescVersion := adminauditlogMixinFields0[2].Descriptor()
+	// adminauditlog.DefaultVersion holds the default value on creation for the version field.
+	adminauditlog.DefaultVersion = adminauditlogDescVersion.Default.(int)
+	// adminauditlogDescAdminID is the schema descriptor for admin_id field.
+	adminauditlogDescAdminID := adminauditlogFields[1].Descriptor()
+	// adminauditlog.AdminIDValidator is a validator for the "admin_id" field. It is called by the builders before save.
+	adminauditlog.AdminIDValidator = adminauditlogDescAdminID.Validators[0].(func(string) error)
+	// adminauditlogDescAction is the schema descriptor for action field.
+	adminauditlogDescAction := adminauditlogFields[2].Descriptor()
+	// adminauditlog.ActionValidator is a validator for the "action" field. It is called by the builders before save.
+	adminauditlog.ActionValidator = adminauditlogDescAction.Validators[0].(func(string) error)
+	// adminauditlogDescTargetID is the schema descriptor for target_id field.
+	adminauditlogDescTargetID := adminauditlogFields[3].Descriptor()
+	// adminauditlog.DefaultTargetID holds the default value on creation for the target_id field.
+	adminauditlog.DefaultTargetID = adminauditlogDescTargetID.Default.(string)
+	// adminauditlogDescDetail is the schema descriptor for detail field.
+	adminauditlogDescDetail := adminauditlogFields[4].Descriptor()
+	// adminauditlog.DefaultDetail holds the default value on creation for the detail field.
+	adminauditlog.DefaultDetail = adminauditlogDescDetail.Default.(string)
+	// adminauditlogDescID is the schema descriptor for id field.
+	adminauditlogDescID := adminauditlogFields[0].Descriptor()
+	// adminauditlog.IDValidator is a validator for the "id" field. It is called by the builders before save.
+	adminauditlog.IDValidator = adminauditlogDescID.Validators[0].(func(string) error)
 	bucketMixin := schema.Bucket{}.Mixin()
 	bucketMixinFields0 := bucketMixin[0].Fields()
 	_ = bucketMixinFields0

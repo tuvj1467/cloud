@@ -6,6 +6,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"onecloud/ent/adminauditlog"
 	"onecloud/ent/bucket"
 	"onecloud/ent/file"
 	"onecloud/ent/filepart"
@@ -79,6 +80,7 @@ var (
 func checkColumn(t, c string) error {
 	initCheck.Do(func() {
 		columnCheck = sql.NewColumnCheck(map[string]func(string) bool{
+			adminauditlog.Table:   adminauditlog.ValidColumn,
 			bucket.Table:          bucket.ValidColumn,
 			file.Table:            file.ValidColumn,
 			filepart.Table:        filepart.ValidColumn,

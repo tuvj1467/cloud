@@ -36,6 +36,12 @@ service User {
 
   // 最近分享访问/下载审计（需 admin 角色）
   rpc AdminRecentAccessLogs(AdminRecentAccessLogsRequest) returns (Response);
+
+  // 管理员强制彻底删除任意文件（需 admin 角色，写操作审计）
+  rpc AdminPurgeFile(AdminPurgeFileRequest) returns (Response);
+
+  // 最近管理操作审计（需 admin 角色）
+  rpc AdminRecentOpLogs(AdminRecentOpLogsRequest) returns (Response);
 }
 
 // 存储桶服务定义

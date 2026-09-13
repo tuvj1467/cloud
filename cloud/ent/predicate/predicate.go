@@ -6,6 +6,9 @@ import (
 	"entgo.io/ent/dialect/sql"
 )
 
+// AdminAuditLog is the predicate function for adminauditlog builders.
+type AdminAuditLog func(*sql.Selector)
+
 // Bucket is the predicate function for bucket builders.
 type Bucket func(*sql.Selector)
 

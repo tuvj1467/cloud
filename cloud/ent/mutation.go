@@ -6,6 +6,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"onecloud/ent/adminauditlog"
 	"onecloud/ent/bucket"
 	"onecloud/ent/file"
 	"onecloud/ent/filepart"
@@ -30,6 +31,7 @@ const (
 	OpUpdateOne = ent.OpUpdateOne
 
 	// Node types.
+	TypeAdminAuditLog   = "AdminAuditLog"
 	TypeBucket          = "Bucket"
 	TypeFile            = "File"
 	TypeFilePart        = "FilePart"
@@ -38,6 +40,739 @@ const (
 	TypeStorageSnapshot = "StorageSnapshot"
 	TypeUser            = "User"
 )
+
+// AdminAuditLogMutation represents an operation that mutates the AdminAuditLog nodes in the graph.
+type AdminAuditLogMutation struct {
+	config
+	op            Op
+	typ           string
+	id            *string
+	created_at    *time.Time
+	updated_at    *time.Time
+	version       *int
+	addversion    *int
+	admin_id      *string
+	action        *string
+	target_id     *string
+	detail        *string
+	clearedFields map[string]struct{}
+	done          bool
+	oldValue      func(context.Context) (*AdminAuditLog, error)
+	predicates    []predicate.AdminAuditLog
+}
+
+var _ ent.Mutation = (*AdminAuditLogMutation)(nil)
+
+// adminauditlogOption allows management of the mutation configuration using functional options.
+type adminauditlogOption func(*AdminAuditLogMutation)
+
+// newAdminAuditLogMutation creates new mutation for the AdminAuditLog entity.
+func newAdminAuditLogMutation(c config, op Op, opts ...adminauditlogOption) *AdminAuditLogMutation {
+	m := &AdminAuditLogMutation{
+		config:        c,
+		op:            op,
+		typ:           TypeAdminAuditLog,
+		clearedFields: make(map[string]struct{}),
+	}
+	for _, opt := range opts {
+		opt(m)
+	}
+	return m
+}
+
+// withAdminAuditLogID sets the ID field of the mutation.
+func withAdminAuditLogID(id string) adminauditlogOption {
+	return func(m *AdminAuditLogMutation) {
+		var (
+			err   error
+			once  sync.Once
+			value *AdminAuditLog
+		)
+		m.oldValue = func(ctx context.Context) (*AdminAuditLog, error) {
+			once.Do(func() {
+				if m.done {
+					err = errors.New("querying old values post mutation is not allowed")
+				} else {
+					value, err = m.Client().AdminAuditLog.Get(ctx, id)
+				}
+			})
+			return value, err
+		}
+		m.id = &id
+	}
+}
+
+// withAdminAuditLog sets the old AdminAuditLog of the mutation.
+func withAdminAuditLog(node *AdminAuditLog) adminauditlogOption {
+	return func(m *AdminAuditLogMutation) {
+		m.oldValue = func(context.Context) (*AdminAuditLog, error) {
+			return node, nil
+		}
+		m.id = &node.ID
+	}
+}
+
+// Client returns a new `ent.Client` from the mutation. If the mutation was
+// executed in a transaction (ent.Tx), a transactional client is returned.
+func (m AdminAuditLogMutation) Client() *Client {
+	client := &Client{config: m.config}
+	client.init()
+	return client
+}
+
+// Tx returns an `ent.Tx` for mutations that were executed in transactions;
+// it returns an error otherwise.
+func (m AdminAuditLogMutation) Tx() (*Tx, error) {
+	if _, ok := m.driver.(*txDriver); !ok {
+		return nil, errors.New("ent: mutation is not running in a transaction")
+	}
+	tx := &Tx{config: m.config}
+	tx.init()
+	return tx, nil
+}
+
+// SetID sets the value of the id field. Note that this
+// operation is only accepted on creation of AdminAuditLog entities.
+func (m *AdminAuditLogMutation) SetID(id string) {
+	m.id = &id
+}
+
+// ID returns the ID value in the mutation. Note that the ID is only available
+// if it was provided to the builder or after it was returned from the database.
+func (m *AdminAuditLogMutation) ID() (id string, exists bool) {
+	if m.id == nil {
+		return
+	}
+	return *m.id, true
+}
+
+// IDs queries the database and returns the entity ids that match the mutation's predicate.
+// That means, if the mutation is applied within a transaction with an isolation level such
+// as sql.LevelSerializable, the returned ids match the ids of the rows that will be updated
+// or updated by the mutation.
+func (m *AdminAuditLogMutation) IDs(ctx context.Context) ([]string, error) {
+	switch {
+	case m.op.Is(OpUpdateOne | OpDeleteOne):
+		id, exists := m.ID()
+		if exists {
+			return []string{id}, nil
+		}
+		fallthrough
+	case m.op.Is(OpUpdate | OpDelete):
+		return m.Client().AdminAuditLog.Query().Where(m.predicates...).IDs(ctx)
+	default:
+		return nil, fmt.Errorf("IDs is not allowed on %s operations", m.op)
+	}
+}
+
+// SetCreatedAt sets the "created_at" field.
+func (m *AdminAuditLogMutation) SetCreatedAt(t time.Time) {
+	m.created_at = &t
+}
+
+// CreatedAt returns the value of the "created_at" field in the mutation.
+func (m *AdminAuditLogMutation) CreatedAt() (r time.Time, exists bool) {
+	v := m.created_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCreatedAt returns the old "created_at" field's value of the AdminAuditLog entity.
+// If the AdminAuditLog object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *AdminAuditLogMutation) OldCreatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCreatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCreatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCreatedAt: %w", err)
+	}
+	return oldValue.CreatedAt, nil
+}
+
+// ResetCreatedAt resets all changes to the "created_at" field.
+func (m *AdminAuditLogMutation) ResetCreatedAt() {
+	m.created_at = nil
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (m *AdminAuditLogMutation) SetUpdatedAt(t time.Time) {
+	m.updated_at = &t
+}
+
+// UpdatedAt returns the value of the "updated_at" field in the mutation.
+func (m *AdminAuditLogMutation) UpdatedAt() (r time.Time, exists bool) {
+	v := m.updated_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldUpdatedAt returns the old "updated_at" field's value of the AdminAuditLog entity.
+// If the AdminAuditLog object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *AdminAuditLogMutation) OldUpdatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldUpdatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldUpdatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldUpdatedAt: %w", err)
+	}
+	return oldValue.UpdatedAt, nil
+}
+
+// ResetUpdatedAt resets all changes to the "updated_at" field.
+func (m *AdminAuditLogMutation) ResetUpdatedAt() {
+	m.updated_at = nil
+}
+
+// SetVersion sets the "version" field.
+func (m *AdminAuditLogMutation) SetVersion(i int) {
+	m.version = &i
+	m.addversion = nil
+}
+
+// Version returns the value of the "version" field in the mutation.
+func (m *AdminAuditLogMutation) Version() (r int, exists bool) {
+	v := m.version
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldVersion returns the old "version" field's value of the AdminAuditLog entity.
+// If the AdminAuditLog object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *AdminAuditLogMutation) OldVersion(ctx context.Context) (v int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldVersion is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldVersion requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldVersion: %w", err)
+	}
+	return oldValue.Version, nil
+}
+
+// AddVersion adds i to the "version" field.
+func (m *AdminAuditLogMutation) AddVersion(i int) {
+	if m.addversion != nil {
+		*m.addversion += i
+	} else {
+		m.addversion = &i
+	}
+}
+
+// AddedVersion returns the value that was added to the "version" field in this mutation.
+func (m *AdminAuditLogMutation) AddedVersion() (r int, exists bool) {
+	v := m.addversion
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetVersion resets all changes to the "version" field.
+func (m *AdminAuditLogMutation) ResetVersion() {
+	m.version = nil
+	m.addversion = nil
+}
+
+// SetAdminID sets the "admin_id" field.
+func (m *AdminAuditLogMutation) SetAdminID(s string) {
+	m.admin_id = &s
+}
+
+// AdminID returns the value of the "admin_id" field in the mutation.
+func (m *AdminAuditLogMutation) AdminID() (r string, exists bool) {
+	v := m.admin_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldAdminID returns the old "admin_id" field's value of the AdminAuditLog entity.
+// If the AdminAuditLog object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *AdminAuditLogMutation) OldAdminID(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldAdminID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldAdminID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldAdminID: %w", err)
+	}
+	return oldValue.AdminID, nil
+}
+
+// ResetAdminID resets all changes to the "admin_id" field.
+func (m *AdminAuditLogMutation) ResetAdminID() {
+	m.admin_id = nil
+}
+
+// SetAction sets the "action" field.
+func (m *AdminAuditLogMutation) SetAction(s string) {
+	m.action = &s
+}
+
+// Action returns the value of the "action" field in the mutation.
+func (m *AdminAuditLogMutation) Action() (r string, exists bool) {
+	v := m.action
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldAction returns the old "action" field's value of the AdminAuditLog entity.
+// If the AdminAuditLog object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *AdminAuditLogMutation) OldAction(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldAction is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldAction requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldAction: %w", err)
+	}
+	return oldValue.Action, nil
+}
+
+// ResetAction resets all changes to the "action" field.
+func (m *AdminAuditLogMutation) ResetAction() {
+	m.action = nil
+}
+
+// SetTargetID sets the "target_id" field.
+func (m *AdminAuditLogMutation) SetTargetID(s string) {
+	m.target_id = &s
+}
+
+// TargetID returns the value of the "target_id" field in the mutation.
+func (m *AdminAuditLogMutation) TargetID() (r string, exists bool) {
+	v := m.target_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldTargetID returns the old "target_id" field's value of the AdminAuditLog entity.
+// If the AdminAuditLog object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *AdminAuditLogMutation) OldTargetID(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldTargetID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldTargetID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldTargetID: %w", err)
+	}
+	return oldValue.TargetID, nil
+}
+
+// ClearTargetID clears the value of the "target_id" field.
+func (m *AdminAuditLogMutation) ClearTargetID() {
+	m.target_id = nil
+	m.clearedFields[adminauditlog.FieldTargetID] = struct{}{}
+}
+
+// TargetIDCleared returns if the "target_id" field was cleared in this mutation.
+func (m *AdminAuditLogMutation) TargetIDCleared() bool {
+	_, ok := m.clearedFields[adminauditlog.FieldTargetID]
+	return ok
+}
+
+// ResetTargetID resets all changes to the "target_id" field.
+func (m *AdminAuditLogMutation) ResetTargetID() {
+	m.target_id = nil
+	delete(m.clearedFields, adminauditlog.FieldTargetID)
+}
+
+// SetDetail sets the "detail" field.
+func (m *AdminAuditLogMutation) SetDetail(s string) {
+	m.detail = &s
+}
+
+// Detail returns the value of the "detail" field in the mutation.
+func (m *AdminAuditLogMutation) Detail() (r string, exists bool) {
+	v := m.detail
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldDetail returns the old "detail" field's value of the AdminAuditLog entity.
+// If the AdminAuditLog object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *AdminAuditLogMutation) OldDetail(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldDetail is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldDetail requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldDetail: %w", err)
+	}
+	return oldValue.Detail, nil
+}
+
+// ClearDetail clears the value of the "detail" field.
+func (m *AdminAuditLogMutation) ClearDetail() {
+	m.detail = nil
+	m.clearedFields[adminauditlog.FieldDetail] = struct{}{}
+}
+
+// DetailCleared returns if the "detail" field was cleared in this mutation.
+func (m *AdminAuditLogMutation) DetailCleared() bool {
+	_, ok := m.clearedFields[adminauditlog.FieldDetail]
+	return ok
+}
+
+// ResetDetail resets all changes to the "detail" field.
+func (m *AdminAuditLogMutation) ResetDetail() {
+	m.detail = nil
+	delete(m.clearedFields, adminauditlog.FieldDetail)
+}
+
+// Where appends a list predicates to the AdminAuditLogMutation builder.
+func (m *AdminAuditLogMutation) Where(ps ...predicate.AdminAuditLog) {
+	m.predicates = append(m.predicates, ps...)
+}
+
+// WhereP appends storage-level predicates to the AdminAuditLogMutation builder. Using this method,
+// users can use type-assertion to append predicates that do not depend on any generated package.
+func (m *AdminAuditLogMutation) WhereP(ps ...func(*sql.Selector)) {
+	p := make([]predicate.AdminAuditLog, len(ps))
+	for i := range ps {
+		p[i] = ps[i]
+	}
+	m.Where(p...)
+}
+
+// Op returns the operation name.
+func (m *AdminAuditLogMutation) Op() Op {
+	return m.op
+}
+
+// SetOp allows setting the mutation operation.
+func (m *AdminAuditLogMutation) SetOp(op Op) {
+	m.op = op
+}
+
+// Type returns the node type of this mutation (AdminAuditLog).
+func (m *AdminAuditLogMutation) Type() string {
+	return m.typ
+}
+
+// Fields returns all fields that were changed during this mutation. Note that in
+// order to get all numeric fields that were incremented/decremented, call
+// AddedFields().
+func (m *AdminAuditLogMutation) Fields() []string {
+	fields := make([]string, 0, 7)
+	if m.created_at != nil {
+		fields = append(fields, adminauditlog.FieldCreatedAt)
+	}
+	if m.updated_at != nil {
+		fields = append(fields, adminauditlog.FieldUpdatedAt)
+	}
+	if m.version != nil {
+		fields = append(fields, adminauditlog.FieldVersion)
+	}
+	if m.admin_id != nil {
+		fields = append(fields, adminauditlog.FieldAdminID)
+	}
+	if m.action != nil {
+		fields = append(fields, adminauditlog.FieldAction)
+	}
+	if m.target_id != nil {
+		fields = append(fields, adminauditlog.FieldTargetID)
+	}
+	if m.detail != nil {
+		fields = append(fields, adminauditlog.FieldDetail)
+	}
+	return fields
+}
+
+// Field returns the value of a field with the given name. The second boolean
+// return value indicates that this field was not set, or was not defined in the
+// schema.
+func (m *AdminAuditLogMutation) Field(name string) (ent.Value, bool) {
+	switch name {
+	case adminauditlog.FieldCreatedAt:
+		return m.CreatedAt()
+	case adminauditlog.FieldUpdatedAt:
+		return m.UpdatedAt()
+	case adminauditlog.FieldVersion:
+		return m.Version()
+	case adminauditlog.FieldAdminID:
+		return m.AdminID()
+	case adminauditlog.FieldAction:
+		return m.Action()
+	case adminauditlog.FieldTargetID:
+		return m.TargetID()
+	case adminauditlog.FieldDetail:
+		return m.Detail()
+	}
+	return nil, false
+}
+
+// OldField returns the old value of the field from the database. An error is
+// returned if the mutation operation is not UpdateOne, or the query to the
+// database failed.
+func (m *AdminAuditLogMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
+	switch name {
+	case adminauditlog.FieldCreatedAt:
+		return m.OldCreatedAt(ctx)
+	case adminauditlog.FieldUpdatedAt:
+		return m.OldUpdatedAt(ctx)
+	case adminauditlog.FieldVersion:
+		return m.OldVersion(ctx)
+	case adminauditlog.FieldAdminID:
+		return m.OldAdminID(ctx)
+	case adminauditlog.FieldAction:
+		return m.OldAction(ctx)
+	case adminauditlog.FieldTargetID:
+		return m.OldTargetID(ctx)
+	case adminauditlog.FieldDetail:
+		return m.OldDetail(ctx)
+	}
+	return nil, fmt.Errorf("unknown AdminAuditLog field %s", name)
+}
+
+// SetField sets the value of a field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *AdminAuditLogMutation) SetField(name string, value ent.Value) error {
+	switch name {
+	case adminauditlog.FieldCreatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCreatedAt(v)
+		return nil
+	case adminauditlog.FieldUpdatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetUpdatedAt(v)
+		return nil
+	case adminauditlog.FieldVersion:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetVersion(v)
+		return nil
+	case adminauditlog.FieldAdminID:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetAdminID(v)
+		return nil
+	case adminauditlog.FieldAction:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetAction(v)
+		return nil
+	case adminauditlog.FieldTargetID:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetTargetID(v)
+		return nil
+	case adminauditlog.FieldDetail:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetDetail(v)
+		return nil
+	}
+	return fmt.Errorf("unknown AdminAuditLog field %s", name)
+}
+
+// AddedFields returns all numeric fields that were incremented/decremented during
+// this mutation.
+func (m *AdminAuditLogMutation) AddedFields() []string {
+	var fields []string
+	if m.addversion != nil {
+		fields = append(fields, adminauditlog.FieldVersion)
+	}
+	return fields
+}
+
+// AddedField returns the numeric value that was incremented/decremented on a field
+// with the given name. The second boolean return value indicates that this field
+// was not set, or was not defined in the schema.
+func (m *AdminAuditLogMutation) AddedField(name string) (ent.Value, bool) {
+	switch name {
+	case adminauditlog.FieldVersion:
+		return m.AddedVersion()
+	}
+	return nil, false
+}
+
+// AddField adds the value to the field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *AdminAuditLogMutation) AddField(name string, value ent.Value) error {
+	switch name {
+	case adminauditlog.FieldVersion:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddVersion(v)
+		return nil
+	}
+	return fmt.Errorf("unknown AdminAuditLog numeric field %s", name)
+}
+
+// ClearedFields returns all nullable fields that were cleared during this
+// mutation.
+func (m *AdminAuditLogMutation) ClearedFields() []string {
+	var fields []string
+	if m.FieldCleared(adminauditlog.FieldTargetID) {
+		fields = append(fields, adminauditlog.FieldTargetID)
+	}
+	if m.FieldCleared(adminauditlog.FieldDetail) {
+		fields = append(fields, adminauditlog.FieldDetail)
+	}
+	return fields
+}
+
+// FieldCleared returns a boolean indicating if a field with the given name was
+// cleared in this mutation.
+func (m *AdminAuditLogMutation) FieldCleared(name string) bool {
+	_, ok := m.clearedFields[name]
+	return ok
+}
+
+// ClearField clears the value of the field with the given name. It returns an
+// error if the field is not defined in the schema.
+func (m *AdminAuditLogMutation) ClearField(name string) error {
+	switch name {
+	case adminauditlog.FieldTargetID:
+		m.ClearTargetID()
+		return nil
+	case adminauditlog.FieldDetail:
+		m.ClearDetail()
+		return nil
+	}
+	return fmt.Errorf("unknown AdminAuditLog nullable field %s", name)
+}
+
+// ResetField resets all changes in the mutation for the field with the given name.
+// It returns an error if the field is not defined in the schema.
+func (m *AdminAuditLogMutation) ResetField(name string) error {
+	switch name {
+	case adminauditlog.FieldCreatedAt:
+		m.ResetCreatedAt()
+		return nil
+	case adminauditlog.FieldUpdatedAt:
+		m.ResetUpdatedAt()
+		return nil
+	case adminauditlog.FieldVersion:
+		m.ResetVersion()
+		return nil
+	case adminauditlog.FieldAdminID:
+		m.ResetAdminID()
+		return nil
+	case adminauditlog.FieldAction:
+		m.ResetAction()
+		return nil
+	case adminauditlog.FieldTargetID:
+		m.ResetTargetID()
+		return nil
+	case adminauditlog.FieldDetail:
+		m.ResetDetail()
+		return nil
+	}
+	return fmt.Errorf("unknown AdminAuditLog field %s", name)
+}
+
+// AddedEdges returns all edge names that were set/added in this mutation.
+func (m *AdminAuditLogMutation) AddedEdges() []string {
+	edges := make([]string, 0, 0)
+	return edges
+}
+
+// AddedIDs returns all IDs (to other nodes) that were added for the given edge
+// name in this mutation.
+func (m *AdminAuditLogMutation) AddedIDs(name string) []ent.Value {
+	return nil
+}
+
+// RemovedEdges returns all edge names that were removed in this mutation.
+func (m *AdminAuditLogMutation) RemovedEdges() []string {
+	edges := make([]string, 0, 0)
+	return edges
+}
+
+// RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
+// the given name in this mutation.
+func (m *AdminAuditLogMutation) RemovedIDs(name string) []ent.Value {
+	return nil
+}
+
+// ClearedEdges returns all edge names that were cleared in this mutation.
+func (m *AdminAuditLogMutation) ClearedEdges() []string {
+	edges := make([]string, 0, 0)
+	return edges
+}
+
+// EdgeCleared returns a boolean which indicates if the edge with the given name
+// was cleared in this mutation.
+func (m *AdminAuditLogMutation) EdgeCleared(name string) bool {
+	return false
+}
+
+// ClearEdge clears the value of the edge with the given name. It returns an error
+// if that edge is not defined in the schema.
+func (m *AdminAuditLogMutation) ClearEdge(name string) error {
+	return fmt.Errorf("unknown AdminAuditLog unique edge %s", name)
+}
+
+// ResetEdge resets all changes to the edge with the given name in this mutation.
+// It returns an error if the edge is not defined in the schema.
+func (m *AdminAuditLogMutation) ResetEdge(name string) error {
+	return fmt.Errorf("unknown AdminAuditLog edge %s", name)
+}
 
 // BucketMutation represents an operation that mutates the Bucket nodes in the graph.
 type BucketMutation struct {

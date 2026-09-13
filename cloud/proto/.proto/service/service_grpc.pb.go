@@ -31,6 +31,8 @@ const (
 	User_AdminSetUserDisabled_FullMethodName  = "/storage.User/AdminSetUserDisabled"
 	User_AdminGetGlobalStats_FullMethodName   = "/storage.User/AdminGetGlobalStats"
 	User_AdminRecentAccessLogs_FullMethodName = "/storage.User/AdminRecentAccessLogs"
+	User_AdminPurgeFile_FullMethodName        = "/storage.User/AdminPurgeFile"
+	User_AdminRecentOpLogs_FullMethodName     = "/storage.User/AdminRecentOpLogs"
 )
 
 // UserClient is the client API for User service.
@@ -56,6 +58,10 @@ type UserClient interface {
 	AdminGetGlobalStats(ctx context.Context, in *AdminGlobalStatsRequest, opts ...grpc.CallOption) (*Response, error)
 	// 最近分享访问/下载审计（需 admin 角色）
 	AdminRecentAccessLogs(ctx context.Context, in *AdminRecentAccessLogsRequest, opts ...grpc.CallOption) (*Response, error)
+	// 管理员强制彻底删除任意文件（需 admin 角色，写操作审计）
+	AdminPurgeFile(ctx context.Context, in *AdminPurgeFileRequest, opts ...grpc.CallOption) (*Response, error)
+	// 最近管理操作审计（需 admin 角色）
+	AdminRecentOpLogs(ctx context.Context, in *AdminRecentOpLogsRequest, opts ...grpc.CallOption) (*Response, error)
 }
 
 type userClient struct {
@@ -186,6 +192,26 @@ func (c *userClient) AdminRecentAccessLogs(ctx context.Context, in *AdminRecentA
 	return out, nil
 }
 
+func (c *userClient) AdminPurgeFile(ctx context.Context, in *AdminPurgeFileRequest, opts ...grpc.CallOption) (*Response, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(Response)
+	err := c.cc.Invoke(ctx, User_AdminPurgeFile_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *userClient) AdminRecentOpLogs(ctx context.Context, in *AdminRecentOpLogsRequest, opts ...grpc.CallOption) (*Response, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(Response)
+	err := c.cc.Invoke(ctx, User_AdminRecentOpLogs_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // UserServer is the server API for User service.
 // All implementations must embed UnimplementedUserServer
 // for forward compatibility.
@@ -209,6 +235,10 @@ type UserServer interface {
 	AdminGetGlobalStats(context.Context, *AdminGlobalStatsRequest) (*Response, error)
 	// 最近分享访问/下载审计（需 admin 角色）
 	AdminRecentAccessLogs(context.Context, *AdminRecentAccessLogsRequest) (*Response, error)
+	// 管理员强制彻底删除任意文件（需 admin 角色，写操作审计）
+	AdminPurgeFile(context.Context, *AdminPurgeFileRequest) (*Response, error)
+	// 最近管理操作审计（需 admin 角色）
+	AdminRecentOpLogs(context.Context, *AdminRecentOpLogsRequest) (*Response, error)
 	mustEmbedUnimplementedUserServer()
 }
 
@@ -254,6 +284,12 @@ func (UnimplementedUserServer) AdminGetGlobalStats(context.Context, *AdminGlobal
 }
 func (UnimplementedUserServer) AdminRecentAccessLogs(context.Context, *AdminRecentAccessLogsRequest) (*Response, error) {
 	return nil, status.Error(codes.Unimplemented, "method AdminRecentAccessLogs not implemented")
+}
+func (UnimplementedUserServer) AdminPurgeFile(context.Context, *AdminPurgeFileRequest) (*Response, error) {
+	return nil, status.Error(codes.Unimplemented, "method AdminPurgeFile not implemented")
+}
+func (UnimplementedUserServer) AdminRecentOpLogs(context.Context, *AdminRecentOpLogsRequest) (*Response, error) {
+	return nil, status.Error(codes.Unimplemented, "method AdminRecentOpLogs not implemented")
 }
 func (UnimplementedUserServer) mustEmbedUnimplementedUserServer() {}
 func (UnimplementedUserServer) testEmbeddedByValue()              {}
@@ -492,6 +528,42 @@ func _User_AdminRecentAccessLogs_Handler(srv interface{}, ctx context.Context, d
 	return interceptor(ctx, in, info, handler)
 }
 
+func _User_AdminPurgeFile_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(AdminPurgeFileRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(UserServer).AdminPurgeFile(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: User_AdminPurgeFile_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(UserServer).AdminPurgeFile(ctx, req.(*AdminPurgeFileRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _User_AdminRecentOpLogs_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(AdminRecentOpLogsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(UserServer).AdminRecentOpLogs(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: User_AdminRecentOpLogs_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(UserServer).AdminRecentOpLogs(ctx, req.(*AdminRecentOpLogsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // User_ServiceDesc is the grpc.ServiceDesc for User service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -546,6 +618,14 @@ var User_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "AdminRecentAccessLogs",
 			Handler:    _User_AdminRecentAccessLogs_Handler,
+		},
+		{
+			MethodName: "AdminPurgeFile",
+			Handler:    _User_AdminPurgeFile_Handler,
+		},
+		{
+			MethodName: "AdminRecentOpLogs",
+			Handler:    _User_AdminRecentOpLogs_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

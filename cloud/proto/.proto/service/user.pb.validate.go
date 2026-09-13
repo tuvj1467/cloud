@@ -3420,3 +3420,579 @@ var _ interface {
 	Cause() error
 	ErrorName() string
 } = AdminRecentAccessLogsResponseValidationError{}
+
+// Validate checks the field values on AdminPurgeFileRequest with the rules
+// defined in the proto definition for this message. If any rules are
+// violated, the first error encountered is returned, or nil if there are no violations.
+func (m *AdminPurgeFileRequest) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on AdminPurgeFileRequest with the rules
+// defined in the proto definition for this message. If any rules are
+// violated, the result is a list of violation errors wrapped in
+// AdminPurgeFileRequestMultiError, or nil if none found.
+func (m *AdminPurgeFileRequest) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *AdminPurgeFileRequest) validate(all bool) error {
+	if m == nil {
+		return nil
+	}
+
+	var errors []error
+
+	if utf8.RuneCountInString(m.GetFileId()) < 1 {
+		err := AdminPurgeFileRequestValidationError{
+			field:  "FileId",
+			reason: "value length must be at least 1 runes",
+		}
+		if !all {
+			return err
+		}
+		errors = append(errors, err)
+	}
+
+	if len(errors) > 0 {
+		return AdminPurgeFileRequestMultiError(errors)
+	}
+
+	return nil
+}
+
+// AdminPurgeFileRequestMultiError is an error wrapping multiple validation
+// errors returned by AdminPurgeFileRequest.ValidateAll() if the designated
+// constraints aren't met.
+type AdminPurgeFileRequestMultiError []error
+
+// Error returns a concatenation of all the error messages it wraps.
+func (m AdminPurgeFileRequestMultiError) Error() string {
+	msgs := make([]string, 0, len(m))
+	for _, err := range m {
+		msgs = append(msgs, err.Error())
+	}
+	return strings.Join(msgs, "; ")
+}
+
+// AllErrors returns a list of validation violation errors.
+func (m AdminPurgeFileRequestMultiError) AllErrors() []error { return m }
+
+// AdminPurgeFileRequestValidationError is the validation error returned by
+// AdminPurgeFileRequest.Validate if the designated constraints aren't met.
+type AdminPurgeFileRequestValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e AdminPurgeFileRequestValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e AdminPurgeFileRequestValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e AdminPurgeFileRequestValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e AdminPurgeFileRequestValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e AdminPurgeFileRequestValidationError) ErrorName() string {
+	return "AdminPurgeFileRequestValidationError"
+}
+
+// Error satisfies the builtin error interface
+func (e AdminPurgeFileRequestValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sAdminPurgeFileRequest.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = AdminPurgeFileRequestValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = AdminPurgeFileRequestValidationError{}
+
+// Validate checks the field values on AdminPurgeFileResponse with the rules
+// defined in the proto definition for this message. If any rules are
+// violated, the first error encountered is returned, or nil if there are no violations.
+func (m *AdminPurgeFileResponse) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on AdminPurgeFileResponse with the rules
+// defined in the proto definition for this message. If any rules are
+// violated, the result is a list of violation errors wrapped in
+// AdminPurgeFileResponseMultiError, or nil if none found.
+func (m *AdminPurgeFileResponse) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *AdminPurgeFileResponse) validate(all bool) error {
+	if m == nil {
+		return nil
+	}
+
+	var errors []error
+
+	// no validation rules for Success
+
+	if len(errors) > 0 {
+		return AdminPurgeFileResponseMultiError(errors)
+	}
+
+	return nil
+}
+
+// AdminPurgeFileResponseMultiError is an error wrapping multiple validation
+// errors returned by AdminPurgeFileResponse.ValidateAll() if the designated
+// constraints aren't met.
+type AdminPurgeFileResponseMultiError []error
+
+// Error returns a concatenation of all the error messages it wraps.
+func (m AdminPurgeFileResponseMultiError) Error() string {
+	msgs := make([]string, 0, len(m))
+	for _, err := range m {
+		msgs = append(msgs, err.Error())
+	}
+	return strings.Join(msgs, "; ")
+}
+
+// AllErrors returns a list of validation violation errors.
+func (m AdminPurgeFileResponseMultiError) AllErrors() []error { return m }
+
+// AdminPurgeFileResponseValidationError is the validation error returned by
+// AdminPurgeFileResponse.Validate if the designated constraints aren't met.
+type AdminPurgeFileResponseValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e AdminPurgeFileResponseValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e AdminPurgeFileResponseValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e AdminPurgeFileResponseValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e AdminPurgeFileResponseValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e AdminPurgeFileResponseValidationError) ErrorName() string {
+	return "AdminPurgeFileResponseValidationError"
+}
+
+// Error satisfies the builtin error interface
+func (e AdminPurgeFileResponseValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sAdminPurgeFileResponse.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = AdminPurgeFileResponseValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = AdminPurgeFileResponseValidationError{}
+
+// Validate checks the field values on AdminRecentOpLogsRequest with the rules
+// defined in the proto definition for this message. If any rules are
+// violated, the first error encountered is returned, or nil if there are no violations.
+func (m *AdminRecentOpLogsRequest) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on AdminRecentOpLogsRequest with the
+// rules defined in the proto definition for this message. If any rules are
+// violated, the result is a list of violation errors wrapped in
+// AdminRecentOpLogsRequestMultiError, or nil if none found.
+func (m *AdminRecentOpLogsRequest) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *AdminRecentOpLogsRequest) validate(all bool) error {
+	if m == nil {
+		return nil
+	}
+
+	var errors []error
+
+	if val := m.GetLimit(); val < 1 || val > 200 {
+		err := AdminRecentOpLogsRequestValidationError{
+			field:  "Limit",
+			reason: "value must be inside range [1, 200]",
+		}
+		if !all {
+			return err
+		}
+		errors = append(errors, err)
+	}
+
+	if len(errors) > 0 {
+		return AdminRecentOpLogsRequestMultiError(errors)
+	}
+
+	return nil
+}
+
+// AdminRecentOpLogsRequestMultiError is an error wrapping multiple validation
+// errors returned by AdminRecentOpLogsRequest.ValidateAll() if the designated
+// constraints aren't met.
+type AdminRecentOpLogsRequestMultiError []error
+
+// Error returns a concatenation of all the error messages it wraps.
+func (m AdminRecentOpLogsRequestMultiError) Error() string {
+	msgs := make([]string, 0, len(m))
+	for _, err := range m {
+		msgs = append(msgs, err.Error())
+	}
+	return strings.Join(msgs, "; ")
+}
+
+// AllErrors returns a list of validation violation errors.
+func (m AdminRecentOpLogsRequestMultiError) AllErrors() []error { return m }
+
+// AdminRecentOpLogsRequestValidationError is the validation error returned by
+// AdminRecentOpLogsRequest.Validate if the designated constraints aren't met.
+type AdminRecentOpLogsRequestValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e AdminRecentOpLogsRequestValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e AdminRecentOpLogsRequestValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e AdminRecentOpLogsRequestValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e AdminRecentOpLogsRequestValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e AdminRecentOpLogsRequestValidationError) ErrorName() string {
+	return "AdminRecentOpLogsRequestValidationError"
+}
+
+// Error satisfies the builtin error interface
+func (e AdminRecentOpLogsRequestValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sAdminRecentOpLogsRequest.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = AdminRecentOpLogsRequestValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = AdminRecentOpLogsRequestValidationError{}
+
+// Validate checks the field values on AdminOpLogItem with the rules defined in
+// the proto definition for this message. If any rules are violated, the first
+// error encountered is returned, or nil if there are no violations.
+func (m *AdminOpLogItem) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on AdminOpLogItem with the rules defined
+// in the proto definition for this message. If any rules are violated, the
+// result is a list of violation errors wrapped in AdminOpLogItemMultiError,
+// or nil if none found.
+func (m *AdminOpLogItem) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *AdminOpLogItem) validate(all bool) error {
+	if m == nil {
+		return nil
+	}
+
+	var errors []error
+
+	// no validation rules for AdminId
+
+	// no validation rules for Action
+
+	// no validation rules for TargetId
+
+	// no validation rules for Detail
+
+	// no validation rules for CreatedAt
+
+	if len(errors) > 0 {
+		return AdminOpLogItemMultiError(errors)
+	}
+
+	return nil
+}
+
+// AdminOpLogItemMultiError is an error wrapping multiple validation errors
+// returned by AdminOpLogItem.ValidateAll() if the designated constraints
+// aren't met.
+type AdminOpLogItemMultiError []error
+
+// Error returns a concatenation of all the error messages it wraps.
+func (m AdminOpLogItemMultiError) Error() string {
+	msgs := make([]string, 0, len(m))
+	for _, err := range m {
+		msgs = append(msgs, err.Error())
+	}
+	return strings.Join(msgs, "; ")
+}
+
+// AllErrors returns a list of validation violation errors.
+func (m AdminOpLogItemMultiError) AllErrors() []error { return m }
+
+// AdminOpLogItemValidationError is the validation error returned by
+// AdminOpLogItem.Validate if the designated constraints aren't met.
+type AdminOpLogItemValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e AdminOpLogItemValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e AdminOpLogItemValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e AdminOpLogItemValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e AdminOpLogItemValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e AdminOpLogItemValidationError) ErrorName() string { return "AdminOpLogItemValidationError" }
+
+// Error satisfies the builtin error interface
+func (e AdminOpLogItemValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sAdminOpLogItem.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = AdminOpLogItemValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = AdminOpLogItemValidationError{}
+
+// Validate checks the field values on AdminRecentOpLogsResponse with the rules
+// defined in the proto definition for this message. If any rules are
+// violated, the first error encountered is returned, or nil if there are no violations.
+func (m *AdminRecentOpLogsResponse) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on AdminRecentOpLogsResponse with the
+// rules defined in the proto definition for this message. If any rules are
+// violated, the result is a list of violation errors wrapped in
+// AdminRecentOpLogsResponseMultiError, or nil if none found.
+func (m *AdminRecentOpLogsResponse) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *AdminRecentOpLogsResponse) validate(all bool) error {
+	if m == nil {
+		return nil
+	}
+
+	var errors []error
+
+	for idx, item := range m.GetLogs() {
+		_, _ = idx, item
+
+		if all {
+			switch v := interface{}(item).(type) {
+			case interface{ ValidateAll() error }:
+				if err := v.ValidateAll(); err != nil {
+					errors = append(errors, AdminRecentOpLogsResponseValidationError{
+						field:  fmt.Sprintf("Logs[%v]", idx),
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			case interface{ Validate() error }:
+				if err := v.Validate(); err != nil {
+					errors = append(errors, AdminRecentOpLogsResponseValidationError{
+						field:  fmt.Sprintf("Logs[%v]", idx),
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			}
+		} else if v, ok := interface{}(item).(interface{ Validate() error }); ok {
+			if err := v.Validate(); err != nil {
+				return AdminRecentOpLogsResponseValidationError{
+					field:  fmt.Sprintf("Logs[%v]", idx),
+					reason: "embedded message failed validation",
+					cause:  err,
+				}
+			}
+		}
+
+	}
+
+	if len(errors) > 0 {
+		return AdminRecentOpLogsResponseMultiError(errors)
+	}
+
+	return nil
+}
+
+// AdminRecentOpLogsResponseMultiError is an error wrapping multiple validation
+// errors returned by AdminRecentOpLogsResponse.ValidateAll() if the
+// designated constraints aren't met.
+type AdminRecentOpLogsResponseMultiError []error
+
+// Error returns a concatenation of all the error messages it wraps.
+func (m AdminRecentOpLogsResponseMultiError) Error() string {
+	msgs := make([]string, 0, len(m))
+	for _, err := range m {
+		msgs = append(msgs, err.Error())
+	}
+	return strings.Join(msgs, "; ")
+}
+
+// AllErrors returns a list of validation violation errors.
+func (m AdminRecentOpLogsResponseMultiError) AllErrors() []error { return m }
+
+// AdminRecentOpLogsResponseValidationError is the validation error returned by
+// AdminRecentOpLogsResponse.Validate if the designated constraints aren't met.
+type AdminRecentOpLogsResponseValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e AdminRecentOpLogsResponseValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e AdminRecentOpLogsResponseValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e AdminRecentOpLogsResponseValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e AdminRecentOpLogsResponseValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e AdminRecentOpLogsResponseValidationError) ErrorName() string {
+	return "AdminRecentOpLogsResponseValidationError"
+}
+
+// Error satisfies the builtin error interface
+func (e AdminRecentOpLogsResponseValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sAdminRecentOpLogsResponse.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = AdminRecentOpLogsResponseValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = AdminRecentOpLogsResponseValidationError{}

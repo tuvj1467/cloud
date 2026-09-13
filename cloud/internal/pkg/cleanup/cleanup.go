@@ -13,6 +13,7 @@ import (
 
 	"onecloud/ent"
 	"onecloud/ent/filepart"
+	"onecloud/ent/shareaccesslog"
 	"onecloud/internal/pkg/cache"
 	"onecloud/internal/pkg/storage"
 	"onecloud/internal/repository"
@@ -25,6 +26,8 @@ const (
 	stalePendingAge = 48 * time.Hour
 	// staleDeletedAge 回收站软删文件的保留期，超期每日自动彻底删除
 	staleDeletedAge = 30 * 24 * time.Hour
+	// accessLogRetention 分享访问审计日志保留期（防无界增长）
+	accessLogRetention = 90 * 24 * time.Hour
 	// sweepInterval 清理周期
 	sweepInterval = 12 * time.Hour
 )
@@ -59,6 +62,7 @@ func Start(ctx context.Context, entClient *ent.Client, localRootDir string, stor
 // sweep 执行一轮清理，各项失败仅记日志不互相阻塞
 func sweep(ctx context.Context, entClient *ent.Client, localRootDir string, storageDriver storage.Driver, rdb *redis.Client) {
 	purgeStaleDeleted(ctx, entClient, storageDriver, rdb)
+	purgeStaleAccessLogs(ctx, entClient)
 	if n, err := cleanTmpDirs(localRootDir, staleTmpAge); err != nil {
 		logx.Errorf("[cleanup] 清理孤儿 .tmp 目录失败: %v", err)
 	} else if n > 0 {
@@ -113,6 +117,21 @@ func purgeStaleDeleted(ctx context.Context, entClient *ent.Client, storageDriver
 		purged++
 	}
 	logx.Infof("[cleanup] 已彻底删除软删超 30 天文件 %d 个", purged)
+}
+
+// purgeStaleAccessLogs 删除超保留期的分享访问审计日志
+func purgeStaleAccessLogs(ctx context.Context, entClient *ent.Client) {
+	deadline := time.Now().Add(-accessLogRetention)
+	n, err := entClient.ShareAccessLog.Delete().
+		Where(shareaccesslog.CreatedAtLT(deadline)).
+		Exec(ctx)
+	if err != nil {
+		logx.Errorf("[cleanup] 清理过期分享审计日志失败: %v", err)
+		return
+	}
+	if n > 0 {
+		logx.Infof("[cleanup] 已清理过期分享审计日志 %d 条", n)
+	}
 }
 
 // cleanTmpDirs 删除 .tmp 下修改时间早于 age 的 uploadID 目录，返回删除数量

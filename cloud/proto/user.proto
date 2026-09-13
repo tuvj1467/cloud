@@ -207,3 +207,27 @@ message AdminRecentAccessLogsRequest {
 message AdminRecentAccessLogsResponse {
   repeated ShareAccessLogItem logs = 1;
 }
+
+message AdminPurgeFileRequest {
+  string file_id = 1 [(validate.rules).string = {min_len: 1}];
+}
+
+message AdminPurgeFileResponse {
+  bool success = 1;
+}
+
+message AdminRecentOpLogsRequest {
+  int32 limit = 1 [(validate.rules).int32 = {gte:1, lte:200}];
+}
+
+message AdminOpLogItem {
+  string admin_id = 1;    // 操作管理员
+  string action = 2;      // set_role / set_disabled / purge_file
+  string target_id = 3;   // 目标对象 ID
+  string detail = 4;      // 详情
+  string created_at = 5;  // 时间
+}
+
+message AdminRecentOpLogsResponse {
+  repeated AdminOpLogItem logs = 1;
+}

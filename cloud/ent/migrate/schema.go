@@ -8,6 +8,30 @@ import (
 )
 
 var (
+	// AdminAuditLogsColumns holds the columns for the "admin_audit_logs" table.
+	AdminAuditLogsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeString, Unique: true, Comment: "雪花ID"},
+		{Name: "created_at", Type: field.TypeTime},
+		{Name: "updated_at", Type: field.TypeTime},
+		{Name: "version", Type: field.TypeInt, Default: 1},
+		{Name: "admin_id", Type: field.TypeString, Comment: "操作管理员ID"},
+		{Name: "action", Type: field.TypeString, Comment: "动作：set_role / set_disabled / purge_file"},
+		{Name: "target_id", Type: field.TypeString, Nullable: true, Comment: "目标对象ID（用户ID或文件ID）", Default: ""},
+		{Name: "detail", Type: field.TypeString, Nullable: true, Comment: "动作详情（如新角色值）", Default: ""},
+	}
+	// AdminAuditLogsTable holds the schema information for the "admin_audit_logs" table.
+	AdminAuditLogsTable = &schema.Table{
+		Name:       "admin_audit_logs",
+		Columns:    AdminAuditLogsColumns,
+		PrimaryKey: []*schema.Column{AdminAuditLogsColumns[0]},
+		Indexes: []*schema.Index{
+			{
+				Name:    "adminauditlog_created_at",
+				Unique:  false,
+				Columns: []*schema.Column{AdminAuditLogsColumns[1]},
+			},
+		},
+	}
 	// BucketsColumns holds the columns for the "buckets" table.
 	BucketsColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeString, Unique: true, Comment: "桶主键"},
@@ -194,6 +218,7 @@ var (
 	}
 	// Tables holds all the tables in the schema.
 	Tables = []*schema.Table{
+		AdminAuditLogsTable,
 		BucketsTable,
 		FilesTable,
 		FilePartsTable,

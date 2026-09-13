@@ -4,7 +4,7 @@
 const { ref, computed, onMounted, onUnmounted } = Vue;
 import {
   adminListUsers, adminSetUserRole, adminSetUserDisabled, adminGetGlobalStats,
-  adminRecentAccessLogs,
+  adminRecentAccessLogs, adminRecentOpLogs,
 } from '../api.js';
 import { store } from '../store.js';
 import { formatSize, formatTime, toast } from '../common.js';
@@ -94,6 +94,15 @@ export const AdminPanel = {
       }
     }
 
+    // 最近管理操作审计
+    const opLogs = ref([]);
+    async function loadOpLogs() {
+      try {
+        const d = await adminRecentOpLogs({ limit: 50 });
+        opLogs.value = d.logs || [];
+      } catch { /* 静默 */ }
+    }
+
     // 最近分享访问/下载审计
     const accessLogs = ref([]);
     async function loadAccessLogs() {
@@ -103,7 +112,7 @@ export const AdminPanel = {
       } catch { /* 静默：审计属辅助信息 */ }
     }
 
-    onMounted(() => { loadUsers(); loadStats(); loadAccessLogs(); });
+    onMounted(() => { loadUsers(); loadStats(); loadAccessLogs(); loadOpLogs(); });
 
     const totalPages = computed(() => Math.max(1, Math.ceil(list.value.total / list.value.pageSize)));
 
@@ -115,7 +124,7 @@ export const AdminPanel = {
 
     return {
       store, stats, list, totalPages, searchKw, onSearch,
-      doSetRole, doSetDisabled, formatSize, formatTime, openAdmin, accessLogs, loadAccessLogs,
+      doSetRole, doSetDisabled, formatSize, formatTime, openAdmin, accessLogs, loadAccessLogs, opLogs, loadOpLogs,
     };
   },
   template: `
@@ -131,6 +140,21 @@ export const AdminPanel = {
       <div class="p8-admin-search">
         <input v-model="list.keyword" type="text" placeholder="搜索用户名/昵称/手机号" @input="onSearch">
       </div>
+
+      <h3 style="margin:18px 0 8px;font-size:14px;color:#555">最近管理操作</h3>
+      <div v-if="!opLogs.length" class="empty-state">暂无管理操作记录</div>
+      <table v-else class="p8-share-table">
+        <thead><tr><th>动作</th><th>目标</th><th>详情</th><th>操作者</th><th>时间</th></tr></thead>
+        <tbody>
+          <tr v-for="(lg, i) in opLogs" :key="'op'+i">
+            <td>{{ { set_role:'设置角色', set_disabled:'禁用/启用', purge_file:'强制删除' }[lg.action] || lg.action }}</td>
+            <td style="max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" :title="lg.targetId">{{ lg.targetId }}</td>
+            <td>{{ lg.detail || '-' }}</td>
+            <td>{{ lg.adminId }}</td>
+            <td>{{ lg.createdAt }}</td>
+          </tr>
+        </tbody>
+      </table>
 
       <h3 style="margin:18px 0 8px;font-size:14px;color:#555">最近分享访问 / 下载</h3>
       <div v-if="!accessLogs.length" class="empty-state">暂无访问记录</div>

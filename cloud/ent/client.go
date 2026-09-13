@@ -11,6 +11,7 @@ import (
 
 	"onecloud/ent/migrate"
 
+	"onecloud/ent/adminauditlog"
 	"onecloud/ent/bucket"
 	"onecloud/ent/file"
 	"onecloud/ent/filepart"
@@ -29,6 +30,8 @@ type Client struct {
 	config
 	// Schema is the client for creating, migrating and dropping schema.
 	Schema *migrate.Schema
+	// AdminAuditLog is the client for interacting with the AdminAuditLog builders.
+	AdminAuditLog *AdminAuditLogClient
 	// Bucket is the client for interacting with the Bucket builders.
 	Bucket *BucketClient
 	// File is the client for interacting with the File builders.
@@ -54,6 +57,7 @@ func NewClient(opts ...Option) *Client {
 
 func (c *Client) init() {
 	c.Schema = migrate.NewSchema(c.driver)
+	c.AdminAuditLog = NewAdminAuditLogClient(c.config)
 	c.Bucket = NewBucketClient(c.config)
 	c.File = NewFileClient(c.config)
 	c.FilePart = NewFilePartClient(c.config)
@@ -153,6 +157,7 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 	return &Tx{
 		ctx:             ctx,
 		config:          cfg,
+		AdminAuditLog:   NewAdminAuditLogClient(cfg),
 		Bucket:          NewBucketClient(cfg),
 		File:            NewFileClient(cfg),
 		FilePart:        NewFilePartClient(cfg),
@@ -179,6 +184,7 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 	return &Tx{
 		ctx:             ctx,
 		config:          cfg,
+		AdminAuditLog:   NewAdminAuditLogClient(cfg),
 		Bucket:          NewBucketClient(cfg),
 		File:            NewFileClient(cfg),
 		FilePart:        NewFilePartClient(cfg),
@@ -192,7 +198,7 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 // Debug returns a new debug-client. It's used to get verbose logging on specific operations.
 //
 //	client.Debug().
-//		Bucket.
+//		AdminAuditLog.
 //		Query().
 //		Count(ctx)
 func (c *Client) Debug() *Client {
@@ -215,8 +221,8 @@ func (c *Client) Close() error {
 // In order to add hooks to a specific client, call: `client.Node.Use(...)`.
 func (c *Client) Use(hooks ...Hook) {
 	for _, n := range []interface{ Use(...Hook) }{
-		c.Bucket, c.File, c.FilePart, c.FileShare, c.ShareAccessLog, c.StorageSnapshot,
-		c.User,
+		c.AdminAuditLog, c.Bucket, c.File, c.FilePart, c.FileShare, c.ShareAccessLog,
+		c.StorageSnapshot, c.User,
 	} {
 		n.Use(hooks...)
 	}
@@ -226,8 +232,8 @@ func (c *Client) Use(hooks ...Hook) {
 // In order to add interceptors to a specific client, call: `client.Node.Intercept(...)`.
 func (c *Client) Intercept(interceptors ...Interceptor) {
 	for _, n := range []interface{ Intercept(...Interceptor) }{
-		c.Bucket, c.File, c.FilePart, c.FileShare, c.ShareAccessLog, c.StorageSnapshot,
-		c.User,
+		c.AdminAuditLog, c.Bucket, c.File, c.FilePart, c.FileShare, c.ShareAccessLog,
+		c.StorageSnapshot, c.User,
 	} {
 		n.Intercept(interceptors...)
 	}
@@ -236,6 +242,8 @@ func (c *Client) Intercept(interceptors ...Interceptor) {
 // Mutate implements the ent.Mutator interface.
 func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 	switch m := m.(type) {
+	case *AdminAuditLogMutation:
+		return c.AdminAuditLog.mutate(ctx, m)
 	case *BucketMutation:
 		return c.Bucket.mutate(ctx, m)
 	case *FileMutation:
@@ -252,6 +260,139 @@ func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 		return c.User.mutate(ctx, m)
 	default:
 		return nil, fmt.Errorf("ent: unknown mutation type %T", m)
+	}
+}
+
+// AdminAuditLogClient is a client for the AdminAuditLog schema.
+type AdminAuditLogClient struct {
+	config
+}
+
+// NewAdminAuditLogClient returns a client for the AdminAuditLog from the given config.
+func NewAdminAuditLogClient(c config) *AdminAuditLogClient {
+	return &AdminAuditLogClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `adminauditlog.Hooks(f(g(h())))`.
+func (c *AdminAuditLogClient) Use(hooks ...Hook) {
+	c.hooks.AdminAuditLog = append(c.hooks.AdminAuditLog, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `adminauditlog.Intercept(f(g(h())))`.
+func (c *AdminAuditLogClient) Intercept(interceptors ...Interceptor) {
+	c.inters.AdminAuditLog = append(c.inters.AdminAuditLog, interceptors...)
+}
+
+// Create returns a builder for creating a AdminAuditLog entity.
+func (c *AdminAuditLogClient) Create() *AdminAuditLogCreate {
+	mutation := newAdminAuditLogMutation(c.config, OpCreate)
+	return &AdminAuditLogCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of AdminAuditLog entities.
+func (c *AdminAuditLogClient) CreateBulk(builders ...*AdminAuditLogCreate) *AdminAuditLogCreateBulk {
+	return &AdminAuditLogCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *AdminAuditLogClient) MapCreateBulk(slice any, setFunc func(*AdminAuditLogCreate, int)) *AdminAuditLogCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &AdminAuditLogCreateBulk{err: fmt.Errorf("calling to AdminAuditLogClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*AdminAuditLogCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &AdminAuditLogCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for AdminAuditLog.
+func (c *AdminAuditLogClient) Update() *AdminAuditLogUpdate {
+	mutation := newAdminAuditLogMutation(c.config, OpUpdate)
+	return &AdminAuditLogUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *AdminAuditLogClient) UpdateOne(_m *AdminAuditLog) *AdminAuditLogUpdateOne {
+	mutation := newAdminAuditLogMutation(c.config, OpUpdateOne, withAdminAuditLog(_m))
+	return &AdminAuditLogUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *AdminAuditLogClient) UpdateOneID(id string) *AdminAuditLogUpdateOne {
+	mutation := newAdminAuditLogMutation(c.config, OpUpdateOne, withAdminAuditLogID(id))
+	return &AdminAuditLogUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for AdminAuditLog.
+func (c *AdminAuditLogClient) Delete() *AdminAuditLogDelete {
+	mutation := newAdminAuditLogMutation(c.config, OpDelete)
+	return &AdminAuditLogDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *AdminAuditLogClient) DeleteOne(_m *AdminAuditLog) *AdminAuditLogDeleteOne {
+	return c.DeleteOneID(_m.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *AdminAuditLogClient) DeleteOneID(id string) *AdminAuditLogDeleteOne {
+	builder := c.Delete().Where(adminauditlog.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &AdminAuditLogDeleteOne{builder}
+}
+
+// Query returns a query builder for AdminAuditLog.
+func (c *AdminAuditLogClient) Query() *AdminAuditLogQuery {
+	return &AdminAuditLogQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeAdminAuditLog},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a AdminAuditLog entity by its id.
+func (c *AdminAuditLogClient) Get(ctx context.Context, id string) (*AdminAuditLog, error) {
+	return c.Query().Where(adminauditlog.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *AdminAuditLogClient) GetX(ctx context.Context, id string) *AdminAuditLog {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// Hooks returns the client hooks.
+func (c *AdminAuditLogClient) Hooks() []Hook {
+	return c.hooks.AdminAuditLog
+}
+
+// Interceptors returns the client interceptors.
+func (c *AdminAuditLogClient) Interceptors() []Interceptor {
+	return c.inters.AdminAuditLog
+}
+
+func (c *AdminAuditLogClient) mutate(ctx context.Context, m *AdminAuditLogMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&AdminAuditLogCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&AdminAuditLogUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&AdminAuditLogUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&AdminAuditLogDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown AdminAuditLog mutation op: %q", m.Op())
 	}
 }
 
@@ -1189,11 +1330,11 @@ func (c *UserClient) mutate(ctx context.Context, m *UserMutation) (Value, error)
 // hooks and interceptors per client, for fast access.
 type (
 	hooks struct {
-		Bucket, File, FilePart, FileShare, ShareAccessLog, StorageSnapshot,
-		User []ent.Hook
+		AdminAuditLog, Bucket, File, FilePart, FileShare, ShareAccessLog,
+		StorageSnapshot, User []ent.Hook
 	}
 	inters struct {
-		Bucket, File, FilePart, FileShare, ShareAccessLog, StorageSnapshot,
-		User []ent.Interceptor
+		AdminAuditLog, Bucket, File, FilePart, FileShare, ShareAccessLog,
+		StorageSnapshot, User []ent.Interceptor
 	}
 )
