@@ -79,6 +79,9 @@ upstreams:
       - Method: GET
         Path: /admin/stats
         RpcPath: storage.User/AdminGetGlobalStats
+      - Method: GET
+        Path: /admin/share-access-logs
+        RpcPath: storage.User/AdminRecentAccessLogs
 
       - Method: GET
         Path: /file/share/my

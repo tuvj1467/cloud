@@ -371,6 +371,7 @@ message ShareAccessLogItem {
   string ip = 2;          // 客户端 IP
   string user_agent = 3;  // 客户端 UA
   string created_at = 4;  // 时间
+  string share_code = 5;  // 提取码（admin 全局审计用）
 }
 
 message GetShareAccessLogsResponse {

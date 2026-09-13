@@ -3043,6 +3043,7 @@ type ShareAccessLogItem struct {
 	Ip            string                 `protobuf:"bytes,2,opt,name=ip,proto3" json:"ip,omitempty"`                                // 客户端 IP
 	UserAgent     string                 `protobuf:"bytes,3,opt,name=user_agent,json=userAgent,proto3" json:"user_agent,omitempty"` // 客户端 UA
 	CreatedAt     string                 `protobuf:"bytes,4,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"` // 时间
+	ShareCode     string                 `protobuf:"bytes,5,opt,name=share_code,json=shareCode,proto3" json:"share_code,omitempty"` // 提取码（admin 全局审计用）
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -3101,6 +3102,13 @@ func (x *ShareAccessLogItem) GetUserAgent() string {
 func (x *ShareAccessLogItem) GetCreatedAt() string {
 	if x != nil {
 		return x.CreatedAt
+	}
+	return ""
+}
+
+func (x *ShareAccessLogItem) GetShareCode() string {
+	if x != nil {
+		return x.ShareCode
 	}
 	return ""
 }
@@ -3389,14 +3397,16 @@ const file_file_proto_rawDesc = "" +
 	"\n" +
 	"share_code\x18\x01 \x01(\tB\a\xfaB\x04r\x02\x10\x01R\tshareCode\x12\x1b\n" +
 	"\x04page\x18\x02 \x01(\x05B\a\xfaB\x04\x1a\x02(\x01R\x04page\x12&\n" +
-	"\tpage_size\x18\x03 \x01(\x05B\t\xfaB\x06\x1a\x04\x182(\x01R\bpageSize\"z\n" +
+	"\tpage_size\x18\x03 \x01(\x05B\t\xfaB\x06\x1a\x04\x182(\x01R\bpageSize\"\x99\x01\n" +
 	"\x12ShareAccessLogItem\x12\x16\n" +
 	"\x06action\x18\x01 \x01(\tR\x06action\x12\x0e\n" +
 	"\x02ip\x18\x02 \x01(\tR\x02ip\x12\x1d\n" +
 	"\n" +
 	"user_agent\x18\x03 \x01(\tR\tuserAgent\x12\x1d\n" +
 	"\n" +
-	"created_at\x18\x04 \x01(\tR\tcreatedAt\"c\n" +
+	"created_at\x18\x04 \x01(\tR\tcreatedAt\x12\x1d\n" +
+	"\n" +
+	"share_code\x18\x05 \x01(\tR\tshareCode\"c\n" +
 	"\x1aGetShareAccessLogsResponse\x12/\n" +
 	"\x04logs\x18\x01 \x03(\v2\x1b.storage.ShareAccessLogItemR\x04logs\x12\x14\n" +
 	"\x05total\x18\x02 \x01(\x05R\x05totalB\x10Z\x0e.proto/serviceb\x06proto3"

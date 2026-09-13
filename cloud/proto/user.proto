@@ -4,6 +4,7 @@ package storage;
 option go_package = ".proto/service";
 
 import "validate.proto";
+import "file.proto";
 
 
 // ==========================================
@@ -197,4 +198,12 @@ message AdminGlobalStatsResponse {
   int64 user_count = 1;
   int64 file_count = 2;
   int64 total_size = 3;
+}
+
+message AdminRecentAccessLogsRequest {
+  int32 limit = 1 [(validate.rules).int32 = {gte:1, lte:200}]; // 条数（缺省 50）
+}
+
+message AdminRecentAccessLogsResponse {
+  repeated ShareAccessLogItem logs = 1;
 }

@@ -1470,12 +1470,101 @@ func (x *AdminGlobalStatsResponse) GetTotalSize() int64 {
 	return 0
 }
 
+type AdminRecentAccessLogsRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Limit         int32                  `protobuf:"varint,1,opt,name=limit,proto3" json:"limit,omitempty"` // 条数（缺省 50）
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *AdminRecentAccessLogsRequest) Reset() {
+	*x = AdminRecentAccessLogsRequest{}
+	mi := &file_user_proto_msgTypes[22]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *AdminRecentAccessLogsRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*AdminRecentAccessLogsRequest) ProtoMessage() {}
+
+func (x *AdminRecentAccessLogsRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_user_proto_msgTypes[22]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use AdminRecentAccessLogsRequest.ProtoReflect.Descriptor instead.
+func (*AdminRecentAccessLogsRequest) Descriptor() ([]byte, []int) {
+	return file_user_proto_rawDescGZIP(), []int{22}
+}
+
+func (x *AdminRecentAccessLogsRequest) GetLimit() int32 {
+	if x != nil {
+		return x.Limit
+	}
+	return 0
+}
+
+type AdminRecentAccessLogsResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Logs          []*ShareAccessLogItem  `protobuf:"bytes,1,rep,name=logs,proto3" json:"logs,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *AdminRecentAccessLogsResponse) Reset() {
+	*x = AdminRecentAccessLogsResponse{}
+	mi := &file_user_proto_msgTypes[23]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *AdminRecentAccessLogsResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*AdminRecentAccessLogsResponse) ProtoMessage() {}
+
+func (x *AdminRecentAccessLogsResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_user_proto_msgTypes[23]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use AdminRecentAccessLogsResponse.ProtoReflect.Descriptor instead.
+func (*AdminRecentAccessLogsResponse) Descriptor() ([]byte, []int) {
+	return file_user_proto_rawDescGZIP(), []int{23}
+}
+
+func (x *AdminRecentAccessLogsResponse) GetLogs() []*ShareAccessLogItem {
+	if x != nil {
+		return x.Logs
+	}
+	return nil
+}
+
 var File_user_proto protoreflect.FileDescriptor
 
 const file_user_proto_rawDesc = "" +
 	"\n" +
 	"\n" +
-	"user.proto\x12\astorage\x1a\x0evalidate.proto\"\xbc\x01\n" +
+	"user.proto\x12\astorage\x1a\x0evalidate.proto\x1a\n" +
+	"file.proto\"\xbc\x01\n" +
 	"\bUserInfo\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x1a\n" +
 	"\busername\x18\x02 \x01(\tR\busername\x12\x12\n" +
@@ -1574,7 +1663,12 @@ const file_user_proto_rawDesc = "" +
 	"\n" +
 	"file_count\x18\x02 \x01(\x03R\tfileCount\x12\x1d\n" +
 	"\n" +
-	"total_size\x18\x03 \x01(\x03R\ttotalSize*g\n" +
+	"total_size\x18\x03 \x01(\x03R\ttotalSize\"@\n" +
+	"\x1cAdminRecentAccessLogsRequest\x12 \n" +
+	"\x05limit\x18\x01 \x01(\x05B\n" +
+	"\xfaB\a\x1a\x05\x18\xc8\x01(\x01R\x05limit\"P\n" +
+	"\x1dAdminRecentAccessLogsResponse\x12/\n" +
+	"\x04logs\x18\x01 \x03(\v2\x1b.storage.ShareAccessLogItemR\x04logs*g\n" +
 	"\aSmsType\x12\x14\n" +
 	"\x10SMS_TYPE_UNKNOWN\x10\x00\x12\x12\n" +
 	"\x0eSMS_TYPE_LOGIN\x10\x01\x12\x15\n" +
@@ -1594,31 +1688,34 @@ func file_user_proto_rawDescGZIP() []byte {
 }
 
 var file_user_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
-var file_user_proto_msgTypes = make([]protoimpl.MessageInfo, 22)
+var file_user_proto_msgTypes = make([]protoimpl.MessageInfo, 24)
 var file_user_proto_goTypes = []any{
-	(SmsType)(0),                         // 0: storage.SmsType
-	(*UserInfo)(nil),                     // 1: storage.UserInfo
-	(*RegisterReq)(nil),                  // 2: storage.RegisterReq
-	(*RegisterRes)(nil),                  // 3: storage.RegisterRes
-	(*LoginRes)(nil),                     // 4: storage.LoginRes
-	(*LoginByAccountReq)(nil),            // 5: storage.LoginByAccountReq
-	(*LoginByPhoneSmsReq)(nil),           // 6: storage.LoginByPhoneSmsReq
-	(*LoginByEmailSmsReq)(nil),           // 7: storage.LoginByEmailSmsReq
-	(*SendVerificationCodeReq)(nil),      // 8: storage.SendVerificationCodeReq
-	(*SendVerificationCodeRes)(nil),      // 9: storage.SendVerificationCodeRes
-	(*ResetPasswordReq)(nil),             // 10: storage.ResetPasswordReq
-	(*ResetPasswordRes)(nil),             // 11: storage.ResetPasswordRes
-	(*FindAccountReq)(nil),               // 12: storage.FindAccountReq
-	(*FindAccountRes)(nil),               // 13: storage.FindAccountRes
-	(*AdminListUsersRequest)(nil),        // 14: storage.AdminListUsersRequest
-	(*AdminUserItem)(nil),                // 15: storage.AdminUserItem
-	(*AdminListUsersResponse)(nil),       // 16: storage.AdminListUsersResponse
-	(*AdminSetUserRoleRequest)(nil),      // 17: storage.AdminSetUserRoleRequest
-	(*AdminSetUserRoleResponse)(nil),     // 18: storage.AdminSetUserRoleResponse
-	(*AdminSetUserDisabledRequest)(nil),  // 19: storage.AdminSetUserDisabledRequest
-	(*AdminSetUserDisabledResponse)(nil), // 20: storage.AdminSetUserDisabledResponse
-	(*AdminGlobalStatsRequest)(nil),      // 21: storage.AdminGlobalStatsRequest
-	(*AdminGlobalStatsResponse)(nil),     // 22: storage.AdminGlobalStatsResponse
+	(SmsType)(0),                          // 0: storage.SmsType
+	(*UserInfo)(nil),                      // 1: storage.UserInfo
+	(*RegisterReq)(nil),                   // 2: storage.RegisterReq
+	(*RegisterRes)(nil),                   // 3: storage.RegisterRes
+	(*LoginRes)(nil),                      // 4: storage.LoginRes
+	(*LoginByAccountReq)(nil),             // 5: storage.LoginByAccountReq
+	(*LoginByPhoneSmsReq)(nil),            // 6: storage.LoginByPhoneSmsReq
+	(*LoginByEmailSmsReq)(nil),            // 7: storage.LoginByEmailSmsReq
+	(*SendVerificationCodeReq)(nil),       // 8: storage.SendVerificationCodeReq
+	(*SendVerificationCodeRes)(nil),       // 9: storage.SendVerificationCodeRes
+	(*ResetPasswordReq)(nil),              // 10: storage.ResetPasswordReq
+	(*ResetPasswordRes)(nil),              // 11: storage.ResetPasswordRes
+	(*FindAccountReq)(nil),                // 12: storage.FindAccountReq
+	(*FindAccountRes)(nil),                // 13: storage.FindAccountRes
+	(*AdminListUsersRequest)(nil),         // 14: storage.AdminListUsersRequest
+	(*AdminUserItem)(nil),                 // 15: storage.AdminUserItem
+	(*AdminListUsersResponse)(nil),        // 16: storage.AdminListUsersResponse
+	(*AdminSetUserRoleRequest)(nil),       // 17: storage.AdminSetUserRoleRequest
+	(*AdminSetUserRoleResponse)(nil),      // 18: storage.AdminSetUserRoleResponse
+	(*AdminSetUserDisabledRequest)(nil),   // 19: storage.AdminSetUserDisabledRequest
+	(*AdminSetUserDisabledResponse)(nil),  // 20: storage.AdminSetUserDisabledResponse
+	(*AdminGlobalStatsRequest)(nil),       // 21: storage.AdminGlobalStatsRequest
+	(*AdminGlobalStatsResponse)(nil),      // 22: storage.AdminGlobalStatsResponse
+	(*AdminRecentAccessLogsRequest)(nil),  // 23: storage.AdminRecentAccessLogsRequest
+	(*AdminRecentAccessLogsResponse)(nil), // 24: storage.AdminRecentAccessLogsResponse
+	(*ShareAccessLogItem)(nil),            // 25: storage.ShareAccessLogItem
 }
 var file_user_proto_depIdxs = []int32{
 	1,  // 0: storage.RegisterRes.user:type_name -> storage.UserInfo
@@ -1626,11 +1723,12 @@ var file_user_proto_depIdxs = []int32{
 	0,  // 2: storage.SendVerificationCodeReq.type:type_name -> storage.SmsType
 	1,  // 3: storage.FindAccountRes.user:type_name -> storage.UserInfo
 	15, // 4: storage.AdminListUsersResponse.users:type_name -> storage.AdminUserItem
-	5,  // [5:5] is the sub-list for method output_type
-	5,  // [5:5] is the sub-list for method input_type
-	5,  // [5:5] is the sub-list for extension type_name
-	5,  // [5:5] is the sub-list for extension extendee
-	0,  // [0:5] is the sub-list for field type_name
+	25, // 5: storage.AdminRecentAccessLogsResponse.logs:type_name -> storage.ShareAccessLogItem
+	6,  // [6:6] is the sub-list for method output_type
+	6,  // [6:6] is the sub-list for method input_type
+	6,  // [6:6] is the sub-list for extension type_name
+	6,  // [6:6] is the sub-list for extension extendee
+	0,  // [0:6] is the sub-list for field type_name
 }
 
 func init() { file_user_proto_init() }
@@ -1638,6 +1736,7 @@ func file_user_proto_init() {
 	if File_user_proto != nil {
 		return
 	}
+	file_file_proto_init()
 	file_user_proto_msgTypes[0].OneofWrappers = []any{}
 	file_user_proto_msgTypes[1].OneofWrappers = []any{
 		(*RegisterReq_Name)(nil),
@@ -1664,7 +1763,7 @@ func file_user_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_user_proto_rawDesc), len(file_user_proto_rawDesc)),
 			NumEnums:      1,
-			NumMessages:   22,
+			NumMessages:   24,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

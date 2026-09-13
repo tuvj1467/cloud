@@ -49,3 +49,14 @@ func (r *ShareAccessLogRepository) ListByShareCode(ctx context.Context, shareCod
 	}
 	return list, total, nil
 }
+
+// ListRecent 全局最近审计日志（跨分享，时间倒序，admin 用）
+func (r *ShareAccessLogRepository) ListRecent(ctx context.Context, limit int) ([]*ent.ShareAccessLog, error) {
+	if limit <= 0 {
+		limit = 50
+	}
+	return r.client.ShareAccessLog.Query().
+		Order(shareaccesslog.ByCreatedAt()).
+		Limit(limit).
+		All(ctx)
+}

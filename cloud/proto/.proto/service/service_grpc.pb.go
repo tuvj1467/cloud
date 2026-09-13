@@ -19,17 +19,18 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	User_Register_FullMethodName             = "/storage.User/Register"
-	User_LoginByAccount_FullMethodName       = "/storage.User/LoginByAccount"
-	User_LoginByPhoneSms_FullMethodName      = "/storage.User/LoginByPhoneSms"
-	User_LoginByEmailSms_FullMethodName      = "/storage.User/LoginByEmailSms"
-	User_SendVerificationCode_FullMethodName = "/storage.User/SendVerificationCode"
-	User_ResetPassword_FullMethodName        = "/storage.User/ResetPassword"
-	User_FindAccount_FullMethodName          = "/storage.User/FindAccount"
-	User_AdminListUsers_FullMethodName       = "/storage.User/AdminListUsers"
-	User_AdminSetUserRole_FullMethodName     = "/storage.User/AdminSetUserRole"
-	User_AdminSetUserDisabled_FullMethodName = "/storage.User/AdminSetUserDisabled"
-	User_AdminGetGlobalStats_FullMethodName  = "/storage.User/AdminGetGlobalStats"
+	User_Register_FullMethodName              = "/storage.User/Register"
+	User_LoginByAccount_FullMethodName        = "/storage.User/LoginByAccount"
+	User_LoginByPhoneSms_FullMethodName       = "/storage.User/LoginByPhoneSms"
+	User_LoginByEmailSms_FullMethodName       = "/storage.User/LoginByEmailSms"
+	User_SendVerificationCode_FullMethodName  = "/storage.User/SendVerificationCode"
+	User_ResetPassword_FullMethodName         = "/storage.User/ResetPassword"
+	User_FindAccount_FullMethodName           = "/storage.User/FindAccount"
+	User_AdminListUsers_FullMethodName        = "/storage.User/AdminListUsers"
+	User_AdminSetUserRole_FullMethodName      = "/storage.User/AdminSetUserRole"
+	User_AdminSetUserDisabled_FullMethodName  = "/storage.User/AdminSetUserDisabled"
+	User_AdminGetGlobalStats_FullMethodName   = "/storage.User/AdminGetGlobalStats"
+	User_AdminRecentAccessLogs_FullMethodName = "/storage.User/AdminRecentAccessLogs"
 )
 
 // UserClient is the client API for User service.
@@ -53,6 +54,8 @@ type UserClient interface {
 	AdminSetUserRole(ctx context.Context, in *AdminSetUserRoleRequest, opts ...grpc.CallOption) (*Response, error)
 	AdminSetUserDisabled(ctx context.Context, in *AdminSetUserDisabledRequest, opts ...grpc.CallOption) (*Response, error)
 	AdminGetGlobalStats(ctx context.Context, in *AdminGlobalStatsRequest, opts ...grpc.CallOption) (*Response, error)
+	// 最近分享访问/下载审计（需 admin 角色）
+	AdminRecentAccessLogs(ctx context.Context, in *AdminRecentAccessLogsRequest, opts ...grpc.CallOption) (*Response, error)
 }
 
 type userClient struct {
@@ -173,6 +176,16 @@ func (c *userClient) AdminGetGlobalStats(ctx context.Context, in *AdminGlobalSta
 	return out, nil
 }
 
+func (c *userClient) AdminRecentAccessLogs(ctx context.Context, in *AdminRecentAccessLogsRequest, opts ...grpc.CallOption) (*Response, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(Response)
+	err := c.cc.Invoke(ctx, User_AdminRecentAccessLogs_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // UserServer is the server API for User service.
 // All implementations must embed UnimplementedUserServer
 // for forward compatibility.
@@ -194,6 +207,8 @@ type UserServer interface {
 	AdminSetUserRole(context.Context, *AdminSetUserRoleRequest) (*Response, error)
 	AdminSetUserDisabled(context.Context, *AdminSetUserDisabledRequest) (*Response, error)
 	AdminGetGlobalStats(context.Context, *AdminGlobalStatsRequest) (*Response, error)
+	// 最近分享访问/下载审计（需 admin 角色）
+	AdminRecentAccessLogs(context.Context, *AdminRecentAccessLogsRequest) (*Response, error)
 	mustEmbedUnimplementedUserServer()
 }
 
@@ -236,6 +251,9 @@ func (UnimplementedUserServer) AdminSetUserDisabled(context.Context, *AdminSetUs
 }
 func (UnimplementedUserServer) AdminGetGlobalStats(context.Context, *AdminGlobalStatsRequest) (*Response, error) {
 	return nil, status.Error(codes.Unimplemented, "method AdminGetGlobalStats not implemented")
+}
+func (UnimplementedUserServer) AdminRecentAccessLogs(context.Context, *AdminRecentAccessLogsRequest) (*Response, error) {
+	return nil, status.Error(codes.Unimplemented, "method AdminRecentAccessLogs not implemented")
 }
 func (UnimplementedUserServer) mustEmbedUnimplementedUserServer() {}
 func (UnimplementedUserServer) testEmbeddedByValue()              {}
@@ -456,6 +474,24 @@ func _User_AdminGetGlobalStats_Handler(srv interface{}, ctx context.Context, dec
 	return interceptor(ctx, in, info, handler)
 }
 
+func _User_AdminRecentAccessLogs_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(AdminRecentAccessLogsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(UserServer).AdminRecentAccessLogs(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: User_AdminRecentAccessLogs_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(UserServer).AdminRecentAccessLogs(ctx, req.(*AdminRecentAccessLogsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // User_ServiceDesc is the grpc.ServiceDesc for User service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -506,6 +542,10 @@ var User_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "AdminGetGlobalStats",
 			Handler:    _User_AdminGetGlobalStats_Handler,
+		},
+		{
+			MethodName: "AdminRecentAccessLogs",
+			Handler:    _User_AdminRecentAccessLogs_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

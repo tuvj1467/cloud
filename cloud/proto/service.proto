@@ -33,6 +33,9 @@ service User {
   rpc AdminSetUserRole(AdminSetUserRoleRequest) returns (Response);
   rpc AdminSetUserDisabled(AdminSetUserDisabledRequest) returns (Response);
   rpc AdminGetGlobalStats(AdminGlobalStatsRequest) returns (Response);
+
+  // 最近分享访问/下载审计（需 admin 角色）
+  rpc AdminRecentAccessLogs(AdminRecentAccessLogsRequest) returns (Response);
 }
 
 // 存储桶服务定义

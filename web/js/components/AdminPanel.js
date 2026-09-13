@@ -4,6 +4,7 @@
 const { ref, computed, onMounted, onUnmounted } = Vue;
 import {
   adminListUsers, adminSetUserRole, adminSetUserDisabled, adminGetGlobalStats,
+  adminRecentAccessLogs,
 } from '../api.js';
 import { store } from '../store.js';
 import { formatSize, formatTime, toast } from '../common.js';
@@ -93,7 +94,16 @@ export const AdminPanel = {
       }
     }
 
-    onMounted(() => { loadUsers(); loadStats(); });
+    // 最近分享访问/下载审计
+    const accessLogs = ref([]);
+    async function loadAccessLogs() {
+      try {
+        const d = await adminRecentAccessLogs({ limit: 50 });
+        accessLogs.value = d.logs || [];
+      } catch { /* 静默：审计属辅助信息 */ }
+    }
+
+    onMounted(() => { loadUsers(); loadStats(); loadAccessLogs(); });
 
     const totalPages = computed(() => Math.max(1, Math.ceil(list.value.total / list.value.pageSize)));
 
@@ -105,7 +115,7 @@ export const AdminPanel = {
 
     return {
       store, stats, list, totalPages, searchKw, onSearch,
-      doSetRole, doSetDisabled, formatSize, formatTime, openAdmin,
+      doSetRole, doSetDisabled, formatSize, formatTime, openAdmin, accessLogs, loadAccessLogs,
     };
   },
   template: `
@@ -121,6 +131,20 @@ export const AdminPanel = {
       <div class="p8-admin-search">
         <input v-model="list.keyword" type="text" placeholder="搜索用户名/昵称/手机号" @input="onSearch">
       </div>
+
+      <h3 style="margin:18px 0 8px;font-size:14px;color:#555">最近分享访问 / 下载</h3>
+      <div v-if="!accessLogs.length" class="empty-state">暂无访问记录</div>
+      <table v-else class="p8-share-table">
+        <thead><tr><th>动作</th><th>提取码</th><th>IP</th><th>时间</th></tr></thead>
+        <tbody>
+          <tr v-for="(lg, i) in accessLogs" :key="i">
+            <td>{{ lg.action === 'download' ? '下载' : (lg.action === 'access' ? '查看' : lg.action) }}</td>
+            <td><strong>{{ lg.shareCode }}</strong></td>
+            <td>{{ lg.ip || '-' }}</td>
+            <td>{{ lg.createdAt }}</td>
+          </tr>
+        </tbody>
+      </table>
 
       <div v-if="list.loading" class="empty-state">加载中…</div>
       <div v-else-if="!list.users.length" class="empty-state">无匹配用户</div>

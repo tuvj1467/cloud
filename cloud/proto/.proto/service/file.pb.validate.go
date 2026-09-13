@@ -6569,6 +6569,8 @@ func (m *ShareAccessLogItem) validate(all bool) error {
 
 	// no validation rules for CreatedAt
 
+	// no validation rules for ShareCode
+
 	if len(errors) > 0 {
 		return ShareAccessLogItemMultiError(errors)
 	}
