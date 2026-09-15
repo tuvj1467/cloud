@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"onecloud/ent"
 	"onecloud/ent/user"
+	"onecloud/internal/pkg/loginlock"
 	"onecloud/internal/pkg/passwd"
 	"onecloud/internal/pkg/snowId"
 	"onecloud/proto/.proto/service"
@@ -105,9 +106,14 @@ func (r *UserRepository) LoginByName(ctx context.Context, in *service.LoginByAcc
 		}
 		return nil, err
 	}
+	if locked, remain := loginlock.Locked(ctx, res.Username); locked {
+		return nil, fmt.Errorf("账号已被锁定，请 %d 分钟后重试", int(remain.Minutes())+1)
+	}
 	if err := r.verifyAndUpgrade(ctx, res, in.Password); err != nil {
+		loginlock.RecordFail(ctx, res.Username)
 		return nil, err
 	}
+	loginlock.Clear(ctx, res.Username)
 	return res, nil
 }
 
@@ -124,9 +130,14 @@ func (r *UserRepository) LoginByPhone(ctx context.Context, in *service.LoginByAc
 		}
 		return nil, err
 	}
+	if locked, remain := loginlock.Locked(ctx, res.Username); locked {
+		return nil, fmt.Errorf("账号已被锁定，请 %d 分钟后重试", int(remain.Minutes())+1)
+	}
 	if err := r.verifyAndUpgrade(ctx, res, in.Password); err != nil {
+		loginlock.RecordFail(ctx, res.Username)
 		return nil, err
 	}
+	loginlock.Clear(ctx, res.Username)
 	return res, nil
 }
 
@@ -143,9 +154,14 @@ func (r *UserRepository) LoginByEmail(ctx context.Context, in *service.LoginByAc
 		}
 		return nil, err
 	}
+	if locked, remain := loginlock.Locked(ctx, res.Username); locked {
+		return nil, fmt.Errorf("账号已被锁定，请 %d 分钟后重试", int(remain.Minutes())+1)
+	}
 	if err := r.verifyAndUpgrade(ctx, res, in.Password); err != nil {
+		loginlock.RecordFail(ctx, res.Username)
 		return nil, err
 	}
+	loginlock.Clear(ctx, res.Username)
 	return res, nil
 }
 

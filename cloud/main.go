@@ -8,6 +8,7 @@ import (
 	"onecloud/internal/config"
 	"onecloud/internal/middleware"
 	"onecloud/internal/pkg/cleanup"
+	"onecloud/internal/pkg/loginlock"
 	"onecloud/internal/pkg/migrate"
 	"onecloud/internal/pkg/snapshot"
 	"onecloud/internal/pkg/snowId"
@@ -71,6 +72,9 @@ func main() {
 
 	})
 	defer s.Stop()
+
+	// 登录失败锁定（Redis 计数，Redis 不可用时进程内回退）
+	loginlock.Setup(ctx.Redis)
 
 	// 用户状态查询注入（JWT 拦截器禁用检查与角色注入的数据源）
 	middleware.SetUserStateLookup(func(rctx context.Context, userID string) (string, bool, error) {
