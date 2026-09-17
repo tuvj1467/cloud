@@ -66,7 +66,7 @@ func (l *LoginByPhoneSmsLogic) LoginByPhoneSms(in *service.LoginByPhoneSmsReq) (
 	if res.Disabled {
 		return response.ErrWithCode(response.CodeUserDisabled, "账号已被禁用")
 	}
-	token, err := jwt.GenerateToken(res.ID)
+	token, err := jwt.GenerateToken(res.ID, res.TokenVersion)
 	if err != nil {
 		return response.Err(errors.New("生成 token 失败: " + err.Error()))
 	}

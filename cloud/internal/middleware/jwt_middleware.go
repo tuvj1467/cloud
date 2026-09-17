@@ -109,6 +109,7 @@ func (w *authenticatedStream) Context() context.Context { return w.ctx }
 type userState struct {
 	role     string
 	disabled bool
+	ver      int64
 }
 
 var (
@@ -122,14 +123,16 @@ var (
 const userStateTTL = 60 * time.Second
 
 // userStateLookup 由外部注入（避免 middleware → repository 依赖）：userID → role/disabled
-var userStateLookup func(ctx context.Context, userID string) (role string, disabled bool, err error)
+var userStateLookup func(ctx context.Context, userID string) (role string, disabled bool, ver int64, err error)
 
 // SetUserStateLookup 注册用户状态查询函数（main.go 启动时调用）
-func SetUserStateLookup(fn func(ctx context.Context, userID string) (string, bool, error)) {
+func SetUserStateLookup(fn func(ctx context.Context, userID string) (string, bool, int64, error)) {
 	userStateLookup = fn
 }
 
 // injectUserState 校验禁用状态并将角色注入 context
+func verFromContext(ctx context.Context) int64 { return jwt.GetVerFromCtx(ctx) }
+
 func injectUserState(ctx context.Context) (context.Context, error) {
 	userID, err := jwt.GetUserIdFromCtx(ctx)
 	if err != nil || userID == "" || userStateLookup == nil {
@@ -141,20 +144,24 @@ func injectUserState(ctx context.Context) (context.Context, error) {
 	valid := ok && now.Before(cached.exp)
 	usMu.Unlock()
 	if !valid {
-		role, disabled, err := userStateLookup(ctx, userID)
+		role, disabled, ver, err := userStateLookup(ctx, userID)
 		if err != nil {
 			return nil, status.Error(codes.Unauthenticated, "账号状态查询失败")
 		}
 		cached = struct {
 			state userState
 			exp   time.Time
-		}{userState{role: role, disabled: disabled}, now.Add(userStateTTL)}
+		}{userState{role: role, disabled: disabled, ver: ver}, now.Add(userStateTTL)}
 		usMu.Lock()
 		usCache[userID] = cached
 		usMu.Unlock()
 	}
 	if cached.state.disabled {
 		return nil, status.Error(codes.Unauthenticated, "账号已被禁用")
+	}
+	// 会话版本比对：token ver 落后于 DB（重置密码/禁用触发 bump）→ 旧会话失效
+	if tv := verFromContext(ctx); tv != cached.state.ver {
+		return nil, status.Error(codes.Unauthenticated, "登录已失效，请重新登录")
 	}
 	return jwt.NewRoleContext(ctx, cached.state.role), nil
 }

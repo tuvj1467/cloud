@@ -36,6 +36,8 @@ const (
 	FieldRole = "role"
 	// FieldDisabled holds the string denoting the disabled field in the database.
 	FieldDisabled = "disabled"
+	// FieldTokenVersion holds the string denoting the token_version field in the database.
+	FieldTokenVersion = "token_version"
 	// Table holds the table name of the user in the database.
 	Table = "users"
 )
@@ -54,6 +56,7 @@ var Columns = []string{
 	FieldPhone,
 	FieldRole,
 	FieldDisabled,
+	FieldTokenVersion,
 }
 
 // ValidColumn reports if the column name is valid (part of the table columns).
@@ -83,6 +86,8 @@ var (
 	PasswordValidator func(string) error
 	// DefaultDisabled holds the default value on creation for the "disabled" field.
 	DefaultDisabled bool
+	// DefaultTokenVersion holds the default value on creation for the "token_version" field.
+	DefaultTokenVersion int64
 	// IDValidator is a validator for the "id" field. It is called by the builders before save.
 	IDValidator func(string) error
 )
@@ -174,4 +179,9 @@ func ByRole(opts ...sql.OrderTermOption) OrderOption {
 // ByDisabled orders the results by the disabled field.
 func ByDisabled(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldDisabled, opts...).ToFunc()
+}
+
+// ByTokenVersion orders the results by the token_version field.
+func ByTokenVersion(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldTokenVersion, opts...).ToFunc()
 }

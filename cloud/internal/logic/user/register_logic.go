@@ -133,7 +133,7 @@ func (l *RegisterLogic) Register(in *service.RegisterReq) (*service.Response, er
 	if err != nil {
 		return response.Err(errors.New("查询注册用户失败: " + err.Error()))
 	}
-	token, err := jwt.GenerateToken(res.ID)
+	token, err := jwt.GenerateToken(res.ID, res.TokenVersion)
 	if err != nil {
 		return response.Err(errors.New("生成 token 失败: " + err.Error()))
 	}

@@ -39,7 +39,9 @@ type User struct {
 	// 角色：user 普通用户 / admin 管理员
 	Role user.Role `json:"role,omitempty"`
 	// 是否被禁用（禁用后拒绝登录与既有 token）
-	Disabled     bool `json:"disabled,omitempty"`
+	Disabled bool `json:"disabled,omitempty"`
+	// 会话版本（重置密码/禁用时 +1 使既有 token 全部失效）
+	TokenVersion int64 `json:"token_version,omitempty"`
 	selectValues sql.SelectValues
 }
 
@@ -50,7 +52,7 @@ func (*User) scanValues(columns []string) ([]any, error) {
 		switch columns[i] {
 		case user.FieldDisabled:
 			values[i] = new(sql.NullBool)
-		case user.FieldVersion:
+		case user.FieldVersion, user.FieldTokenVersion:
 			values[i] = new(sql.NullInt64)
 		case user.FieldID, user.FieldUsername, user.FieldNickname, user.FieldAvatar, user.FieldEmail, user.FieldPassword, user.FieldPhone, user.FieldRole:
 			values[i] = new(sql.NullString)
@@ -143,6 +145,12 @@ func (_m *User) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				_m.Disabled = value.Bool
 			}
+		case user.FieldTokenVersion:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for field token_version", values[i])
+			} else if value.Valid {
+				_m.TokenVersion = value.Int64
+			}
 		default:
 			_m.selectValues.Set(columns[i], values[i])
 		}
@@ -211,6 +219,9 @@ func (_m *User) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("disabled=")
 	builder.WriteString(fmt.Sprintf("%v", _m.Disabled))
+	builder.WriteString(", ")
+	builder.WriteString("token_version=")
+	builder.WriteString(fmt.Sprintf("%v", _m.TokenVersion))
 	builder.WriteByte(')')
 	return builder.String()
 }

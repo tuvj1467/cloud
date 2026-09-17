@@ -249,9 +249,13 @@ func (r *UserRepository) ResetPassword(ctx context.Context, in *service.ResetPas
 	if err != nil {
 		return fmt.Errorf("密码加密失败: %w", err)
 	}
-	return r.client.User.UpdateOneID(res.ID).
+	if err := r.client.User.UpdateOneID(res.ID).
 		SetPassword(hashed).
-		Exec(ctx)
+		AddTokenVersion(1). // 重置密码后踢出该用户所有既有 token
+		Exec(ctx); err != nil {
+		return err
+	}
+	return nil
 }
 
 // FindBack 找回账号

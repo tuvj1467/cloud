@@ -57,6 +57,10 @@ func (User) Fields() []ent.Field {
 			Default(false).
 			Comment("是否被禁用（禁用后拒绝登录与既有 token）").
 			Annotations(entsql.Annotation{WithComments: &withComments}),
+		field.Int64("token_version").
+			Default(1).
+			Comment("会话版本（重置密码/禁用时 +1 使既有 token 全部失效）").
+			Annotations(entsql.Annotation{WithComments: &withComments}),
 	}
 }
 

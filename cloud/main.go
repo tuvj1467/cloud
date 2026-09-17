@@ -77,15 +77,15 @@ func main() {
 	loginlock.Setup(ctx.Redis)
 
 	// 用户状态查询注入（JWT 拦截器禁用检查与角色注入的数据源）
-	middleware.SetUserStateLookup(func(rctx context.Context, userID string) (string, bool, error) {
+	middleware.SetUserStateLookup(func(rctx context.Context, userID string) (string, bool, int64, error) {
 		u, err := ctx.EntClient.User.Get(rctx, userID)
 		if err != nil {
 			if ent.IsNotFound(err) {
-				return "user", false, nil // 用户已删除：按普通用户放行（文件归属校验兜底）
+				return "user", false, 0, nil // 用户已删除：按普通用户放行（文件归属校验兜底）
 			}
-			return "", false, err
+			return "", false, 0, err
 		}
-		return string(u.Role), u.Disabled, nil
+		return string(u.Role), u.Disabled, u.TokenVersion, nil
 	})
 
 	// 用户级限流（须在 JWT 之前：匿名也按 IP 限流）

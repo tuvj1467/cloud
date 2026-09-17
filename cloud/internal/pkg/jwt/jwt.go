@@ -42,11 +42,12 @@ func Init(secret string, expire int64, issuer string) {
 // Claims 自定义 JWT 声明
 type Claims struct {
 	UserId string `json:"id"`
+	Ver    int64  `json:"ver"` // 会话版本（重置密码/禁用时 +1 使旧 token 失效）
 	jwt.RegisteredClaims
 }
 
-// GenerateToken 颁发 token
-func GenerateToken(userId string) (string, error) {
+// GenerateToken 颁发 token（ver 为会话版本；重置密码/禁用时 +1 使旧 token 失效）
+func GenerateToken(userId string, ver int64) (string, error) {
 	cfgMu.RLock()
 	secret := cfgSecret
 	expire := cfgExpire
@@ -56,6 +57,7 @@ func GenerateToken(userId string) (string, error) {
 	expireTime := time.Now().Add(time.Duration(expire) * time.Second)
 	claims := &Claims{
 		UserId: userId,
+		Ver:    ver,
 		RegisteredClaims: jwt.RegisteredClaims{
 			ExpiresAt: jwt.NewNumericDate(expireTime), // 过期时间
 			IssuedAt:  jwt.NewNumericDate(time.Now()), // 签发时间
@@ -100,6 +102,19 @@ func NewRoleContext(ctx context.Context, role string) context.Context {
 	return context.WithValue(ctx, roleKey, role)
 }
 
+// NewVerContext 将会话版本注入 context
+func NewVerContext(ctx context.Context, ver int64) context.Context {
+	return context.WithValue(ctx, contextKey("ver"), ver)
+}
+
+// GetVerFromCtx 读取会话版本（未注入返回 0，表示无版本信息的旧 token）
+func GetVerFromCtx(ctx context.Context) int64 {
+	if v, ok := ctx.Value(contextKey("ver")).(int64); ok {
+		return v
+	}
+	return 0
+}
+
 // GetRoleFromCtx 从 context 读取角色（未注入视为 "user"）
 func GetRoleFromCtx(ctx context.Context) string {
 	if v, ok := ctx.Value(roleKey).(string); ok && v != "" {
@@ -128,5 +143,6 @@ func VerifyToken(ctx context.Context, tokenString string) (context.Context, erro
 		return nil, errors.New("token 无效")
 	}
 
-	return NewContext(ctx, claims.UserId), nil
+	// 注入 user_id + 会话版本（拦截器与 DB token_version 比对）
+	return NewContext(NewVerContext(ctx, claims.Ver), claims.UserId), nil
 }

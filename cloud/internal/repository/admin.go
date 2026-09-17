@@ -47,9 +47,11 @@ func AdminSetUserRole(client *ent.Client, ctx context.Context, userID, role stri
 
 // AdminSetUserDisabled 设置禁用状态
 func AdminSetUserDisabled(client *ent.Client, ctx context.Context, userID string, disabled bool) error {
-	return client.User.UpdateOneID(userID).
-		SetDisabled(disabled).
-		Exec(ctx)
+	upd := client.User.UpdateOneID(userID).SetDisabled(disabled)
+	if disabled {
+		upd.AddTokenVersion(1) // 禁用即踢出既有会话（token ver 失配）
+	}
+	return upd.Exec(ctx)
 }
 
 // AdminUserFileUsage 聚合一组用户的文件数与总大小（user_id → 行）

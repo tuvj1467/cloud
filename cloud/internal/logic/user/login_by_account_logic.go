@@ -89,12 +89,11 @@ func (l *LoginByAccountLogic) LoginByAccount(in *service.LoginByAccountReq) (*se
 		}
 	}
 
-
 	// 禁用账号拒绝登录
 	if query.Disabled {
 		return response.ErrWithCode(response.CodeUserDisabled, "账号已被禁用")
 	}
-	token, err := jwt.GenerateToken(query.ID)
+	token, err := jwt.GenerateToken(query.ID, query.TokenVersion)
 	if err != nil {
 		return response.Err(errors.New("生成 token 失败: " + err.Error()))
 	}
