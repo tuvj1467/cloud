@@ -116,7 +116,15 @@ func (l *CompleteMultipartUploadLogic) CompleteMultipartUpload(in *service.Compl
 	}
 
 	// rollback 合并失败回滚：清理本次产物并把分片状态恢复为 uploaded（保留重试能力）
-	rollback := func(physicalPath string, recordID string) {
+	// restoreQuota：配额在本流程第 11 步先扣，扣减之后的失败路径须补偿性归还。
+	// mergedSize 在 Stat 实测后赋值，早于所有 restoreQuota=true 的调用点
+	var mergedSize int64
+	rollback := func(physicalPath string, recordID string, restoreQuota bool) {
+		if restoreQuota {
+			if _, decErr := bucketRepo.TryDecUsedSize(l.ctx, meta.BucketID, mergedSize); decErr != nil {
+				l.Errorf("回滚归还桶容量失败（配额可能泄漏，需对账）bucket=%s delta=%d: %v", meta.BucketID, mergedSize, decErr)
+			}
+		}
 		if physicalPath != "" {
 			if delErr := l.svcCtx.Storage.Delete(l.ctx, physicalPath); delErr != nil {
 				l.Errorf("回滚物理文件失败: %v", delErr)
@@ -137,7 +145,7 @@ func (l *CompleteMultipartUploadLogic) CompleteMultipartUpload(in *service.Compl
 
 	// 目标后缀白名单（meta.FileSuffix 来自 init 请求）
 	if !storage.ValidSuffix(meta.FileSuffix) {
-		rollback("", "")
+		rollback("", "", false)
 		return response.ErrWithCode(response.CodeStoragePathInvalid, "文件后缀非法")
 	}
 
@@ -153,7 +161,7 @@ func (l *CompleteMultipartUploadLogic) CompleteMultipartUpload(in *service.Compl
 		expectedMD5 = nil
 	}
 	if err := l.svcCtx.Storage.CompletePart(l.ctx, meta.StorageID, targetPath, meta.TotalParts, expectedMD5); err != nil {
-		rollback("", "")
+		rollback("", "", false)
 		return response.ErrInternal(l.Logger, "合并分片失败", err)
 	}
 
@@ -167,11 +175,12 @@ func (l *CompleteMultipartUploadLogic) CompleteMultipartUpload(in *service.Compl
 	// 大小治理：以驱动 Stat 实测值为记账基准（客户端声明的 FileSize 不可信）
 	statInfo, err := l.svcCtx.Storage.Stat(l.ctx, targetPath)
 	if err != nil {
-		rollback(targetPath, "")
+		rollback(targetPath, "", false)
 		return response.ErrInternal(l.Logger, "校验合并文件大小失败", err)
 	}
+	mergedSize = statInfo.Size
 	if meta.FileSize > 0 && statInfo.Size != meta.FileSize {
-		rollback(targetPath, "")
+		rollback(targetPath, "", false)
 		return response.Err(fmt.Errorf("合并文件大小不符：实测 %d / 声明 %d", statInfo.Size, meta.FileSize))
 	}
 
@@ -209,7 +218,7 @@ func (l *CompleteMultipartUploadLogic) CompleteMultipartUpload(in *service.Compl
 	// 11. 先原子扣减桶容量（配额优先：后续失败只需补偿归还，杜绝「记录已建配额未扣」的漂移窗口）
 	ok, err := bucketRepo.TryIncUsedSize(l.ctx, meta.BucketID, statInfo.Size)
 	if err != nil || !ok {
-		rollback(freshPathOf(instantSrc, targetPath), "")
+		rollback(freshPathOf(instantSrc, targetPath), "", false)
 		if err != nil {
 			return response.ErrInternal(l.Logger, "桶容量更新失败", err)
 		}
@@ -222,7 +231,7 @@ func (l *CompleteMultipartUploadLogic) CompleteMultipartUpload(in *service.Compl
 		meta.FileSuffix, contentType, fileMD5, statInfo.Size,
 	)
 	if err != nil {
-		rollback(freshPathOf(instantSrc, targetPath), "")
+		rollback(freshPathOf(instantSrc, targetPath), "", true)
 		return response.ErrInternal(l.Logger, "文件入库失败", err)
 	}
 
