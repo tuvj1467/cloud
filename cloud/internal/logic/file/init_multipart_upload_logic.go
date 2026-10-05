@@ -86,6 +86,14 @@ func (l *InitMultipartUploadLogic) InitMultipartUpload(in *service.InitMultipart
 	// 6. 生成 upload_id（雪花ID，同时作为驱动临时目录名，两边天然一致）
 	uploadID := l.svcCtx.Snowflake.MustIdS()
 
+	// 6.1 S3/MinIO 硬约束：除最后一片外每片 ≥5MiB，违反时 Complete 才报错——
+	// 那时全部分片已传完，代价最大。init 阶段提前拒绝（仅 MinIO 驱动强制，本地无此约束）
+	if _, isMinio := l.svcCtx.Storage.(*storage.MinioDriver); isMinio && in.GetTotalParts() > 1 {
+		if avg := in.GetSize() / int64(in.GetTotalParts()); avg < 5*1024*1024 {
+			return response.Err(errors.New("分片过小：除最后一片外每片不得小于 5MiB，请减少分片数"))
+		}
+	}
+
 	// 7. 调用存储驱动创建分片临时目录
 	if err := l.svcCtx.Storage.InitPart(l.ctx, uploadID, int(in.GetTotalParts())); err != nil {
 		return response.Err(errors.New("初始化分片上传失败: " + err.Error()))

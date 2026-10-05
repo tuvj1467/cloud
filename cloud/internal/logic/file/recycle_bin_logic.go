@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 
+	"onecloud/ent"
 	"onecloud/internal/pkg/cache"
 	"onecloud/internal/pkg/jwt"
 	"onecloud/internal/pkg/response"
@@ -118,13 +119,27 @@ func (l *PurgeFilesLogic) PurgeFiles(in *service.PurgeFilesRequest) (*service.Re
 		return response.Err(errors.New("查询回收站文件失败: " + err.Error()))
 	}
 
+	// 批量预取全部目标的关联分享（原逐文件单查，N+1）；fileID → shares
+	targetIDs := make([]string, 0, len(targets))
+	for _, f := range targets {
+		targetIDs = append(targetIDs, f.ID)
+	}
+	sharesByFile := map[string][]*ent.FileShare{}
+	if len(targetIDs) > 0 {
+		allShares, err := shareRepo.ListByFileIDs(l.ctx, targetIDs)
+		if err != nil {
+			l.Errorf("批量查询关联分享失败（继续清除）: %v", err)
+		}
+		for _, s := range allShares {
+			sharesByFile[s.FileID] = append(sharesByFile[s.FileID], s)
+		}
+	}
+	shareCache := cache.NewShareCache(l.svcCtx.Redis)
+	md5Cache := cache.NewMD5Cache(l.svcCtx.Redis)
+
 	purged := 0
 	for _, f := range targets {
-		// 事务前查出关联分享（提交后清理 Redis 用）
-		shares, err := shareRepo.ListByFileIDs(l.ctx, []string{f.ID})
-		if err != nil {
-			l.Errorf("查询关联分享失败（继续清除）file=%s: %v", f.ID, err)
-		}
+		shares := sharesByFile[f.ID]
 
 		// 事务：删分享 + 删记录 + 归还配额（回收站占用随彻底删除释放）
 		if err := fileRepo.DeleteFull(l.ctx, f); err != nil {
@@ -133,14 +148,12 @@ func (l *PurgeFilesLogic) PurgeFiles(in *service.PurgeFilesRequest) (*service.Re
 		}
 
 		// 事务后清理：分享缓存、秒传索引、物理文件（失败仅告警）
-		shareCache := cache.NewShareCache(l.svcCtx.Redis)
 		for _, s := range shares {
 			if err := shareCache.Del(l.ctx, s.ShareCode); err != nil {
 				l.Errorf("清理分享缓存失败 code=%s: %v", s.ShareCode, err)
 			}
 		}
 		if f.Md5 != "" {
-			md5Cache := cache.NewMD5Cache(l.svcCtx.Redis)
 			if err := md5Cache.Del(l.ctx, userID, f.Md5, f.ID); err != nil {
 				l.Errorf("清理 MD5 索引失败: %v", err)
 			}

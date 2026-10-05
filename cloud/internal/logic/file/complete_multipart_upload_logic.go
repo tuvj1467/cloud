@@ -233,7 +233,7 @@ func (l *CompleteMultipartUploadLogic) CompleteMultipartUpload(in *service.Compl
 
 	// 13.2 生成缩略图（增强能力，失败不影响主流程）
 	if statInfo.Size > ThumbMinSize {
-		BuildThumb(l.ctx, l.svcCtx, newFile.ID, recordPath, meta.FileSuffix)
+		BuildThumbAsync(l.ctx, l.svcCtx, newFile.ID, recordPath, meta.FileSuffix)
 	}
 
 	// 14. 清理 Redis meta/parts（分片状态已在门闩处置为 merged）

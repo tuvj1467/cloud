@@ -14,12 +14,17 @@ var (
 	ErrCodeWrong   = errors.New("验证码错误")
 	ErrCodeExpired = errors.New("验证码已过期")
 	ErrTooFrequent = errors.New("验证码发送过于频繁，请稍后再试")
+	ErrQuotaExceeded = errors.New("今日发送次数已达上限，请明日再试")
 )
 
 const (
 	codeTTL      = 5 * time.Minute  // 验证码有效期
 	limitTTL     = 60 * time.Second // 发送频率限制窗口
 	maxFailCount = 5                // 最大验证失败次数，达到即作废验证码
+	// maxSendsPerDay 单联系方式+类型每日发送上限（60s 窗口只防短时连击，
+	// 不防 3 类型×全天轰炸；日级配额封堵持续轰炸与短信费用攻击面）
+	maxSendsPerDay = 10
+	dayTTL         = 24 * time.Hour
 )
 
 // Service 验证码服务
@@ -46,7 +51,11 @@ func failKey(contact string, typ int) string {
 	return fmt.Sprintf("sms_code_fail:%s:%d", contact, typ)
 }
 
-// Send 生成并“发送”验证码（60 秒频率限制，5 分钟有效期）
+func dailyKey(contact string, typ int) string {
+	return fmt.Sprintf("sms_code_daily:%s:%d", contact, typ)
+}
+
+// Send 生成并“发送”验证码（60 秒频率限制 + 每日 10 条配额，5 分钟有效期）
 func (s *Service) Send(ctx context.Context, contact string, typ int) error {
 	ok, err := s.kv.SetNX(ctx, limitKey(contact, typ), "1", limitTTL)
 	if err != nil {
@@ -57,6 +66,18 @@ func (s *Service) Send(ctx context.Context, contact string, typ int) error {
 	}
 	if !ok {
 		return ErrTooFrequent
+	}
+
+	// 日级配额（原子自增 + TTL；键为永久历史残留时由 Incr 补 TTL 自愈）
+	n, err := s.kv.Incr(ctx, dailyKey(contact, typ), dayTTL)
+	if err != nil {
+		if errors.Is(err, ErrUnavailable) {
+			return ErrUnavailable
+		}
+		return fmt.Errorf("日配额检查失败: %w", err)
+	}
+	if n > maxSendsPerDay {
+		return ErrQuotaExceeded
 	}
 
 	code, err := randomCode()

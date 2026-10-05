@@ -44,25 +44,29 @@ func (l *GetStorageStatsLogic) GetStorageStats(in *service.GetStorageStatsReques
 
 	client := l.svcCtx.EntClient
 
-	// 1. 用户级聚合：文件总数 + 实际总大小
-	fileCount, err := client.File.Query().Where(file.UserIDEQ(userID), file.DeletedAtIsNil()).Count(l.ctx)
-	if err != nil {
-		return response.Err(errors.New("统计文件数失败: " + err.Error()))
+	// 1. 一次 GROUP BY 拿到用户级与分桶级聚合（原实现：用户级 2 查 + 逐桶 2 查的 N+1）
+	//    GROUP BY 只产出 count>0 的分组，天然规避 SUM()=NULL 的空集歧义
+	var rows []struct {
+		BucketID string `json:"bucket_id"`
+		Count    int64  `json:"count"`
+		Sum      int64  `json:"sum"`
+	}
+	if err := client.File.Query().
+		Where(file.UserIDEQ(userID), file.DeletedAtIsNil()).
+		GroupBy(file.FieldBucketID).
+		Aggregate(ent.Count(), ent.Sum(file.FieldSize)).
+		Scan(l.ctx, &rows); err != nil {
+		return response.Err(errors.New("统计文件用量失败: " + err.Error()))
+	}
+	var fileCount, totalSize int64
+	perBucket := make(map[string][2]int64, len(rows))
+	for _, r := range rows {
+		fileCount += r.Count
+		totalSize += r.Sum
+		perBucket[r.BucketID] = [2]int64{r.Count, r.Sum}
 	}
 
-	var totalSize int64
-	if fileCount > 0 { // 空用户跳过 Sum，规避 SUM()=NULL
-		var sizes []int64
-		if err := client.File.Query().Where(file.UserIDEQ(userID), file.DeletedAtIsNil()).
-			Aggregate(ent.Sum(file.FieldSize)).Scan(l.ctx, &sizes); err != nil {
-			return response.Err(errors.New("统计文件大小失败: " + err.Error()))
-		}
-		if len(sizes) > 0 {
-			totalSize = sizes[0]
-		}
-	}
-
-	// 2. 分桶聚合：桶信息（name/used_size/size_limit）取自 buckets 表
+	// 2. 桶信息（name/used_size/size_limit）取自 buckets 表，与聚合结果内存拼装
 	buckets, err := client.Bucket.Query().Where(bucket.UserIDEQ(userID)).All(l.ctx)
 	if err != nil {
 		return response.Err(errors.New("查询桶列表失败: " + err.Error()))
@@ -76,22 +80,9 @@ func (l *GetStorageStatsLogic) GetStorageStats(in *service.GetStorageStatsReques
 			UsedSize:  b.UsedSize,
 			SizeLimit: b.SizeLimit,
 		}
-
-		cnt, err := client.File.Query().Where(file.UserIDEQ(userID), file.BucketIDEQ(b.ID), file.DeletedAtIsNil()).Count(l.ctx)
-		if err != nil {
-			return response.Err(errors.New("统计桶内文件数失败: " + err.Error()))
-		}
-		stat.FileCount = int64(cnt)
-
-		if cnt > 0 {
-			var sizes []int64
-			if err := client.File.Query().Where(file.UserIDEQ(userID), file.BucketIDEQ(b.ID)).
-				Aggregate(ent.Sum(file.FieldSize)).Scan(l.ctx, &sizes); err != nil {
-				return response.Err(errors.New("统计桶内文件大小失败: " + err.Error()))
-			}
-			if len(sizes) > 0 {
-				stat.TotalSize = sizes[0]
-			}
+		if ag, ok := perBucket[b.ID]; ok {
+			stat.FileCount = ag[0]
+			stat.TotalSize = ag[1]
 		}
 		bucketStats = append(bucketStats, stat)
 	}

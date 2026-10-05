@@ -72,6 +72,12 @@ func (l *DownloadByShareStreamLogic) DownloadByShareStream(in *service.DownloadB
 		}
 	}
 
+	// permission=read 为仅查看分享（用户创建时显式选择），不允许下载
+	if data.Permission == "read" {
+		r, _ := response.ErrWithCode(response.CodeFileNoPermission, "该分享仅允许查看，不支持下载")
+		return errors.New(r.Message)
+	}
+
 	f, err := fileRepo.GetInfo(l.ctx, data.FileID)
 	if err != nil {
 		if ent.IsNotFound(err) {
@@ -79,10 +85,9 @@ func (l *DownloadByShareStreamLogic) DownloadByShareStream(in *service.DownloadB
 		}
 		return errors.New("查询文件失败")
 	}
-
-	// permission 不限制下载，read 权限下载时留痕（与一元 DownloadByShare 语义一致）
-	if data.Permission == "read" {
-		l.Infof("share stream download with read permission code=%s file=%s", in.GetShareCode(), data.FileID)
+	// 回收站中的文件不可被分享下载
+	if f.DeletedAt != nil {
+		return errors.New("分享的文件已被删除")
 	}
 
 	reader, err := l.svcCtx.Storage.Get(l.ctx, f.Path)

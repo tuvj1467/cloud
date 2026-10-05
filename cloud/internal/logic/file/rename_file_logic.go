@@ -54,6 +54,10 @@ func (l *RenameFileLogic) RenameFile(in *service.RenameFileRequest) (*service.Re
 	if f.UserID != userID {
 		return response.Err(errors.New("无权重命名该文件"))
 	}
+	// 回收站中的文件不可重命名（还原后操作）
+	if f.DeletedAt != nil {
+		return response.Err(errors.New("文件已在回收站中，请先还原"))
+	}
 
 	// 校验同桶下文件名是否冲突
 	if f.Name != in.GetNewName() {

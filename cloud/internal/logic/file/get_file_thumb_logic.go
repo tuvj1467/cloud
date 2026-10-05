@@ -54,6 +54,10 @@ func (l *GetFileThumbLogic) GetFileThumb(in *service.FileThumbRequest) (*service
 	if f.UserID != userID {
 		return response.ErrWithCode(response.CodeFileNoPermission, "无权访问该文件")
 	}
+	// 回收站中的文件不再提供缩略图
+	if f.DeletedAt != nil {
+		return response.ErrWithCode(response.CodeFileNotFound, "文件不存在")
+	}
 	if !thumb.IsSupported(f.Ext) {
 		return response.ErrWithCode(response.CodeStorageNotImpl, "该文件类型不支持缩略图")
 	}

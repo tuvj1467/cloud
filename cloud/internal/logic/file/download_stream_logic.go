@@ -57,6 +57,11 @@ func (l *DownloadStreamLogic) DownloadStream(in *service.DownloadFileRequest, st
 		r, _ := response.ErrWithCode(response.CodeFileNoPermission, "无权下载该文件")
 		return errors.New(r.Message)
 	}
+	// 回收站中的文件不可下载（还原后可恢复访问）
+	if f.DeletedAt != nil {
+		r, _ := response.ErrWithCode(response.CodeFileNotFound, "文件不存在")
+		return errors.New(r.Message)
+	}
 
 	reader, err := l.svcCtx.Storage.Get(l.ctx, f.Path)
 	if err != nil {

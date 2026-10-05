@@ -202,7 +202,7 @@ func (l *UploadFileLogic) UploadFile(in *service.UploadFileRequest) (*service.Re
 
 	// 10.2 生成缩略图（增强能力，失败不影响主流程）
 	if size > ThumbMinSize {
-		BuildThumb(l.ctx, l.svcCtx, res.ID, filePath, in.GetSuffix())
+		BuildThumbAsync(l.ctx, l.svcCtx, res.ID, filePath, in.GetSuffix())
 	}
 
 	l.Infof("upload success user=%s bucket=%s file=%s size=%d md5=%s instant_new_record=%v",

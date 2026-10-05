@@ -62,6 +62,10 @@ func (l *CreateShareLogic) CreateShare(in *service.CreateShareRequest) (*service
 	if f.UserID != userID {
 		return response.Err(errors.New("无权分享该文件"))
 	}
+	// 回收站中的文件不可分享（软删后至彻底删除前也不允许新增分享入口）
+	if f.DeletedAt != nil {
+		return response.Err(errors.New("文件已在回收站中，无法分享"))
+	}
 
 	// 4. 生成 share_code（碰撞重试 3 次）
 	var shareCode string

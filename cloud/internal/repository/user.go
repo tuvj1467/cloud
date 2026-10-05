@@ -176,7 +176,9 @@ func (r *UserRepository) LoginByPhoneSms(ctx context.Context, in *service.LoginB
 
 	if err != nil {
 		if ent.IsNotFound(err) {
-			return nil, errors.New("用户不存在")
+			// 与「验证码错误」不可区分：验证码仅在已注册联系方式上可获取（发送端静默），
+			// 此处不再回显注册状态，封堵注册状态探测
+			return nil, errors.New("验证码错误或已过期")
 		}
 		return nil, err
 	}
@@ -192,7 +194,9 @@ func (r *UserRepository) LoginByEmailSms(ctx context.Context, in *service.LoginB
 
 	if err != nil {
 		if ent.IsNotFound(err) {
-			return nil, errors.New("用户不存在")
+			// 与「验证码错误」不可区分：验证码仅在已注册联系方式上可获取（发送端静默），
+			// 此处不再回显注册状态，封堵注册状态探测
+			return nil, errors.New("验证码错误或已过期")
 		}
 		return nil, err
 	}
@@ -201,20 +205,24 @@ func (r *UserRepository) LoginByEmailSms(ctx context.Context, in *service.LoginB
 }
 
 // ResetPassword 重置密码（使用 bcrypt 加密新密码）
+// contact oneof 均未设置时显式报错（原实现 res 为 nil 直接解引用 panic）；
+// 未注册联系方式返回与注册状态无关的模糊文案（防枚举），ent 原始错误不透传客户端
 func (r *UserRepository) ResetPassword(ctx context.Context, in *service.ResetPasswordReq) error {
 	var res *ent.User
 	var err error
 	switch in.GetContact().(type) {
 	case *service.ResetPasswordReq_Phone:
 		res, err = r.client.User.Query().Where(user.PhoneEQ(in.GetPhone())).Only(ctx)
-		if err != nil {
-			return err
-		}
 	case *service.ResetPasswordReq_Email:
 		res, err = r.client.User.Query().Where(user.EmailEQ(in.GetEmail())).Only(ctx)
-		if err != nil {
-			return err
+	default:
+		return errors.New("请提供手机号或邮箱")
+	}
+	if err != nil {
+		if ent.IsNotFound(err) {
+			return errors.New("该账号不存在或联系方式有误")
 		}
+		return fmt.Errorf("查询用户失败: %w", err)
 	}
 
 	hashed, err := passwd.Hash(in.GetNewPassword())
@@ -231,20 +239,23 @@ func (r *UserRepository) ResetPassword(ctx context.Context, in *service.ResetPas
 }
 
 // FindBack 找回账号
+// contact oneof 均未设置时显式报错（原实现 res 为 nil 直接解引用 panic）
 func (r *UserRepository) FindBack(ctx context.Context, in *service.FindAccountReq) (*ent.User, error) {
 	var res *ent.User
 	var err error
 	switch in.GetContact().(type) {
 	case *service.FindAccountReq_Phone:
 		res, err = r.client.User.Query().Where(user.PhoneEQ(in.GetPhone())).Only(ctx)
-		if err != nil {
-			return nil, err
-		}
 	case *service.FindAccountReq_Email:
 		res, err = r.client.User.Query().Where(user.EmailEQ(in.GetEmail())).Only(ctx)
-		if err != nil {
-			return nil, err
+	default:
+		return nil, errors.New("请提供手机号或邮箱")
+	}
+	if err != nil {
+		if ent.IsNotFound(err) {
+			return nil, errors.New("该账号不存在或联系方式有误")
 		}
+		return nil, fmt.Errorf("查询用户失败: %w", err)
 	}
 	return r.client.User.Get(ctx, res.ID)
 }

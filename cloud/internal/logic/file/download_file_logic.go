@@ -57,6 +57,10 @@ func (l *DownloadFileLogic) DownloadFile(in *service.DownloadFileRequest) (*serv
 	if f.UserID != userID {
 		return response.ErrWithCode(response.CodeFileNoPermission, "无权下载该文件")
 	}
+	// 回收站中的文件不可下载（还原后可恢复访问）
+	if f.DeletedAt != nil {
+		return response.ErrWithCode(response.CodeFileNotFound, "文件不存在")
+	}
 
 	// 大小治理：超上限走流式端点，避免大文件整文件驻内存
 	if f.Size > unaryDownloadMaxBytes {

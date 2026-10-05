@@ -72,18 +72,21 @@ func (l *DownloadByShareLogic) DownloadByShare(in *service.DownloadByShareReques
 		}
 	}
 
-	// 8. 查询文件元信息
+	// permission=read 为仅查看分享（用户创建时显式选择），不允许下载
+	if data.Permission == "read" {
+		return response.ErrWithCode(response.CodeFileNoPermission, "该分享仅允许查看，不支持下载")
+	}
+
+	// 8. 查询文件元信息（回收站中的文件不可被分享下载）
 	f, err := fileRepo.GetInfo(l.ctx, data.FileID)
 	if err != nil {
 		if ent.IsNotFound(err) {
 			return response.Err(errors.New("分享的文件已被删除"))
 		}
-		return response.Err(errors.New("查询文件失败: " + err.Error()))
+		return response.Err(errors.New("查询文件失败"))
 	}
-
-	// permission 不限制下载，read 权限下载时留痕
-	if data.Permission == "read" {
-		l.Infof("share download with read permission code=%s file=%s", in.GetShareCode(), data.FileID)
+	if f.DeletedAt != nil {
+		return response.Err(errors.New("分享的文件已被删除"))
 	}
 
 	// 9. 通过存储驱动读取物理文件

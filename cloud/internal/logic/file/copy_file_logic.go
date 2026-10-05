@@ -56,6 +56,10 @@ func (l *CopyFileLogic) CopyFile(in *service.CopyFileRequest) (*service.Response
 	if src.UserID != userID {
 		return response.Err(errors.New("无权复制该文件"))
 	}
+	// 回收站中的文件不可复制
+	if src.DeletedAt != nil {
+		return response.Err(errors.New("源文件已在回收站中"))
+	}
 
 	// 2. 校验目标桶归属与容量（快速失败，最终以原子扣减为准）
 	targetBucket, err := bucketRepo.GetByID(l.ctx, in.GetTargetBucketId())

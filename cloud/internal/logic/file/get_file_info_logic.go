@@ -52,6 +52,10 @@ func (l *GetFileInfoLogic) GetFileInfo(in *service.FileInfoRequest) (*service.Re
 	if f.UserID != userID {
 		return response.Err(errors.New("无权访问该文件"))
 	}
+	// 回收站中的文件按不存在处理（列表已过滤，详情不再暴露）
+	if f.DeletedAt != nil {
+		return response.ErrWithCode(response.CodeFileNotFound, "文件不存在")
+	}
 
 	return response.Success(&service.FileInfoResponse{
 		File: toFileMeta(f),
