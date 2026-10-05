@@ -10,7 +10,7 @@
 services:
   # ---------- MySQL 8：元数据存储 ----------
   mysql:
-    image: mysql:8
+    image: mysql:8.0
     environment:
       MYSQL_ROOT_PASSWORD: onecloud123
       MYSQL_DATABASE: cloud
@@ -32,7 +32,7 @@ services:
 
   # ---------- Redis 7：秒传索引 / 分片状态 / 分享缓存 ----------
   redis:
-    image: redis:7-alpine
+    image: redis:7.4-alpine
     volumes:
       - redis-data:/data
     healthcheck:
@@ -56,6 +56,12 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
+    healthcheck:
+      # busybox nc 探测 gRPC 端口存活
+      test: ["CMD-SHELL", "nc -z 127.0.0.1 8081"]
+      interval: 10s
+      timeout: 3s
+      retries: 12
     restart: unless-stopped
     # 需要用 grpcurl 直连调试时放开：
     # ports:
@@ -71,10 +77,13 @@ services:
       # 容器版配置：gRPC 目标为 cloud:8081
       - ./deploy/gateway/gateway.yaml:/app/gateway.yaml:ro
     depends_on:
-      - cloud
+      cloud:
+        condition: service_healthy
     restart: unless-stopped
 
   # ---------- MinIO（可选：--profile minio 启用，S3 兼容存储后端）----------
+  # ⚠ 生产请把镜像固定到具体 RELEASE.日期 tag（latest 不可复现），
+  #   并取消 9000/9001 对宿主机的暴露（仅容器网络内使用）、更换默认 root 口令
   minio:
     image: minio/minio:latest
     command: server /data --console-address ":9001"

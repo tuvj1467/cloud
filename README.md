@@ -316,7 +316,8 @@ curl -X POST http://127.0.0.1:8888/bucket/create \
 |------|------|------|------|
 | CreateShare | POST | ✅ | 创建分享链接 |
 | AccessShare | GET | - | 匿名访问分享 |
-| DownloadByShare | GET | - | 匿名分享下载（校验提取码/有效期/下载次数） |
+| DownloadByShare | GET | - | 匿名分享下载（校验提取码/有效期/下载次数；permission=read 拒绝；>5MB 建议走流式） |
+| DownloadByShareStream | POST | - | 匿名分享流式下载（64KB 分块 server-streaming，大文件不驻内存） |
 | GetMyShares | GET | ✅ | 我的分享列表（分页，含文件名/已用次数） |
 | RevokeShare | POST | ✅ | 撤销分享（仅限本人，立即失效） |
 
@@ -359,7 +360,8 @@ curl -X POST http://127.0.0.1:8888/bucket/create \
 | `upload:{upload_id}:meta` | string(JSON) | 分片上传元信息 | 24 小时 |
 | `upload:{upload_id}:parts` | hash | 已上传分片（part_number → md5） | 24 小时 |
 | `share:{code}:meta` | string(JSON) | 分享元信息 | 与过期时间对齐 |
-| `share:{code}:counter` | string(int) | 分享已用次数 | 与过期时间对齐 |
+| `share:{code}:counter` | string(int) | 分享已用次数（Lua 原子校验+递增） | 与过期时间对齐 |
+| `sms_code_daily:{contact}:{type}` | string(int) | 验证码每日发送配额（10 条/天） | 24 小时 |
 
 ## 开发与贡献
 
