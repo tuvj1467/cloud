@@ -147,3 +147,32 @@ func TestVerifyOneTimeConsume(t *testing.T) {
 		t.Fatalf("replay should fail, got %v", err)
 	}
 }
+
+// TestSendDailyQuota 日级配额：同一联系方式同类型超过 maxSendsPerDay 后拒绝，
+// 且不同类型/不同联系方式互不影响；配额满后验证码发送（含真实写码动作）不得执行
+func TestSendDailyQuota(t *testing.T) {
+	kv := newMemKV()
+	svc := NewService(kv, LogSender{})
+	ctx := context.Background()
+
+	for i := 1; i <= maxSendsPerDay; i++ {
+		// 60s 频率窗口会先拒绝；跳过方式：直接操作 kv 清掉 limit 键模拟窗口过期
+		_ = kv.Del(ctx, limitKey("13800000001", 1))
+		if err := svc.Send(ctx, "13800000001", 1); err != nil {
+			t.Fatalf("第 %d 次发送不应失败: %v", i, err)
+		}
+	}
+	// 清掉频率窗口后再次发送：应命中日配额
+	_ = kv.Del(ctx, limitKey("13800000001", 1))
+	if err := svc.Send(ctx, "13800000001", 1); !errors.Is(err, ErrQuotaExceeded) {
+		t.Fatalf("超过日配额应返回 ErrQuotaExceeded，实际: %v", err)
+	}
+	// 其他类型不受影响
+	if err := svc.Send(ctx, "13800000001", 3); err != nil {
+		t.Fatalf("其他类型不应受配额影响: %v", err)
+	}
+	// 其他联系方式不受影响
+	if err := svc.Send(ctx, "13900000000", 1); err != nil {
+		t.Fatalf("其他联系方式不应受配额影响: %v", err)
+	}
+}

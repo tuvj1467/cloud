@@ -1,0 +1,61 @@
+# ONE_CLOUD CI：三模块构建 + 测试
+# 触发：push 到 main / 全部 PR
+# 说明：
+#   - cloud（onecloud）、gateway（独立 go.mod）、web（根模块 ONE_CLOUD）三个 Go 模块
+#   - MinIO 冒烟测试需真实服务（MINIO_SMOKE 门控），CI 中自动跳过
+#   - 生成代码（ent/proto）已提交入库，CI 不做代码生成
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - module: cloud
+          - module: gateway
+          - module: .
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.25"
+
+      - name: Build (module ${{ matrix.module }})
+        working-directory: ${{ matrix.module }}
+        run: go build ./...
+
+      - name: Vet (module ${{ matrix.module }})
+        working-directory: ${{ matrix.module }}
+        run: go vet ./...
+
+      - name: Test (module ${{ matrix.module }})
+        working-directory: ${{ matrix.module }}
+        run: go test ./... -count=1
+
+  docker:
+    runs-on: ubuntu-latest
+    needs: test
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - context: ./cloud
+            name: cloud
+          - context: ./gateway
+            name: gateway
+          - context: .
+            dockerfile: web/Dockerfile
+            name: web
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Docker build (${{ matrix.name }})
+        run: docker build -f ${{ matrix.dockerfile || 'Dockerfile' }} ${{ matrix.context }}
