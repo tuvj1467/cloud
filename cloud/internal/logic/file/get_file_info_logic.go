@@ -45,7 +45,7 @@ func (l *GetFileInfoLogic) GetFileInfo(in *service.FileInfoRequest) (*service.Re
 		if ent.IsNotFound(err) {
 			return response.Err(errors.New("文件不存在"))
 		}
-		return response.Err(errors.New("查询文件失败: " + err.Error()))
+		return response.ErrInternal(l.Logger, "查询文件失败", err)
 	}
 
 	// 校验文件归属

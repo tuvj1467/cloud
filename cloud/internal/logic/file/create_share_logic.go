@@ -57,7 +57,7 @@ func (l *CreateShareLogic) CreateShare(in *service.CreateShareRequest) (*service
 		if ent.IsNotFound(err) {
 			return response.Err(errors.New("文件不存在"))
 		}
-		return response.Err(errors.New("查询文件失败: " + err.Error()))
+		return response.ErrInternal(l.Logger, "查询文件失败", err)
 	}
 	if f.UserID != userID {
 		return response.Err(errors.New("无权分享该文件"))
@@ -72,7 +72,7 @@ func (l *CreateShareLogic) CreateShare(in *service.CreateShareRequest) (*service
 	for i := 0; i < 3; i++ {
 		code, err := util.GenerateShareCode(8)
 		if err != nil {
-			return response.Err(errors.New("生成分享码失败: " + err.Error()))
+			return response.ErrInternal(l.Logger, "生成分享码失败", err)
 		}
 		// 检查是否碰撞
 		exist, _ := shareRepo.GetByCode(l.ctx, code)
@@ -108,7 +108,7 @@ func (l *CreateShareLogic) CreateShare(in *service.CreateShareRequest) (*service
 		in.GetPermission(), expireUnix, maxCount,
 	)
 	if err != nil {
-		return response.Err(errors.New("创建分享记录失败: " + err.Error()))
+		return response.ErrInternal(l.Logger, "创建分享记录失败", err)
 	}
 
 	// 9. 写入 Redis 缓存

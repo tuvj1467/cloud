@@ -52,7 +52,7 @@ func (l *AdminListUsersLogic) AdminListUsers(in *service.AdminListUsersRequest) 
 
 	list, total, err := repository.AdminListUsers(l.svcCtx.EntClient, l.ctx, int(in.GetPage()), int(in.GetPageSize()), in.GetKeyword())
 	if err != nil {
-		return response.Err(errors.New("查询用户列表失败: " + err.Error()))
+		return response.ErrInternal(l.Logger, "查询用户列表失败", err)
 	}
 
 	// 聚合本页用户的文件用量（单条 GROUP BY）
@@ -119,7 +119,7 @@ func (l *AdminSetUserRoleLogic) AdminSetUserRole(in *service.AdminSetUserRoleReq
 		if ent.IsNotFound(err) {
 			return response.ErrWithCode(response.CodeUserNotFound, "用户不存在")
 		}
-		return response.Err(errors.New("设置角色失败: " + err.Error()))
+		return response.ErrInternal(l.Logger, "设置角色失败", err)
 	}
 	if err := repository.NewAdminAuditLogRepository(l.svcCtx.EntClient).
 		Create(l.ctx, operatorID, "set_role", in.GetUserId(), in.GetRole()); err != nil {
@@ -158,7 +158,7 @@ func (l *AdminSetUserDisabledLogic) AdminSetUserDisabled(in *service.AdminSetUse
 		if ent.IsNotFound(err) {
 			return response.ErrWithCode(response.CodeUserNotFound, "用户不存在")
 		}
-		return response.Err(errors.New("设置禁用状态失败: " + err.Error()))
+		return response.ErrInternal(l.Logger, "设置禁用状态失败", err)
 	}
 	if err := repository.NewAdminAuditLogRepository(l.svcCtx.EntClient).
 		Create(l.ctx, operatorID, "set_disabled", in.GetUserId(), map[bool]string{true: "disable", false: "enable"}[in.GetDisabled()]); err != nil {

@@ -2,7 +2,6 @@ package userlogic
 
 import (
 	"context"
-	"errors"
 
 	"onecloud/internal/pkg/response"
 	"onecloud/internal/repository"
@@ -36,7 +35,7 @@ func (l *AdminRecentAccessLogsLogic) AdminRecentAccessLogs(in *service.AdminRece
 	logRepo := repository.NewShareAccessLogRepository(l.svcCtx.EntClient)
 	logs, err := logRepo.ListRecent(l.ctx, limit)
 	if err != nil {
-		return response.Err(errors.New("查询审计日志失败: " + err.Error()))
+		return response.ErrInternal(l.Logger, "查询审计日志失败", err)
 	}
 
 	items := make([]*service.ShareAccessLogItem, 0, len(logs))

@@ -45,7 +45,7 @@ func (l *UpdateBucketLogic) UpdateBucket(in *service.UpdateBucketRequest) (*serv
 		if ent.IsNotFound(err) {
 			return response.Err(errors.New("桶不存在"))
 		}
-		return response.Err(errors.New("查询桶失败: " + err.Error()))
+		return response.ErrInternal(l.Logger, "查询桶失败", err)
 	}
 
 	// 校验桶归属
@@ -60,7 +60,7 @@ func (l *UpdateBucketLogic) UpdateBucket(in *service.UpdateBucketRequest) (*serv
 
 	_, err = bucketRepo.Update(l.ctx, in.GetBucketId(), in)
 	if err != nil {
-		return response.Err(errors.New("更新桶失败: " + err.Error()))
+		return response.ErrInternal(l.Logger, "更新桶失败", err)
 	}
 
 	return response.Success(&service.UpdateBucketResponse{Success: true})

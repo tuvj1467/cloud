@@ -14,6 +14,13 @@ type Config struct {
 	Storage   storage.Config // 存储驱动配置
 	JWT       JWTConf        // JWT 鉴权配置
 	RateLimit RateLimitConf  `json:",optional"` // 用户级 API 限流（缺省关闭）
+	Snowflake SnowflakeConf  `json:",optional"` // 雪花 ID 生成器
+}
+
+// SnowflakeConf 雪花 ID 配置
+// 多实例部署时必须为每个实例分配不同的 WorkerId（0-1023），否则主键冲突
+type SnowflakeConf struct {
+	WorkerId int64 `json:",default=0"` // 机器节点 ID（0-1023）
 }
 
 // RateLimitConf 用户级 API 限流配置

@@ -6,6 +6,8 @@ import (
 	"errors"
 	"fmt"
 	"onecloud/ent"
+
+	entsql "entgo.io/ent/dialect/sql"
 	"onecloud/internal/config"
 	"onecloud/internal/pkg/cache"
 	"onecloud/internal/pkg/database"
@@ -120,11 +122,9 @@ func (s *ServiceContext) initDatabase() error {
 		return fmt.Errorf("数据库连接校验失败: %w", err)
 	}
 
-	// 5. 用 ent.Open 创建 ent 客户端
-	entClient, err := ent.Open("mysql", dsn)
-	if err != nil {
-		return fmt.Errorf("初始化 ent 客户端失败: %w", err)
-	}
+	// 5. 基于同一个 *sql.DB 构建 ent 客户端（复用连接池配置；
+	// 原 ent.Open 同 DSN 再开一个池，其一白占连接配置）
+	entClient := ent.NewClient(ent.Driver(entsql.OpenDB("mysql", dbConn)))
 
 	// 6. 开发模式下自动迁移
 	if s.Config.Mode == "dev" {
@@ -187,12 +187,10 @@ func (s *ServiceContext) initSnowFlake() error {
 // Close 关闭所有连接
 func (s *ServiceContext) Close() {
 	if s.EntClient != nil {
+		// ent 客户端持有并托管唯一的 *sql.DB（含 s.Db 指向的同一连接池）
 		s.EntClient.Close()
 	}
 	if s.Redis != nil {
 		s.Redis.Close()
-	}
-	if s.Db != nil {
-		s.Db.Close()
 	}
 }

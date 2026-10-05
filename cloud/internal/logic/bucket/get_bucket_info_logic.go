@@ -45,7 +45,7 @@ func (l *GetBucketInfoLogic) GetBucketInfo(in *service.BucketInfoRequest) (*serv
 		if ent.IsNotFound(err) {
 			return response.Err(errors.New("桶不存在"))
 		}
-		return response.Err(errors.New("查询桶失败: " + err.Error()))
+		return response.ErrInternal(l.Logger, "查询桶失败", err)
 	}
 
 	// 校验桶归属

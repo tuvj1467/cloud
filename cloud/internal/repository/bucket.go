@@ -8,6 +8,7 @@ import (
 	"onecloud/ent/bucket"
 	"onecloud/ent/file"
 	"onecloud/ent/fileshare"
+	"onecloud/internal/pkg/consts"
 	"onecloud/proto/.proto/service"
 
 	entsql "entgo.io/ent/dialect/sql"
@@ -39,7 +40,7 @@ func parseVisibility(v string) bucket.Visibility {
 func (r *BucketRepository) Create(ctx context.Context, id, userID string, in *service.CreateBucketRequest) (*ent.Bucket, error) {
 	sizeLimit := in.GetSizeLimit()
 	if sizeLimit <= 0 {
-		sizeLimit = 1024 * 1024 * 1024 // 默认 1GB
+		sizeLimit = consts.DefaultBucketSizeLimit
 	}
 	builder := r.client.Bucket.Create().
 		SetID(id).

@@ -33,7 +33,8 @@ func main() {
 	var c config.Config
 	//读取配置文件
 	conf.MustLoad(*configFile, &c)
-	err := snowId.Initialize(0)
+	// workerId 从配置注入：多实例部署须各配不同值（0-1023），全 0 会主键冲突
+	err := snowId.Initialize(c.Snowflake.WorkerId)
 	if err != nil {
 		panic(fmt.Errorf("雪花 ID 生成器初始化失败: %v", err))
 	}

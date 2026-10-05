@@ -47,7 +47,7 @@ func (l *DeleteFileLogic) DeleteFile(in *service.DeleteFileRequest) (*service.Re
 		if ent.IsNotFound(err) {
 			return response.ErrWithCode(response.CodeFileNotFound, "文件不存在")
 		}
-		return response.Err(errors.New("查询文件失败: " + err.Error()))
+		return response.ErrInternal(l.Logger, "查询文件失败", err)
 	}
 
 	// 校验文件归属
@@ -58,7 +58,7 @@ func (l *DeleteFileLogic) DeleteFile(in *service.DeleteFileRequest) (*service.Re
 	// 软删除：仅标记 deleted_at（回收站语义）
 	// 配额不归还（回收站占用容量）、分享不级联、物理文件保留——彻底删除（Purge）时才处理
 	if err := fileRepo.SoftDelete(l.ctx, f.ID); err != nil {
-		return response.Err(errors.New("删除文件失败: " + err.Error()))
+		return response.ErrInternal(l.Logger, "删除文件失败", err)
 	}
 
 	// 清理秒传索引：同内容再次上传应创建新文件，而不是命中回收站里的记录

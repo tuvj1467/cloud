@@ -48,7 +48,7 @@ func (l *GetBucketFileListLogic) GetBucketFileList(in *service.BucketFileListReq
 		if ent.IsNotFound(err) {
 			return response.Err(errors.New("桶不存在"))
 		}
-		return response.Err(errors.New("查询桶失败: " + err.Error()))
+		return response.ErrInternal(l.Logger, "查询桶失败", err)
 	}
 	if b.UserID != userID {
 		return response.Err(errors.New("无权访问该桶"))
@@ -57,7 +57,7 @@ func (l *GetBucketFileListLogic) GetBucketFileList(in *service.BucketFileListReq
 	// 分页查询桶内文件
 	list, total, err := fileRepo.GetBucketFileList(l.ctx, userID, in.GetBucketId(), in)
 	if err != nil {
-		return response.Err(errors.New("查询桶文件列表失败: " + err.Error()))
+		return response.ErrInternal(l.Logger, "查询桶文件列表失败", err)
 	}
 
 	files := make([]*service.FileMeta, 0, len(list))

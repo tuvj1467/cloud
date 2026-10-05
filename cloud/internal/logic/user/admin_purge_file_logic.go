@@ -44,7 +44,7 @@ func (l *AdminPurgeFileLogic) AdminPurgeFile(in *service.AdminPurgeFileRequest) 
 		if ent.IsNotFound(err) {
 			return response.ErrWithCode(response.CodeFileNotFound, "文件不存在")
 		}
-		return response.Err(errors.New("查询文件失败: " + err.Error()))
+		return response.ErrInternal(l.Logger, "查询文件失败", err)
 	}
 
 	// 事务前查出关联分享（提交后清理 Redis 用）
@@ -54,7 +54,7 @@ func (l *AdminPurgeFileLogic) AdminPurgeFile(in *service.AdminPurgeFileRequest) 
 	}
 
 	if err := fileRepo.DeleteFull(l.ctx, f); err != nil {
-		return response.Err(errors.New("强制删除失败: " + err.Error()))
+		return response.ErrInternal(l.Logger, "强制删除失败", err)
 	}
 
 	// 事务后清理：分享缓存、秒传索引、物理文件（失败仅告警）
@@ -70,10 +70,10 @@ func (l *AdminPurgeFileLogic) AdminPurgeFile(in *service.AdminPurgeFileRequest) 
 			l.Errorf("清理 MD5 索引失败: %v", err)
 		}
 	}
-		// 共享路径守卫：秒传允许跨记录共享物理文件，仍有引用时跳过物理删除
-		if err := fileRepo.DeletePhysicalIfUnshared(l.ctx, l.svcCtx.Storage, f.Path); err != nil {
-			l.Errorf("物理文件删除失败（孤儿，待GC）path=%s: %v", f.Path, err)
-		}
+	// 共享路径守卫：秒传允许跨记录共享物理文件，仍有引用时跳过物理删除
+	if err := fileRepo.DeletePhysicalIfUnshared(l.ctx, l.svcCtx.Storage, f.Path); err != nil {
+		l.Errorf("物理文件删除失败（孤儿，待GC）path=%s: %v", f.Path, err)
+	}
 
 	// 操作审计（失败仅日志，不回滚主操作）
 	auditRepo := repository.NewAdminAuditLogRepository(l.svcCtx.EntClient)

@@ -56,7 +56,7 @@ func (l *AbortMultipartUploadLogic) AbortMultipartUpload(in *service.AbortMultip
 	// 3. 读取上传元信息（Redis 优先，DB 兜底）
 	meta, err := multipartCache.GetMeta(l.ctx, in.GetUploadId())
 	if err != nil {
-		return response.Err(errors.New("查询上传元信息失败: " + err.Error()))
+		return response.ErrInternal(l.Logger, "查询上传元信息失败", err)
 	}
 	if meta == nil {
 		// Redis 未命中，查 DB 兜底
@@ -81,7 +81,7 @@ func (l *AbortMultipartUploadLogic) AbortMultipartUpload(in *service.AbortMultip
 	// 其他失败（存储端瞬时故障）直接返回错误——此时删 DB 记录会让服务端
 	// 残留的任务/对象成为无法通过 API 触达的孤儿，保留记录供客户端重试中止
 	if err := l.svcCtx.Storage.AbortPart(l.ctx, meta.StorageID); err != nil && !errors.Is(err, storage.ErrFileNotFound) {
-		return response.Err(errors.New("清理物理分片失败，请稍后重试: " + err.Error()))
+		return response.ErrInternal(l.Logger, "清理物理分片失败，请稍后重试", err)
 	}
 
 	// 6. 删除 DB 分片记录

@@ -95,7 +95,7 @@ func (l *LoginByAccountLogic) LoginByAccount(in *service.LoginByAccountReq) (*se
 	}
 	token, err := jwt.GenerateToken(query.ID, query.TokenVersion)
 	if err != nil {
-		return response.Err(errors.New("生成 token 失败: " + err.Error()))
+		return response.ErrInternal(l.Logger, "生成 token 失败", err)
 	}
 
 	return response.Success(&service.LoginRes{User: &service.UserInfo{

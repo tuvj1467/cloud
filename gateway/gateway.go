@@ -23,18 +23,6 @@ func main() {
 	var c GatewayConfig
 	conf.MustLoad(*configFile, &c)
 
-	fmt.Printf("=== 加载的网关配置 ===\n")
-	fmt.Printf("网关地址：%s:%d\n", c.Host, c.Port)
-	fmt.Printf("上游服务数量：%d\n", len(c.Upstreams))
-	for i, upstream := range c.Upstreams {
-		fmt.Printf("上游服务%d: %s\n", i, upstream.Name)
-		fmt.Printf("  gRPC地址：%s\n", upstream.Grpc.Target)
-		fmt.Printf("  路由规则数量：%d\n", len(upstream.Mappings))
-		for j, mapping := range upstream.Mappings {
-			fmt.Printf("    路由%d: %s %s -> %s\n", j, mapping.Method, mapping.Path, mapping.RpcPath)
-		}
-	}
-
 	// go-zero gateway 的 ProcessHeaders 仅转发 Grpc-Metadata-* 前缀 header（映射为 gateway-* metadata），
 	// 浏览器 fetch 无法设置该前缀（fetch 规范禁止以 Grpc- 开头的 header），
 	// 这里把标准 Authorization header 桥接为 gateway-authorization，与 cloud jwt_middleware 的 fallback 匹配，

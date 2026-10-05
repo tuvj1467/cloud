@@ -11,9 +11,9 @@ import (
 
 // 语义化错误，logic 层据此映射 response 错误码
 var (
-	ErrCodeWrong   = errors.New("验证码错误")
-	ErrCodeExpired = errors.New("验证码已过期")
-	ErrTooFrequent = errors.New("验证码发送过于频繁，请稍后再试")
+	ErrCodeWrong     = errors.New("验证码错误")
+	ErrCodeExpired   = errors.New("验证码已过期")
+	ErrTooFrequent   = errors.New("验证码发送过于频繁，请稍后再试")
 	ErrQuotaExceeded = errors.New("今日发送次数已达上限，请明日再试")
 )
 

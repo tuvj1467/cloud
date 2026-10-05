@@ -46,7 +46,7 @@ func (l *CreateBucketLogic) CreateBucket(in *service.CreateBucketRequest) (*serv
 	// 检查桶名是否重复（同一用户内唯一）
 	exist, err := bucketRepo.GetByUserAndName(l.ctx, userID, in.GetName())
 	if err != nil && !ent.IsNotFound(err) {
-		return response.Err(errors.New("查询桶失败: " + err.Error()))
+		return response.ErrInternal(l.Logger, "查询桶失败", err)
 	}
 	if exist != nil {
 		return response.Err(errors.New("桶名已存在"))
@@ -58,7 +58,7 @@ func (l *CreateBucketLogic) CreateBucket(in *service.CreateBucketRequest) (*serv
 	// 创建桶
 	b, err := bucketRepo.Create(l.ctx, bucketID, userID, in)
 	if err != nil {
-		return response.Err(errors.New("创建桶失败: " + err.Error()))
+		return response.ErrInternal(l.Logger, "创建桶失败", err)
 	}
 
 	return response.Success(&service.CreateBucketResponse{

@@ -44,7 +44,7 @@ func (l *GetMySharesLogic) GetMyShares(in *service.GetMySharesRequest) (*service
 	shareRepo := repository.NewFileShareRepository(l.svcCtx.EntClient)
 	shares, total, err := shareRepo.ListByUser(l.ctx, userID, int(in.GetPage()), int(in.GetPageSize()))
 	if err != nil {
-		return response.Err(errors.New("查询分享列表失败: " + err.Error()))
+		return response.ErrInternal(l.Logger, "查询分享列表失败", err)
 	}
 
 	// 批量取文件名（一次 IN 查询）
@@ -104,14 +104,14 @@ func (l *GetMySharesLogic) RevokeShare(in *service.RevokeShareRequest) (*service
 		if ent.IsNotFound(err) {
 			return response.ErrWithCode(response.CodeFileShareNotFound, "分享不存在")
 		}
-		return response.Err(errors.New("查询分享失败: " + err.Error()))
+		return response.ErrInternal(l.Logger, "查询分享失败", err)
 	}
 	if s.UserID != userID {
 		return response.ErrWithCode(response.CodeFileNoPermission, "只能撤销自己的分享")
 	}
 
 	if err := shareRepo.DeleteByID(l.ctx, s.ID); err != nil {
-		return response.Err(errors.New("撤销分享失败: " + err.Error()))
+		return response.ErrInternal(l.Logger, "撤销分享失败", err)
 	}
 	// Redis 缓存清理（分享 meta / 计数）——经 nil 安全的 ShareCache，禁止直连 svcCtx.Redis
 	shareCache := cache.NewShareCache(l.svcCtx.Redis)

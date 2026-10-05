@@ -59,13 +59,13 @@ func (l *UploadPartLogic) UploadPart(in *service.UploadPartRequest) (*service.Re
 	// 3. 读取上传元信息（Redis 优先，DB 兜底）
 	meta, err := multipartCache.GetMeta(l.ctx, in.GetUploadId())
 	if err != nil {
-		return response.Err(errors.New("查询上传元信息失败: " + err.Error()))
+		return response.ErrInternal(l.Logger, "查询上传元信息失败", err)
 	}
 	if meta == nil {
 		// Redis 未命中，查 DB 兜底
 		part, err := partRepo.GetMetaByUploadID(l.ctx, in.GetUploadId())
 		if err != nil {
-			return response.Err(errors.New("上传任务不存在或已过期: " + err.Error()))
+			return response.ErrInternal(l.Logger, "上传任务不存在或已过期", err)
 		}
 		// 重建 Redis meta
 		meta = &cache.MultipartMeta{
@@ -129,7 +129,7 @@ func (l *UploadPartLogic) UploadPart(in *service.UploadPartRequest) (*service.Re
 		in.GetSize(),
 	)
 	if err != nil {
-		return response.Err(errors.New("分片写入失败: " + err.Error()))
+		return response.ErrInternal(l.Logger, "分片写入失败", err)
 	}
 
 	// 8. 更新 DB 分片记录（DB 是 Complete 完整性判定的基准，必须先于 Redis 成功）

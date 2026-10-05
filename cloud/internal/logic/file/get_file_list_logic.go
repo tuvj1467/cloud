@@ -41,7 +41,7 @@ func (l *GetFileListLogic) GetFileList(in *service.FileListRequest) (*service.Re
 	fileRepo := repository.NewFileRepository(l.svcCtx.EntClient)
 	list, total, err := fileRepo.GetPageFileList(l.ctx, userID, in)
 	if err != nil {
-		return response.Err(errors.New("查询文件列表失败: " + err.Error()))
+		return response.ErrInternal(l.Logger, "查询文件列表失败", err)
 	}
 
 	files := make([]*service.FileMeta, 0, len(list))

@@ -39,7 +39,7 @@ func (l *ListDeletedFilesLogic) ListDeletedFiles(in *service.ListDeletedFilesReq
 	fileRepo := repository.NewFileRepository(l.svcCtx.EntClient)
 	list, total, err := fileRepo.ListDeleted(l.ctx, userID, int(in.GetPage()), int(in.GetPageSize()))
 	if err != nil {
-		return response.Err(errors.New("查询回收站失败: " + err.Error()))
+		return response.ErrInternal(l.Logger, "查询回收站失败", err)
 	}
 
 	items := make([]*service.DeletedFileItem, 0, len(list))
@@ -82,7 +82,7 @@ func (l *RestoreFilesLogic) RestoreFiles(in *service.RestoreFilesRequest) (*serv
 	fileRepo := repository.NewFileRepository(l.svcCtx.EntClient)
 	restored, err := fileRepo.RestoreByIDs(l.ctx, userID, in.GetFileIds())
 	if err != nil {
-		return response.Err(errors.New("恢复文件失败: " + err.Error()))
+		return response.ErrInternal(l.Logger, "恢复文件失败", err)
 	}
 	l.Infof("recycle restore user=%s requested=%d restored=%d", userID, len(in.GetFileIds()), restored)
 	return response.Success(&service.RestoreFilesResponse{RestoredCount: int32(restored)})
@@ -116,7 +116,7 @@ func (l *PurgeFilesLogic) PurgeFiles(in *service.PurgeFilesRequest) (*service.Re
 	shareRepo := repository.NewFileShareRepository(l.svcCtx.EntClient)
 	targets, err := fileRepo.ListDeletedByIDs(l.ctx, userID, in.GetFileIds())
 	if err != nil {
-		return response.Err(errors.New("查询回收站文件失败: " + err.Error()))
+		return response.ErrInternal(l.Logger, "查询回收站文件失败", err)
 	}
 
 	// 批量预取全部目标的关联分享（原逐文件单查，N+1）；fileID → shares

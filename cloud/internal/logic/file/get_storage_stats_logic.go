@@ -56,7 +56,7 @@ func (l *GetStorageStatsLogic) GetStorageStats(in *service.GetStorageStatsReques
 		GroupBy(file.FieldBucketID).
 		Aggregate(ent.Count(), ent.Sum(file.FieldSize)).
 		Scan(l.ctx, &rows); err != nil {
-		return response.Err(errors.New("统计文件用量失败: " + err.Error()))
+		return response.ErrInternal(l.Logger, "统计文件用量失败", err)
 	}
 	var fileCount, totalSize int64
 	perBucket := make(map[string][2]int64, len(rows))
@@ -69,7 +69,7 @@ func (l *GetStorageStatsLogic) GetStorageStats(in *service.GetStorageStatsReques
 	// 2. 桶信息（name/used_size/size_limit）取自 buckets 表，与聚合结果内存拼装
 	buckets, err := client.Bucket.Query().Where(bucket.UserIDEQ(userID)).All(l.ctx)
 	if err != nil {
-		return response.Err(errors.New("查询桶列表失败: " + err.Error()))
+		return response.ErrInternal(l.Logger, "查询桶列表失败", err)
 	}
 
 	bucketStats := make([]*service.BucketStats, 0, len(buckets))

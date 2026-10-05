@@ -49,7 +49,7 @@ func (l *GetFileThumbLogic) GetFileThumb(in *service.FileThumbRequest) (*service
 		if ent.IsNotFound(err) {
 			return response.ErrWithCode(response.CodeFileNotFound, "文件不存在")
 		}
-		return response.Err(errors.New("查询文件失败: " + err.Error()))
+		return response.ErrInternal(l.Logger, "查询文件失败", err)
 	}
 	if f.UserID != userID {
 		return response.ErrWithCode(response.CodeFileNoPermission, "无权访问该文件")

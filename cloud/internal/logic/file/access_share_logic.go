@@ -58,7 +58,7 @@ func (l *AccessShareLogic) AccessShare(in *service.AccessShareRequest) (*service
 		if ent.IsNotFound(err) {
 			return response.Err(errors.New("分享的文件已被删除"))
 		}
-		return response.Err(errors.New("查询文件失败: " + err.Error()))
+		return response.ErrInternal(l.Logger, "查询文件失败", err)
 	}
 
 	l.Infof("access share code=%s file=%s permission=%s",

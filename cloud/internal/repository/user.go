@@ -94,6 +94,20 @@ func (r *UserRepository) ExistsByUsername(ctx context.Context, name string) (boo
 		Exist(ctx)
 }
 
+// ExistsByPhone 判断手机号是否已被占用（注册预检）
+func (r *UserRepository) ExistsByPhone(ctx context.Context, phone string) (bool, error) {
+	return r.client.User.Query().
+		Where(user.PhoneEQ(phone)).
+		Exist(ctx)
+}
+
+// ExistsByEmail 判断邮箱是否已被占用（注册预检）
+func (r *UserRepository) ExistsByEmail(ctx context.Context, email string) (bool, error) {
+	return r.client.User.Query().
+		Where(user.EmailEQ(email)).
+		Exist(ctx)
+}
+
 // loginWithLookup 账号密码登录公共流程：查询 → 锁定检查 → 密码校验 → 失败计数/清零
 // 锁定键使用用户 ID：手机/邮箱注册用户 username 为 NULL，若用 username 作键，
 // 所有该类账号会共享同一个失败计数桶（单账号爆破不触发锁定，且可被用来互相锁定）

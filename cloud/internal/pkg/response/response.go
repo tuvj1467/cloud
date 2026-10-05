@@ -3,10 +3,14 @@ package response
 import (
 	"fmt"
 
+	"github.com/zeromicro/go-zero/core/logx"
 	"google.golang.org/protobuf/reflect/protoreflect"
 	"google.golang.org/protobuf/types/known/anypb"
 	"onecloud/proto/.proto/service"
 )
+
+// Logger 日志接口（取 logx.Logger 子集，便于单测注入）
+type Logger = logx.Logger
 
 type Response struct {
 	code    int32
@@ -61,6 +65,32 @@ func ErrWithCodef(code int32, format string, args ...interface{}) (*service.Resp
 	return &service.Response{
 		Code:    code,
 		Message: fmt.Sprintf(format, args...),
+		Data:    nil,
+	}, nil
+}
+
+// ErrInternal 内部错误统一出口：完整错误细节（含 DB/存储层原文、本地路径）
+// 只进服务端日志，客户端收到「操作文案 + 失败」通用信息，防止内部拓扑泄漏
+// op 为操作描述（如 "查询文件失败"），err 为原始错误
+func ErrInternal(logger Logger, op string, err error) (*service.Response, error) {
+	if logger != nil {
+		logger.Errorf("%s: %v", op, err)
+	}
+	return &service.Response{
+		Code:    CodeSystemInternal,
+		Message: op + "，请稍后重试或联系管理员",
+		Data:    nil,
+	}, nil
+}
+
+// ErrInternalWithCode 同 ErrInternal，但允许指定业务错误码
+func ErrInternalWithCode(logger Logger, code int32, op string, err error) (*service.Response, error) {
+	if logger != nil {
+		logger.Errorf("%s: %v", op, err)
+	}
+	return &service.Response{
+		Code:    code,
+		Message: op + "，请稍后重试或联系管理员",
 		Data:    nil,
 	}, nil
 }

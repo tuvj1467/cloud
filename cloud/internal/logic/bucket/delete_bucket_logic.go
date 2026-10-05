@@ -47,7 +47,7 @@ func (l *DeleteBucketLogic) DeleteBucket(in *service.DeleteBucketRequest) (*serv
 		if ent.IsNotFound(err) {
 			return response.ErrWithCode(response.CodeBucketNotFound, "桶不存在")
 		}
-		return response.Err(errors.New("查询桶失败: " + err.Error()))
+		return response.ErrInternal(l.Logger, "查询桶失败", err)
 	}
 
 	// 校验桶归属
@@ -62,7 +62,7 @@ func (l *DeleteBucketLogic) DeleteBucket(in *service.DeleteBucketRequest) (*serv
 		// force：先查出文件关联分享（供事务后清理 Redis），再事务级联删除
 		files, err := l.svcCtx.EntClient.File.Query().Where(file.BucketIDEQ(in.GetBucketId())).All(l.ctx)
 		if err != nil {
-			return response.Err(errors.New("查询桶内文件失败: " + err.Error()))
+			return response.ErrInternal(l.Logger, "查询桶内文件失败", err)
 		}
 		fileIDs := make([]string, 0, len(files))
 		for _, f := range files {
@@ -78,7 +78,7 @@ func (l *DeleteBucketLogic) DeleteBucket(in *service.DeleteBucketRequest) (*serv
 
 		deletedFiles, err := bucketRepo.DeleteWithFiles(l.ctx, in.GetBucketId())
 		if err != nil {
-			return response.Err(errors.New("强制删除桶失败: " + err.Error()))
+			return response.ErrInternal(l.Logger, "强制删除桶失败", err)
 		}
 
 		// 事务后清理：分享缓存、秒传索引、物理文件
@@ -106,7 +106,7 @@ func (l *DeleteBucketLogic) DeleteBucket(in *service.DeleteBucketRequest) (*serv
 	// 非 force：事务内校验桶为空后删除
 	empty, err := bucketRepo.DeleteIfEmpty(l.ctx, in.GetBucketId())
 	if err != nil {
-		return response.Err(errors.New("删除桶失败: " + err.Error()))
+		return response.ErrInternal(l.Logger, "删除桶失败", err)
 	}
 	if !empty {
 		return response.ErrWithCode(response.CodeBucketNotEmpty, "桶非空，无法删除（可使用 force 强制删除）")

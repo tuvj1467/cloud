@@ -47,7 +47,7 @@ func (l *RenameFileLogic) RenameFile(in *service.RenameFileRequest) (*service.Re
 		if ent.IsNotFound(err) {
 			return response.Err(errors.New("文件不存在"))
 		}
-		return response.Err(errors.New("查询文件失败: " + err.Error()))
+		return response.ErrInternal(l.Logger, "查询文件失败", err)
 	}
 
 	// 校验文件归属
@@ -69,7 +69,7 @@ func (l *RenameFileLogic) RenameFile(in *service.RenameFileRequest) (*service.Re
 			).
 			First(l.ctx)
 		if err != nil && !ent.IsNotFound(err) {
-			return response.Err(errors.New("查询文件名冲突失败: " + err.Error()))
+			return response.ErrInternal(l.Logger, "查询文件名冲突失败", err)
 		}
 		if conflict != nil {
 			return response.Err(errors.New("同桶下已存在同名文件"))
@@ -79,7 +79,7 @@ func (l *RenameFileLogic) RenameFile(in *service.RenameFileRequest) (*service.Re
 	// 执行重命名
 	updated, err := fileRepo.Rename(l.ctx, in.GetFileId(), in.GetNewName())
 	if err != nil {
-		return response.Err(errors.New("重命名失败: " + err.Error()))
+		return response.ErrInternal(l.Logger, "重命名失败", err)
 	}
 
 	_ = updated // 重命名后的文件信息（如需返回可使用 toFileMeta(updated)）

@@ -68,7 +68,7 @@ func (l *LoginByEmailSmsLogic) LoginByEmailSms(in *service.LoginByEmailSmsReq) (
 	}
 	token, err := jwt.GenerateToken(res.ID, res.TokenVersion)
 	if err != nil {
-		return response.Err(errors.New("生成 token 失败: " + err.Error()))
+		return response.ErrInternal(l.Logger, "生成 token 失败", err)
 	}
 
 	return response.Success(&service.LoginRes{User: &service.UserInfo{

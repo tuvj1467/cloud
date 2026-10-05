@@ -41,7 +41,7 @@ func (l *GetShareAccessLogsLogic) GetShareAccessLogs(in *service.GetShareAccessL
 		if ent.IsNotFound(err) {
 			return response.ErrWithCode(response.CodeFileShareNotFound, "分享不存在")
 		}
-		return response.Err(errors.New("查询分享失败: " + err.Error()))
+		return response.ErrInternal(l.Logger, "查询分享失败", err)
 	}
 	if s.UserID != userID {
 		return response.ErrWithCode(response.CodeFileNoPermission, "只能查看自己分享的审计日志")
@@ -50,7 +50,7 @@ func (l *GetShareAccessLogsLogic) GetShareAccessLogs(in *service.GetShareAccessL
 	logRepo := repository.NewShareAccessLogRepository(l.svcCtx.EntClient)
 	logs, total, err := logRepo.ListByShareCode(l.ctx, s.ShareCode, int(in.GetPage()), int(in.GetPageSize()))
 	if err != nil {
-		return response.Err(errors.New("查询审计日志失败: " + err.Error()))
+		return response.ErrInternal(l.Logger, "查询审计日志失败", err)
 	}
 
 	items := make([]*service.ShareAccessLogItem, 0, len(logs))

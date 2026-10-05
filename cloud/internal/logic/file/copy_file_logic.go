@@ -51,7 +51,7 @@ func (l *CopyFileLogic) CopyFile(in *service.CopyFileRequest) (*service.Response
 		if ent.IsNotFound(err) {
 			return response.Err(errors.New("源文件不存在"))
 		}
-		return response.Err(errors.New("查询源文件失败: " + err.Error()))
+		return response.ErrInternal(l.Logger, "查询源文件失败", err)
 	}
 	if src.UserID != userID {
 		return response.Err(errors.New("无权复制该文件"))
@@ -67,7 +67,7 @@ func (l *CopyFileLogic) CopyFile(in *service.CopyFileRequest) (*service.Response
 		if ent.IsNotFound(err) {
 			return response.Err(errors.New("目标桶不存在"))
 		}
-		return response.Err(errors.New("查询目标桶失败: " + err.Error()))
+		return response.ErrInternal(l.Logger, "查询目标桶失败", err)
 	}
 	if targetBucket.UserID != userID {
 		return response.Err(errors.New("无权操作目标桶"))
@@ -88,11 +88,11 @@ func (l *CopyFileLogic) CopyFile(in *service.CopyFileRequest) (*service.Response
 	// 4. 复制物理文件（读取源文件流并写入新路径）
 	reader, err := l.svcCtx.Storage.Get(l.ctx, src.Path)
 	if err != nil {
-		return response.Err(errors.New("读取源文件失败: " + err.Error()))
+		return response.ErrInternal(l.Logger, "读取源文件失败", err)
 	}
 	defer reader.Close()
 	if err := l.svcCtx.Storage.Put(l.ctx, newPath, reader, src.Size); err != nil {
-		return response.Err(errors.New("文件复制失败: " + err.Error()))
+		return response.ErrInternal(l.Logger, "文件复制失败", err)
 	}
 
 	// 5. 创建新文件元数据
@@ -101,7 +101,7 @@ func (l *CopyFileLogic) CopyFile(in *service.CopyFileRequest) (*service.Response
 		if delErr := l.svcCtx.Storage.Delete(l.ctx, newPath); delErr != nil {
 			l.Errorf("回滚物理文件失败: %v", delErr)
 		}
-		return response.Err(errors.New("文件入库失败: " + err.Error()))
+		return response.ErrInternal(l.Logger, "文件入库失败", err)
 	}
 
 	// 6. 扣减目标桶容量（原子 UPDATE，失败回滚本次复制）
@@ -114,7 +114,7 @@ func (l *CopyFileLogic) CopyFile(in *service.CopyFileRequest) (*service.Response
 		if delErr := l.svcCtx.Storage.Delete(l.ctx, newPath); delErr != nil {
 			l.Errorf("回滚物理文件失败: %v", delErr)
 		}
-		return response.Err(errors.New("目标桶容量更新失败: " + err.Error()))
+		return response.ErrInternal(l.Logger, "目标桶容量更新失败", err)
 	}
 	if !ok {
 		if delErr := fileRepo.Delete(l.ctx, newFile.ID); delErr != nil {

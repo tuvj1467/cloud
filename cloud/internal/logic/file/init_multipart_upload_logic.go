@@ -56,7 +56,7 @@ func (l *InitMultipartUploadLogic) InitMultipartUpload(in *service.InitMultipart
 		if ent.IsNotFound(err) {
 			return response.Err(errors.New("桶不存在"))
 		}
-		return response.Err(errors.New("查询桶失败: " + err.Error()))
+		return response.ErrInternal(l.Logger, "查询桶失败", err)
 	}
 	if b.UserID != userID {
 		return response.Err(errors.New("无权操作该桶"))
@@ -96,7 +96,7 @@ func (l *InitMultipartUploadLogic) InitMultipartUpload(in *service.InitMultipart
 
 	// 7. 调用存储驱动创建分片临时目录
 	if err := l.svcCtx.Storage.InitPart(l.ctx, uploadID, int(in.GetTotalParts())); err != nil {
-		return response.Err(errors.New("初始化分片上传失败: " + err.Error()))
+		return response.ErrInternal(l.Logger, "初始化分片上传失败", err)
 	}
 
 	// 8. 写入 Redis 元信息
@@ -120,7 +120,7 @@ func (l *InitMultipartUploadLogic) InitMultipartUpload(in *service.InitMultipart
 		// 写库失败，回滚物理初始化
 		_ = l.svcCtx.Storage.AbortPart(l.ctx, uploadID)
 		_ = multipartCache.Clear(l.ctx, uploadID)
-		return response.Err(errors.New("创建分片记录失败: " + err.Error()))
+		return response.ErrInternal(l.Logger, "创建分片记录失败", err)
 	}
 
 	// 10. 计算建议分片大小

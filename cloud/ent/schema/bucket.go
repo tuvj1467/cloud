@@ -1,6 +1,8 @@
 package schema
 
 import (
+	"onecloud/internal/pkg/consts"
+
 	"entgo.io/ent"
 	"entgo.io/ent/dialect/entsql"
 	"entgo.io/ent/schema/field"
@@ -30,7 +32,7 @@ func (Bucket) Fields() []ent.Field {
 			Comment("桶描述").
 			Annotations(entsql.Annotation{WithComments: &withComments}),
 		field.Int64("size_limit").
-			Default(1024 * 1024 * 1024). // 默认 1GB 容量限制
+			Default(consts.DefaultBucketSizeLimit). // 默认 1GB 容量限制
 			Comment("桶容量限制（字节）").
 			Annotations(entsql.Annotation{WithComments: &withComments}),
 		field.Int64("used_size").

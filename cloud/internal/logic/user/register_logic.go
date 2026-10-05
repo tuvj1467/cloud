@@ -3,6 +3,7 @@ package userlogic
 import (
 	"context"
 	"errors"
+	"onecloud/ent"
 	"onecloud/internal/pkg/jwt"
 
 	"onecloud/internal/pkg/response"
@@ -88,7 +89,7 @@ func (l *RegisterLogic) Register(in *service.RegisterReq) (*service.Response, er
 		// 注册预检：用户名唯一索引冲突前给出业务错误码
 		exists, err := userRepository.ExistsByUsername(l.ctx, contact)
 		if err != nil {
-			return response.Err(errors.New("查询用户失败: " + err.Error()))
+			return response.ErrInternal(l.Logger, "查询用户失败", err)
 		}
 		if exists {
 			return response.ErrWithCode(response.CodeUserDuplicate, "用户名已被注册")
@@ -97,7 +98,11 @@ func (l *RegisterLogic) Register(in *service.RegisterReq) (*service.Response, er
 		//注册账号
 		id, err = userRepository.CreateByAccount(l.ctx, l.svcCtx.Snowflake, contact, in.GetPassword())
 		if err != nil {
-			return response.Err(err)
+			// 并发撞唯一索引的兜底：不透传 MySQL 原文
+			if ent.IsConstraintError(err) {
+				return response.ErrWithCode(response.CodeUserDuplicate, "用户名已被注册")
+			}
+			return response.Err(errors.New("注册失败，请稍后重试"))
 		}
 
 	case *service.RegisterReq_Phone:
@@ -108,10 +113,23 @@ func (l *RegisterLogic) Register(in *service.RegisterReq) (*service.Response, er
 			return resp, err
 		}
 
+		// 注册预检：唯一索引冲突前给出业务错误码
+		exists, err := userRepository.ExistsByPhone(l.ctx, contact)
+		if err != nil {
+			return response.ErrInternal(l.Logger, "查询用户失败", err)
+		}
+		if exists {
+			return response.ErrWithCode(response.CodeUserDuplicate, "手机号已被注册")
+		}
+
 		//手机注册账号
 		id, err = userRepository.CreateByPhone(l.ctx, l.svcCtx.Snowflake, contact, in.GetName(), in.GetPassword())
 		if err != nil {
-			return response.Err(err)
+			// 并发撞唯一索引的兜底：把 MySQL 1062 原文收敛为业务错误码（不透传 DB 内部信息）
+			if ent.IsConstraintError(err) {
+				return response.ErrWithCode(response.CodeUserDuplicate, "手机号已被注册")
+			}
+			return response.Err(errors.New("注册失败，请稍后重试"))
 		}
 
 	case *service.RegisterReq_Email:
@@ -122,20 +140,32 @@ func (l *RegisterLogic) Register(in *service.RegisterReq) (*service.Response, er
 			return resp, err
 		}
 
+		// 注册预检：唯一索引冲突前给出业务错误码
+		exists, err := userRepository.ExistsByEmail(l.ctx, contact)
+		if err != nil {
+			return response.ErrInternal(l.Logger, "查询用户失败", err)
+		}
+		if exists {
+			return response.ErrWithCode(response.CodeUserDuplicate, "邮箱已被注册")
+		}
+
 		//邮箱注册账号
 		id, err = userRepository.CreateByEmail(l.ctx, l.svcCtx.Snowflake, contact, in.GetName(), in.GetPassword())
 		if err != nil {
-			return response.Err(err)
+			if ent.IsConstraintError(err) {
+				return response.ErrWithCode(response.CodeUserDuplicate, "邮箱已被注册")
+			}
+			return response.Err(errors.New("注册失败，请稍后重试"))
 		}
 
 	}
 	res, err := userRepository.GetById(l.ctx, id)
 	if err != nil {
-		return response.Err(errors.New("查询注册用户失败: " + err.Error()))
+		return response.ErrInternal(l.Logger, "查询注册用户失败", err)
 	}
 	token, err := jwt.GenerateToken(res.ID, res.TokenVersion)
 	if err != nil {
-		return response.Err(errors.New("生成 token 失败: " + err.Error()))
+		return response.ErrInternal(l.Logger, "生成 token 失败", err)
 	}
 
 	return response.Success(&service.RegisterRes{User: &service.UserInfo{

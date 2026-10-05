@@ -50,7 +50,7 @@ func (l *DownloadFileLogic) DownloadFile(in *service.DownloadFileRequest) (*serv
 		if ent.IsNotFound(err) {
 			return response.ErrWithCode(response.CodeFileNotFound, "文件不存在")
 		}
-		return response.Err(errors.New("查询文件失败: " + err.Error()))
+		return response.ErrInternal(l.Logger, "查询文件失败", err)
 	}
 
 	// 校验文件归属
@@ -72,14 +72,14 @@ func (l *DownloadFileLogic) DownloadFile(in *service.DownloadFileRequest) (*serv
 	reader, err := l.svcCtx.Storage.Get(l.ctx, f.Path)
 	if err != nil {
 		l.Errorf("读取物理文件失败 path=%s: %v", f.Path, err)
-		return response.ErrWithCode(response.CodeStorageRead, "文件读取失败: "+err.Error())
+		return response.ErrInternalWithCode(l.Logger, response.CodeStorageRead, "文件读取失败", err)
 	}
 	defer reader.Close()
 
 	content, err := io.ReadAll(io.LimitReader(reader, unaryDownloadMaxBytes+1))
 	if err != nil {
 		l.Errorf("读取文件流失败 path=%s: %v", f.Path, err)
-		return response.ErrWithCode(response.CodeStorageRead, "文件读取失败: "+err.Error())
+		return response.ErrInternalWithCode(l.Logger, response.CodeStorageRead, "文件读取失败", err)
 	}
 
 	l.Infof("download success user=%s file=%s size=%d", userID, f.ID, f.Size)

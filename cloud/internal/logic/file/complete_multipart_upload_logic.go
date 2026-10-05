@@ -72,7 +72,7 @@ func (l *CompleteMultipartUploadLogic) CompleteMultipartUpload(in *service.Compl
 	// 3. 读取上传元信息（Redis 优先，DB 兜底）
 	meta, err := multipartCache.GetMeta(l.ctx, in.GetUploadId())
 	if err != nil {
-		return response.Err(errors.New("查询上传元信息失败: " + err.Error()))
+		return response.ErrInternal(l.Logger, "查询上传元信息失败", err)
 	}
 	if meta == nil {
 		// Redis 未命中，查 DB 兜底
@@ -100,7 +100,7 @@ func (l *CompleteMultipartUploadLogic) CompleteMultipartUpload(in *service.Compl
 	// 5. 校验分片完整性
 	uploadedCount, err := partRepo.CountUploaded(l.ctx, in.GetUploadId())
 	if err != nil {
-		return response.Err(errors.New("查询已上传分片数失败: " + err.Error()))
+		return response.ErrInternal(l.Logger, "查询已上传分片数失败", err)
 	}
 	if uploadedCount != meta.TotalParts {
 		return response.Err(fmt.Errorf("分片不完整：已上传 %d / 共 %d", uploadedCount, meta.TotalParts))
@@ -109,7 +109,7 @@ func (l *CompleteMultipartUploadLogic) CompleteMultipartUpload(in *service.Compl
 	// 5.1 原子占有合并权（uploaded → merged 一次性迁移）
 	owned, err := partRepo.TryMarkMerging(l.ctx, in.GetUploadId(), meta.TotalParts)
 	if err != nil {
-		return response.Err(errors.New("占有合并权失败: " + err.Error()))
+		return response.ErrInternal(l.Logger, "占有合并权失败", err)
 	}
 	if !owned {
 		return response.Err(errors.New("该上传任务正在合并或已完成，请勿重复提交"))
@@ -154,7 +154,7 @@ func (l *CompleteMultipartUploadLogic) CompleteMultipartUpload(in *service.Compl
 	}
 	if err := l.svcCtx.Storage.CompletePart(l.ctx, meta.StorageID, targetPath, meta.TotalParts, expectedMD5); err != nil {
 		rollback("", "")
-		return response.Err(errors.New("合并分片失败: " + err.Error()))
+		return response.ErrInternal(l.Logger, "合并分片失败", err)
 	}
 
 	// 8. 计算合并后文件的 MD5（重新读取物理文件）
@@ -168,7 +168,7 @@ func (l *CompleteMultipartUploadLogic) CompleteMultipartUpload(in *service.Compl
 	statInfo, err := l.svcCtx.Storage.Stat(l.ctx, targetPath)
 	if err != nil {
 		rollback(targetPath, "")
-		return response.Err(errors.New("校验合并文件大小失败: " + err.Error()))
+		return response.ErrInternal(l.Logger, "校验合并文件大小失败", err)
 	}
 	if meta.FileSize > 0 && statInfo.Size != meta.FileSize {
 		rollback(targetPath, "")
@@ -211,7 +211,7 @@ func (l *CompleteMultipartUploadLogic) CompleteMultipartUpload(in *service.Compl
 	if err != nil || !ok {
 		rollback(freshPathOf(instantSrc, targetPath), "")
 		if err != nil {
-			return response.Err(errors.New("桶容量更新失败: " + err.Error()))
+			return response.ErrInternal(l.Logger, "桶容量更新失败", err)
 		}
 		return response.ErrWithCode(response.CodeBucketCapacity, "桶容量不足")
 	}
@@ -223,7 +223,7 @@ func (l *CompleteMultipartUploadLogic) CompleteMultipartUpload(in *service.Compl
 	)
 	if err != nil {
 		rollback(freshPathOf(instantSrc, targetPath), "")
-		return response.Err(errors.New("文件入库失败: " + err.Error()))
+		return response.ErrInternal(l.Logger, "文件入库失败", err)
 	}
 
 	// 13. 写 Redis MD5 索引

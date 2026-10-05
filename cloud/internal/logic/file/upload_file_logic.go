@@ -90,7 +90,7 @@ func (l *UploadFileLogic) UploadFile(in *service.UploadFileRequest) (*service.Re
 		if ent.IsNotFound(err) {
 			return response.ErrWithCode(response.CodeBucketNotFound, "桶不存在")
 		}
-		return response.Err(errors.New("查询桶失败: " + err.Error()))
+		return response.ErrInternal(l.Logger, "查询桶失败", err)
 	}
 	if b.UserID != userID {
 		return response.ErrWithCode(response.CodeBucketNoPermission, "无权操作该桶")
@@ -153,7 +153,7 @@ func (l *UploadFileLogic) UploadFile(in *service.UploadFileRequest) (*service.Re
 	// 不存在「记录已建但配额未扣」的崩溃漂移窗口）
 	ok, err := bucketRepo.TryIncUsedSize(l.ctx, in.GetBucketId(), size)
 	if err != nil {
-		return response.Err(errors.New("桶容量更新失败: " + err.Error()))
+		return response.ErrInternal(l.Logger, "桶容量更新失败", err)
 	}
 	if !ok {
 		return response.ErrWithCode(response.CodeBucketCapacity, "桶容量不足")
@@ -184,7 +184,7 @@ func (l *UploadFileLogic) UploadFile(in *service.UploadFileRequest) (*service.Re
 	if instantSrc == nil {
 		if err := l.svcCtx.Storage.Put(l.ctx, filePath, bytes.NewReader(in.GetContent()), size); err != nil {
 			rollback("", "")
-			return response.Err(errors.New("文件存储失败: " + err.Error()))
+			return response.ErrInternal(l.Logger, "文件存储失败", err)
 		}
 	}
 
@@ -192,7 +192,7 @@ func (l *UploadFileLogic) UploadFile(in *service.UploadFileRequest) (*service.Re
 	res, err := fileRepo.Create(l.ctx, in, fileID, userID, in.GetBucketId(), filePath, contentType, md5)
 	if err != nil {
 		rollback(freshPathOf(instantSrc, filePath), "")
-		return response.Err(errors.New("文件入库失败: " + err.Error()))
+		return response.ErrInternal(l.Logger, "文件入库失败", err)
 	}
 
 	// 10.1 写入 Redis MD5 索引，便于后续秒传

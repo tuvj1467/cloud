@@ -2,7 +2,6 @@ package userlogic
 
 import (
 	"context"
-	"errors"
 
 	"onecloud/internal/pkg/response"
 	"onecloud/internal/repository"
@@ -30,7 +29,7 @@ func (l *AdminGetGlobalStatsLogic) AdminGetGlobalStats(in *service.AdminGlobalSt
 
 	users, files, totalSize, err := repository.AdminGlobalCounts(l.svcCtx.EntClient, l.ctx)
 	if err != nil {
-		return response.Err(errors.New("查询全局统计失败: " + err.Error()))
+		return response.ErrInternal(l.Logger, "查询全局统计失败", err)
 	}
 	return response.Success(&service.AdminGlobalStatsResponse{
 		UserCount: int64(users),

@@ -94,33 +94,7 @@ func (l *FileRepository) GetPageFileList(ctx context.Context, userId string, in 
 	// 构造分页查询
 	query := l.client.File.Query().Where(basePredicates...)
 
-	sortBy := strings.ToLower(in.SortBy)
-	sortOrder := strings.ToLower(in.SortOrder)
-	isAsc := sortOrder == "asc"
-
-	switch sortBy {
-	case "name":
-		if isAsc {
-			query = query.Order(file.ByName(entsql.OrderAsc()))
-		} else {
-			query = query.Order(file.ByName(entsql.OrderDesc()))
-		}
-	case "size":
-		if isAsc {
-			query = query.Order(file.BySize(entsql.OrderAsc()))
-		} else {
-			query = query.Order(file.BySize(entsql.OrderDesc()))
-		}
-	case "create_time":
-		if isAsc {
-			query = query.Order(file.ByCreatedAt(entsql.OrderAsc()))
-		} else {
-			query = query.Order(file.ByCreatedAt(entsql.OrderDesc()))
-		}
-	default:
-		// 默认按更新时间倒序，保证列表稳定
-		query = query.Order(file.ByUpdatedAt(entsql.OrderDesc()))
-	}
+	query = applyFileSort(query, in.SortBy, in.SortOrder)
 
 	res, err := query.Offset(int(offset)).Limit(int(pageSize)).All(ctx)
 	if err != nil {
@@ -157,32 +131,7 @@ func (l *FileRepository) GetBucketFileList(ctx context.Context, userId, bucketId
 
 	query := l.client.File.Query().Where(basePredicates...)
 
-	sortBy := strings.ToLower(in.SortBy)
-	sortOrder := strings.ToLower(in.SortOrder)
-	isAsc := sortOrder == "asc"
-
-	switch sortBy {
-	case "name":
-		if isAsc {
-			query = query.Order(file.ByName(entsql.OrderAsc()))
-		} else {
-			query = query.Order(file.ByName(entsql.OrderDesc()))
-		}
-	case "size":
-		if isAsc {
-			query = query.Order(file.BySize(entsql.OrderAsc()))
-		} else {
-			query = query.Order(file.BySize(entsql.OrderDesc()))
-		}
-	case "create_time":
-		if isAsc {
-			query = query.Order(file.ByCreatedAt(entsql.OrderAsc()))
-		} else {
-			query = query.Order(file.ByCreatedAt(entsql.OrderDesc()))
-		}
-	default:
-		query = query.Order(file.ByUpdatedAt(entsql.OrderDesc()))
-	}
+	query = applyFileSort(query, in.SortBy, in.SortOrder)
 
 	res, err := query.Offset(int(offset)).Limit(int(pageSize)).All(ctx)
 	if err != nil {
@@ -367,3 +316,30 @@ func (r *FileRepository) DeletePhysicalIfUnshared(ctx context.Context, driver st
 	}
 	return driver.Delete(ctx, path)
 }
+
+// applyFileSort 列表排序的统一实现（用户级/桶级共用）：sortBy ∈ {name,size,create_time}，
+// 其余（含空）按更新时间倒序保证列表稳定
+func applyFileSort(query *ent.FileQuery, sortBy, sortOrder string) *ent.FileQuery {
+	isAsc := strings.ToLower(sortOrder) == "asc"
+	switch strings.ToLower(sortBy) {
+	case "name":
+		if isAsc {
+			return query.Order(file.ByName(entsql.OrderAsc()))
+		}
+		return query.Order(file.ByName(entsql.OrderDesc()))
+	case "size":
+		if isAsc {
+			return query.Order(file.BySize(entsql.OrderAsc()))
+		}
+		return query.Order(file.BySize(entsql.OrderDesc()))
+	case "create_time":
+		if isAsc {
+			return query.Order(file.ByCreatedAt(entsql.OrderAsc()))
+		}
+		return query.Order(file.ByCreatedAt(entsql.OrderDesc()))
+	default:
+		return query.Order(file.ByUpdatedAt(entsql.OrderDesc()))
+	}
+}
+
+// GetPageFileList

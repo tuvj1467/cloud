@@ -41,7 +41,7 @@ func (l *GetBucketListLogic) GetBucketList(in *service.BucketListRequest) (*serv
 	bucketRepo := repository.NewBucketRepository(l.svcCtx.EntClient)
 	list, total, err := bucketRepo.ListByUser(l.ctx, userID, in.GetPage(), in.GetPageSize())
 	if err != nil {
-		return response.Err(errors.New("查询桶列表失败: " + err.Error()))
+		return response.ErrInternal(l.Logger, "查询桶列表失败", err)
 	}
 
 	// 聚合各桶文件数（单条 GROUP BY 查询，避免 N+1）
