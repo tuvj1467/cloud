@@ -76,6 +76,7 @@ type Driver interface {
 	AbortPart(ctx context.Context, uploadID string) error
 
 	// PresignURL 生成预签名 URL（直传/直下，MinIO/S3 适用）
+	// filename 用于下载预签名强制 attachment 头（防 html/svg 内联渲染的存储型 XSS）
 	// 本地驱动返回 ErrNotImplemented
-	PresignURL(ctx context.Context, path string, expire int64, method string) (string, error)
+	PresignURL(ctx context.Context, path string, expire int64, method string, filename string) (string, error)
 }

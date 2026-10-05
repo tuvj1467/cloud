@@ -97,7 +97,7 @@ func (l *DownloadStreamLogic) DownloadStream(in *service.DownloadFileRequest, st
 		if err != nil {
 			l.Errorf("读取文件流失败 path=%s: %v", f.Path, err)
 			r, _ := response.ErrWithCode(response.CodeStorageRead, "文件读取失败")
-		return errors.New(r.Message)
+			return errors.New(r.Message)
 		}
 	}
 

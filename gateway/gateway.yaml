@@ -2,17 +2,16 @@
 Name: storage-gateway       # 0空格（顶行）
 Host: 0.0.0.0               # 0空格
 Port: 8888                  # 0空格
-Timeout: 3000               # 0空格
+# 5 分钟：与 MaxBytes 110MB 匹配（100MB 上传/流式下载在普通带宽下 >3s，
+# 原 3s 超时导致大文件传输必 504）
+Timeout: 300000             # 0空格
 MaxBytes: 115343360         # 110MB（> 后端 MaxUploadSize 100MB；go-zero 默认 1MB 会挡住 5MB 直传）
-
-Header: Authorization
 
 upstreams:                  # 0空格
   - Name: storage.rpc       # 2空格（upstreams下的数组项）
     Grpc:                   # 2空格（与name同级）
       target: 127.0.0.1:8081 # 4空格（grpc下的字段）
       schema: ""            # 4空格（1.4+版本必填）
-    ProtoSet: protoset.pb
     ProtoSets:
       - protoset.pb  # 依赖的 validate.proto
     Mappings:                # 2空格（与grpc同级）

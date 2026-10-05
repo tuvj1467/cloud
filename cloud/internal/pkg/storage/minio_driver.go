@@ -328,7 +328,9 @@ func (d *MinioDriver) AbortPart(ctx context.Context, uploadID string) error {
 }
 
 // PresignURL 生成预签名 URL（download→GET，upload→PUT；expire 秒）
-func (d *MinioDriver) PresignURL(ctx context.Context, path string, expire int64, method string) (string, error) {
+// 下载预签名强制 response-content-disposition=attachment：html/svg 等可内联类型
+// 若允许浏览器直接渲染，预签名 URL 会成为存储型 XSS 载体
+func (d *MinioDriver) PresignURL(ctx context.Context, path string, expire int64, method string, filename string) (string, error) {
 	key, err := objectKey(path)
 	if err != nil {
 		return "", err
@@ -336,7 +338,6 @@ func (d *MinioDriver) PresignURL(ctx context.Context, path string, expire int64,
 	if expire <= 0 {
 		expire = 3600
 	}
-	reqParams := make(url.Values)
 	switch strings.ToLower(method) {
 	case "upload", "put":
 		u, err := d.client.PresignHeader(ctx, "PUT", d.bucket, key, time.Duration(expire)*time.Second, nil, nil)
@@ -345,10 +346,38 @@ func (d *MinioDriver) PresignURL(ctx context.Context, path string, expire int64,
 		}
 		return u.String(), nil
 	default:
+		reqParams := make(url.Values)
+		reqParams.Set("response-content-disposition", contentDisposition(filename))
 		u, err := d.client.PresignHeader(ctx, "GET", d.bucket, key, time.Duration(expire)*time.Second, reqParams, nil)
 		if err != nil {
 			return "", fmt.Errorf("生成预签名下载 URL 失败: %w", err)
 		}
 		return u.String(), nil
 	}
+}
+
+// contentDisposition 构造 attachment 头：filename 走 RFC 5987（UTF-8 百分号编码），
+// 同时提供 ASCII 回退（不识别 filename* 的旧客户端）；控制字符/引号剥离
+func contentDisposition(filename string) string {
+	name := strings.Map(func(r rune) rune {
+		if r < 0x20 || r == 0x7f || r == '"' || r == '\\' {
+			return -1
+		}
+		return r
+	}, filename)
+	if name == "" {
+		return "attachment"
+	}
+	fallback := name
+	for i := len(fallback) - 1; i >= 0; i-- {
+		if fallback[i] > 0x7f { // 截断首个非 ASCII（粗略回退，仅保扩展名可读）
+			fallback = fallback[:i]
+		} else {
+			break
+		}
+	}
+	if fallback == "" {
+		fallback = "download"
+	}
+	return `attachment; filename="` + fallback + `"; filename*=UTF-8''` + url.PathEscape(name)
 }

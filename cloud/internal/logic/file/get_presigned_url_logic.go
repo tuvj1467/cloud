@@ -53,14 +53,22 @@ func (l *GetPresignedURLLogic) GetPresignedURL(in *service.GetPresignedURLReques
 	if f.UserID != userID {
 		return response.ErrWithCode(response.CodeFileNoPermission, "无权访问该文件")
 	}
+	// 回收站中的文件不可预签名
+	if f.DeletedAt != nil {
+		return response.ErrWithCode(response.CodeFileNotFound, "文件不存在")
+	}
 
-	// 有效期缺省 1 小时
+	// 有效期缺省 1 小时，钳制 [1min, 7d]：无上限时用户可请求十年有效的直链
 	expire := int64(3600)
 	if in.ExpireSeconds != nil && *in.ExpireSeconds > 0 {
 		expire = *in.ExpireSeconds
 	}
+	const maxPresignExpire = int64(7 * 24 * 3600)
+	if expire > maxPresignExpire {
+		expire = maxPresignExpire
+	}
 
-	url, err := l.svcCtx.Storage.PresignURL(l.ctx, f.Path, expire, "download")
+	url, err := l.svcCtx.Storage.PresignURL(l.ctx, f.Path, expire, "download", f.Name)
 	if err != nil {
 		if errors.Is(err, storage.ErrNotImplemented) {
 			return response.ErrWithCode(response.CodeStorageNotImpl, "当前存储驱动不支持预签名下载")

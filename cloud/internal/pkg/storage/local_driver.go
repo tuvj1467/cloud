@@ -303,6 +303,6 @@ func (d *LocalDriver) AbortPart(ctx context.Context, uploadID string) error {
 }
 
 // PresignURL 本地驱动不支持预签名
-func (d *LocalDriver) PresignURL(ctx context.Context, path string, expire int64, method string) (string, error) {
+func (d *LocalDriver) PresignURL(ctx context.Context, path string, expire int64, method string, filename string) (string, error) {
 	return "", ErrNotImplemented
 }

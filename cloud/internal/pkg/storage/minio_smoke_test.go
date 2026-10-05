@@ -120,7 +120,7 @@ func TestMinioSmoke(t *testing.T) {
 	}
 
 	// ===== 4. PresignURL（GET 预签名可匿名取回内容）=====
-	u, err := d.PresignURL(ctx, path, 300, "download")
+	u, err := d.PresignURL(ctx, path, 300, "download", "smoke.bin")
 	if err != nil {
 		t.Fatalf("PresignURL: %v", err)
 	}

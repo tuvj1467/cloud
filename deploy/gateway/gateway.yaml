@@ -4,17 +4,15 @@
 Name: storage-gateway
 Host: 0.0.0.0
 Port: 8888
-Timeout: 3000
+Timeout: 300000
 MaxBytes: 115343360         # 110MB（> 后端 MaxUploadSize 100MB；go-zero 默认 1MB 会挡住 5MB 直传）
 
-Header: Authorization
 
 upstreams:
   - Name: storage.rpc
     Grpc:
       target: cloud:8081
       schema: ""
-    ProtoSet: protoset.pb
     ProtoSets:
       - protoset.pb  # 依赖的 validate.proto
     Mappings:
