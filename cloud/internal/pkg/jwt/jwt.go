@@ -3,15 +3,16 @@ package jwt
 import (
 	"context"
 	"errors"
+	"fmt"
 	"sync"
 	"time"
 
 	"github.com/golang-jwt/jwt/v4"
 )
 
-// 默认配置（未调用 Init 时使用，保持向后兼容）
+// 默认过期与签发者（未调用 Init 时的兜底；Secret 不设兜底——空 Secret 直接报错，
+// 杜绝静默回退到公开已知密钥导致 token 可被伪造）
 const (
-	defaultSecret = "www.topgoer.com"
 	defaultExpire = int64(7 * 24 * 3600) // 7 天
 	defaultIssuer = "127.0.0.1"
 )
@@ -19,18 +20,19 @@ const (
 // 全局配置（通过 Init 设置，线程安全）
 var (
 	cfgMu     sync.RWMutex
-	cfgSecret = []byte(defaultSecret)
+	cfgSecret []byte
 	cfgExpire = defaultExpire
 	cfgIssuer = defaultIssuer
 )
 
 // Init 初始化 JWT 配置（启动时由 ServiceContext 调用）
 func Init(secret string, expire int64, issuer string) {
+	if secret == "" {
+		panic("JWT Secret 未配置：请在服务配置（或其环境变量）中设置足够长的随机 Secret")
+	}
 	cfgMu.Lock()
 	defer cfgMu.Unlock()
-	if secret != "" {
-		cfgSecret = []byte(secret)
-	}
+	cfgSecret = []byte(secret)
 	if expire > 0 {
 		cfgExpire = expire
 	}
@@ -53,6 +55,9 @@ func GenerateToken(userId string, ver int64) (string, error) {
 	expire := cfgExpire
 	issuer := cfgIssuer
 	cfgMu.RUnlock()
+	if len(secret) == 0 {
+		return "", errors.New("JWT 未初始化（缺少 Secret）")
+	}
 
 	expireTime := time.Now().Add(time.Duration(expire) * time.Second)
 	claims := &Claims{
@@ -78,9 +83,16 @@ func ParseToken(tokenString string) (*jwt.Token, *Claims, error) {
 	cfgMu.RLock()
 	secret := cfgSecret
 	cfgMu.RUnlock()
+	if len(secret) == 0 {
+		return nil, nil, errors.New("JWT 未初始化（缺少 Secret）")
+	}
 
 	claims := &Claims{}
 	token, err := jwt.ParseWithClaims(tokenString, claims, func(token *jwt.Token) (interface{}, error) {
+		// 仅接受 HMAC 系列签名算法，防止算法混淆攻击
+		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+			return nil, fmt.Errorf("意外的签名算法: %v", token.Header["alg"])
+		}
 		return secret, nil
 	})
 	return token, claims, err

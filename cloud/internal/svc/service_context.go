@@ -33,12 +33,18 @@ type ServiceContext struct {
 func NewServiceContext(c config.Config) *ServiceContext {
 	ctx := &ServiceContext{Config: c}
 
-	// 生产模式禁止使用演示默认密钥（空值或演示值直接拒绝启动）
-	if c.Mode == "prod" && (c.JWT.Secret == "" || c.JWT.Secret == "www.topgoer.com") {
-		panic(fmt.Errorf("JWT Secret 未配置或仍为演示默认值，拒绝在生产模式启动"))
+	// 生产模式禁止使用演示默认密钥或过短密钥（空值/演示值/长度不足均拒绝启动）
+	// HS256 安全基线：随机 Secret ≥ 32 字节
+	if c.Mode == "prod" {
+		if c.JWT.Secret == "" || c.JWT.Secret == "www.topgoer.com" || c.JWT.Secret == "change-me-in-production" {
+			panic(fmt.Errorf("JWT Secret 未配置或仍为演示默认值，拒绝在生产模式启动"))
+		}
+		if len(c.JWT.Secret) < 32 {
+			panic(fmt.Errorf("JWT Secret 长度不足（%d < 32），拒绝在生产模式启动", len(c.JWT.Secret)))
+		}
 	}
 
-	// 初始化 JWT 配置（密钥、过期时间、签发者）
+	// 初始化 JWT 配置（密钥、过期时间、签发者；空 Secret 在 Init 内直接 panic）
 	jwt.Init(c.JWT.Secret, c.JWT.Expire, c.JWT.Issuer)
 
 	// 连接 MySQL
@@ -64,7 +70,8 @@ func NewServiceContext(c config.Config) *ServiceContext {
 	}
 
 	// 初始化验证码服务（Redis 未配置时由组件降级为明确报错，不再空指针）
-	ctx.Verifier = verification.NewService(cache.NewRedisKV(ctx.Redis), verification.LogSender{})
+	// LogSender 按 mode 脱码：dev 输出完整验证码，其余模式仅输出 ******
+	ctx.Verifier = verification.NewService(cache.NewRedisKV(ctx.Redis), verification.NewLogSender(c.Mode))
 
 	return ctx
 }
