@@ -94,75 +94,47 @@ func (r *UserRepository) ExistsByUsername(ctx context.Context, name string) (boo
 		Exist(ctx)
 }
 
-// LoginByName 用户名登录
-// 支持存量明文密码渐进式迁移：若 DB 中是明文，校验通过后自动升级为 bcrypt
-func (r *UserRepository) LoginByName(ctx context.Context, in *service.LoginByAccountReq) (*ent.User, error) {
-	res, err := r.client.User.Query().
-		Where(user.UsernameEQ(in.Account)).
-		Only(ctx)
+// loginWithLookup 账号密码登录公共流程：查询 → 锁定检查 → 密码校验 → 失败计数/清零
+// 锁定键使用用户 ID：手机/邮箱注册用户 username 为 NULL，若用 username 作键，
+// 所有该类账号会共享同一个失败计数桶（单账号爆破不触发锁定，且可被用来互相锁定）
+func (r *UserRepository) loginWithLookup(ctx context.Context, query *ent.UserQuery, password string) (*ent.User, error) {
+	res, err := query.Only(ctx)
 	if err != nil {
 		if ent.IsNotFound(err) {
 			return nil, errors.New("用户名或密码错误")
 		}
 		return nil, err
 	}
-	if locked, remain := loginlock.Locked(ctx, res.Username); locked {
+	if locked, remain := loginlock.Locked(ctx, res.ID); locked {
 		return nil, fmt.Errorf("账号已被锁定，请 %d 分钟后重试", int(remain.Minutes())+1)
 	}
-	if err := r.verifyAndUpgrade(ctx, res, in.Password); err != nil {
-		loginlock.RecordFail(ctx, res.Username)
+	if err := r.verifyAndUpgrade(ctx, res, password); err != nil {
+		loginlock.RecordFail(ctx, res.ID)
 		return nil, err
 	}
-	loginlock.Clear(ctx, res.Username)
+	loginlock.Clear(ctx, res.ID)
 	return res, nil
+}
+
+// LoginByName 用户名登录
+// 支持存量明文密码渐进式迁移：若 DB 中是明文，校验通过后自动升级为 bcrypt
+func (r *UserRepository) LoginByName(ctx context.Context, in *service.LoginByAccountReq) (*ent.User, error) {
+	return r.loginWithLookup(ctx, r.client.User.Query().
+		Where(user.UsernameEQ(in.Account)), in.Password)
 }
 
 // LoginByPhone 手机号登录
 // 支持存量明文密码渐进式迁移
 func (r *UserRepository) LoginByPhone(ctx context.Context, in *service.LoginByAccountReq) (*ent.User, error) {
-	res, err := r.client.User.Query().
-		Where(user.PhoneEQ(in.GetAccount())). // 查找相同的phone
-		Only(ctx)
-
-	if err != nil {
-		if ent.IsNotFound(err) {
-			return nil, errors.New("用户名或密码错误")
-		}
-		return nil, err
-	}
-	if locked, remain := loginlock.Locked(ctx, res.Username); locked {
-		return nil, fmt.Errorf("账号已被锁定，请 %d 分钟后重试", int(remain.Minutes())+1)
-	}
-	if err := r.verifyAndUpgrade(ctx, res, in.Password); err != nil {
-		loginlock.RecordFail(ctx, res.Username)
-		return nil, err
-	}
-	loginlock.Clear(ctx, res.Username)
-	return res, nil
+	return r.loginWithLookup(ctx, r.client.User.Query().
+		Where(user.PhoneEQ(in.GetAccount())), in.Password)
 }
 
 // LoginByEmail 邮箱登录
 // 支持存量明文密码渐进式迁移
 func (r *UserRepository) LoginByEmail(ctx context.Context, in *service.LoginByAccountReq) (*ent.User, error) {
-	res, err := r.client.User.Query().
-		Where(user.EmailEQ(in.GetAccount())). // 查找相同的email
-		Only(ctx)
-
-	if err != nil {
-		if ent.IsNotFound(err) {
-			return nil, errors.New("用户名或密码错误")
-		}
-		return nil, err
-	}
-	if locked, remain := loginlock.Locked(ctx, res.Username); locked {
-		return nil, fmt.Errorf("账号已被锁定，请 %d 分钟后重试", int(remain.Minutes())+1)
-	}
-	if err := r.verifyAndUpgrade(ctx, res, in.Password); err != nil {
-		loginlock.RecordFail(ctx, res.Username)
-		return nil, err
-	}
-	loginlock.Clear(ctx, res.Username)
-	return res, nil
+	return r.loginWithLookup(ctx, r.client.User.Query().
+		Where(user.EmailEQ(in.GetAccount())), in.Password)
 }
 
 // verifyAndUpgrade 校验密码并自动升级存量明文密码为 bcrypt

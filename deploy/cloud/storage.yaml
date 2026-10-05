@@ -40,12 +40,12 @@ Storage:
     # 挂载卷路径（docker-compose 中由 storage-data 卷持久化）
     RootDir: /data/cloud_storage
 
-# 用户级 API 限流（生产建议开启）
-# RateLimit:
-#   Enabled: true
-#   QPS: 10
-#   Burst: 20
-#   SendCodeEvery: 20
+# 用户级 API 限流（生产必须开启：关闭时登录爆破/验证码轰炸/匿名分享访问均无节流）
+RateLimit:
+  Enabled: true
+  QPS: 10
+  Burst: 20
+  SendCodeEvery: 20
 
 # JWT 鉴权配置
 JWT:

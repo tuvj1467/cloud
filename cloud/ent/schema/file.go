@@ -68,6 +68,8 @@ func (File) Indexes() []ent.Index {
 		index.Fields("user_id", "md5"),
 		// 桶维度列表与桶清空删除
 		index.Fields("bucket_id"),
+		// 回收站列表与 30 天过期清扫（deleted_at 谓词 + 排序）
+		index.Fields("deleted_at"),
 	}
 }
 

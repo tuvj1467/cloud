@@ -24,7 +24,6 @@ ONE_CLOUD/
 │   ├── etc/storage.yaml       # 服务配置
 │   ├── proto/                 # protobuf 定义（file/user/bucket/service）
 │   ├── ent/                   # ent 模型与生成代码（user/bucket/file/file_part/file_share）
-│   ├── storageclient/         # gRPC 客户端封装
 │   └── internal/
 │       ├── config/            # 配置定义（MySQL/Redis/Storage/JWT）
 │       ├── logic/             # 业务逻辑（file / user / bucket）

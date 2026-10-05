@@ -83,6 +83,11 @@ var (
 				Unique:  false,
 				Columns: []*schema.Column{FilesColumns[10]},
 			},
+			{
+				Name:    "file_deleted_at",
+				Unique:  false,
+				Columns: []*schema.Column{FilesColumns[12]},
+			},
 		},
 	}
 	// FilePartsColumns holds the columns for the "file_parts" table.
@@ -136,6 +141,18 @@ var (
 		Name:       "file_shares",
 		Columns:    FileSharesColumns,
 		PrimaryKey: []*schema.Column{FileSharesColumns[0]},
+		Indexes: []*schema.Index{
+			{
+				Name:    "fileshare_user_id",
+				Unique:  false,
+				Columns: []*schema.Column{FileSharesColumns[5]},
+			},
+			{
+				Name:    "fileshare_file_id",
+				Unique:  false,
+				Columns: []*schema.Column{FileSharesColumns[4]},
+			},
+		},
 	}
 	// ShareAccessLogsColumns holds the columns for the "share_access_logs" table.
 	ShareAccessLogsColumns = []*schema.Column{

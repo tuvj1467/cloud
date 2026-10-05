@@ -19,7 +19,6 @@ COPY --from=builder /app/gateway /app/gateway
 
 # protoset.pb 是运行时加载的 proto 描述符，必须随镜像分发
 COPY --from=builder /app/protoset.pb /app/protoset.pb
-COPY --from=builder /app/static /app/static
 
 EXPOSE 8888
 

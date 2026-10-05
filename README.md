@@ -25,7 +25,7 @@ ONE CLOUD 是一个生产级的对象存储服务，采用 **gRPC 微服务 + HT
 
 | 层级 | 技术 | 说明 |
 |------|------|------|
-| 服务框架 | [go-zero](https://github.com/zeromicro/go-zero) v1.6 | gRPC 服务 + HTTP 网关 |
+| 服务框架 | [go-zero](https://github.com/zeromicro/go-zero) | gRPC 服务（v1.6）+ HTTP 网关（v1.10） |
 | ORM | [ent](https://entgo.io/) v0.14 | 实体定义 + 代码生成 |
 | 数据库 | MySQL 8.x | 用户/桶/文件元数据 |
 | 缓存 | Redis 7.x | 秒传索引、分片状态、分享缓存 |
@@ -71,9 +71,6 @@ ONE CLOUD 是一个生产级的对象存储服务，采用 **gRPC 微服务 + HT
 ### 🚧 规划中
 
 - 图片处理（缩放 / 裁剪 / 水印）
-- 管理后台（Web UI）
-- 管理后台
-- 大文件下载优化（当前 >4MB 受 gRPC 单消息限制，可转流式/预签名 URL）
 
 ## 架构设计
 
@@ -150,14 +147,12 @@ ONE_CLOUD/
 │   │   ├── repository/           # 数据访问层（Repository 模式）
 │   │   ├── server/               # gRPC server 实现
 │   │   └── svc/                  # 服务上下文（依赖注入）
-│   └── storageclient/            # gRPC 客户端封装
 │
 ├── gateway/                      # HTTP 网关
 │   ├── gateway.go                # 网关入口
 │   ├── gateway.yaml              # 路由映射配置
 │   ├── protoset.pb               # proto 描述符集
-│   ├── type/                     # 自定义 Marshaler / 统一响应包装
-│   └── static/                   # 静态资源（css/js）
+│   └── type/                     # 自定义 Marshaler / 统一响应包装
 │
 ├── web/                          # Web 演示前端
 │   ├── server.go                 # 静态服务器 + API 反向代理（:8080）
@@ -167,16 +162,8 @@ ONE_CLOUD/
 │
 ├── doc/                          # 项目文档
 │   ├── README.md                 # 文档索引
-│   ├── 01_现状分析.md
-│   ├── 02_架构设计.md
-│   ├── 03_数据库设计.md
-│   ├── 04_存储引擎设计.md
-│   ├── 05_API接口设计.md
-│   ├── 06_开发任务清单.md
-│   ├── 07_P5_高级能力设计.md
-│   ├── 08_P6_健壮性改造设计.md
-│   ├── 09_部署指南.md
-│   └── 10_配置说明.md
+│   ├── 01_现状分析.md ~ 14_管理后台设计.md
+│   │                             # 详见下方「文档导航」
 │
 ├── docker-compose.yml            # Docker Compose 一键部署（含 MySQL/Redis）
 ├── deploy/                       # 容器化部署专用配置
@@ -311,7 +298,7 @@ curl -X POST http://127.0.0.1:8888/bucket/create \
 | GetBucketFileList | GET | ✅ | 桶内文件列表 |
 | RenameFile | POST | ✅ | 重命名文件 |
 | DeleteFile | POST | ✅ | 删除文件 |
-| DownloadFile | POST | ✅ | 下载文件 |
+| DownloadFile | GET | ✅ | 下载文件 |
 | CopyFile | POST | ✅ | 复制文件 |
 
 #### 分片上传
@@ -426,6 +413,8 @@ protoc --descriptor_set_out=../gateway/protoset.pb \
 | [10_配置说明.md](doc/10_配置说明.md) | 全量配置键位说明（服务/网关/Web） |
 | [11_P7_安全与健壮性修复设计.md](doc/11_P7_安全与健壮性修复设计.md) | 验证码链路 / 路径安全 / 配额与事务修复设计 |
 | [12_P8_前端完善设计.md](doc/12_P8_前端完善设计.md) | Web 前端 Vue 3 本地化改造与功能补齐设计 |
+| [13_夜间自主开发路线图.md](doc/13_夜间自主开发路线图.md) | M1-M12 增量能力路线图（流式下载/缩略图/趋势/回收站/分享审计/限流等） |
+| [14_管理后台设计.md](doc/14_管理后台设计.md) | 管理后台（角色模型/用户管理/全局统计/操作审计）设计 |
 
 ## License
 

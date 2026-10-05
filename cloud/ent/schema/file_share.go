@@ -4,6 +4,7 @@ import (
 	"entgo.io/ent"
 	"entgo.io/ent/dialect/entsql"
 	"entgo.io/ent/schema/field"
+	"entgo.io/ent/schema/index"
 )
 
 type FileShare struct {
@@ -62,4 +63,14 @@ func (FileShare) Mixin() []ent.Mixin {
 
 func (FileShare) Edges() []ent.Edge {
 	return nil
+}
+
+// 索引
+func (FileShare) Indexes() []ent.Index {
+	return []ent.Index{
+		// 我的分享列表（user_id 维度 Count+List）
+		index.Fields("user_id"),
+		// 文件删除/桶删除时按 file_id 级联查分享
+		index.Fields("file_id"),
+	}
 }
