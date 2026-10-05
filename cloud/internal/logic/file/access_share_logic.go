@@ -3,10 +3,8 @@ package filelogic
 import (
 	"context"
 	"errors"
-	"time"
 
 	"onecloud/ent"
-	"onecloud/internal/pkg/cache"
 	"onecloud/internal/pkg/response"
 	"onecloud/internal/repository"
 	"onecloud/internal/svc"
@@ -30,10 +28,10 @@ func NewAccessShareLogic(ctx context.Context, svcCtx *svc.ServiceContext) *Acces
 }
 
 // AccessShare 访问文件分享（匿名）
-// 步骤：查 Redis 缓存 → 未命中查 DB → 校验过期 → 查询文件元信息
+// 步骤：加载分享（Redis 优先，DB 兜底，见 loadShareForAccess）→ 查询文件元信息
 //
 //	→ 返回 FileMeta + permission
-//	（次数上限仅约束下载 DownloadByShare，访问页不计次）
+//	（次数上限仅约束下载 DownloadByShare/Stream，访问页不计次）
 func (l *AccessShareLogic) AccessShare(in *service.AccessShareRequest) (*service.Response, error) {
 	// 1. 校验入参
 	if err := in.Validate(); err != nil {
@@ -41,48 +39,17 @@ func (l *AccessShareLogic) AccessShare(in *service.AccessShareRequest) (*service
 	}
 
 	fileRepo := repository.NewFileRepository(l.svcCtx.EntClient)
-	shareRepo := repository.NewFileShareRepository(l.svcCtx.EntClient)
-	shareCache := cache.NewShareCache(l.svcCtx.Redis)
 
-	// 2. 优先查 Redis 缓存
-	data, err := shareCache.GetMeta(l.ctx, in.GetShareCode())
+	// 2-4. 加载分享元信息并校验过期（公共流程）
+	data, err := loadShareForAccess(l.ctx, l.svcCtx, in.GetShareCode())
 	if err != nil {
-		l.Errorf("查询分享缓存失败: %v", err)
-	}
-	if data == nil {
-		// 3. Redis 未命中，查 DB
-		share, err := shareRepo.GetByCode(l.ctx, in.GetShareCode())
-		if err != nil {
-			if ent.IsNotFound(err) {
-				return response.ErrWithCode(response.CodeFileShareNotFound, "分享不存在或已撤销")
-			}
-			return response.Err(errors.New("查询分享失败: " + err.Error()))
+		if errors.Is(err, ErrShareNotFound) {
+			return response.ErrWithCode(response.CodeFileShareNotFound, err.Error())
 		}
-		// 转换为缓存结构
-		data = &cache.ShareData{
-			ID:         share.ID,
-			FileID:     share.FileID,
-			UserID:     share.UserID,
-			ShareCode:  share.ShareCode,
-			Permission: string(share.Permission),
-			ExpireAt:   nil,
-			MaxCount:   share.MaxCount,
+		if errors.Is(err, ErrShareExpired) {
+			return response.ErrWithCode(response.CodeFileShareExpired, err.Error())
 		}
-		if share.ExpireAt != nil {
-			expireAt := *share.ExpireAt
-			data.ExpireAt = &expireAt
-		}
-		// 回写 Redis
-		usedCount, _ := shareCache.GetUsedCount(l.ctx, in.GetShareCode())
-		if usedCount == 0 {
-			usedCount = share.UsedCount
-		}
-		_ = shareCache.Set(l.ctx, data, usedCount)
-	}
-
-	// 4. 校验过期
-	if data.ExpireAt != nil && data.ExpireAt.Before(time.Now()) {
-		return response.ErrWithCode(response.CodeFileShareExpired, "分享已过期")
+		return response.Err(errors.New("查询分享失败"))
 	}
 
 	// 5. 查询文件元信息

@@ -163,6 +163,11 @@ func (s *FileServer) DownloadByShare(ctx context.Context, in *service.DownloadBy
 	return l.DownloadByShare(in)
 }
 
+func (s *FileServer) DownloadByShareStream(in *service.DownloadByShareRequest, stream service.File_DownloadByShareStreamServer) error {
+	l := filelogic.NewDownloadByShareStreamLogic(stream.Context(), s.svcCtx)
+	return l.DownloadByShareStream(in, stream)
+}
+
 // 用量统计（需登录）
 func (s *FileServer) GetStorageStats(ctx context.Context, in *service.GetStorageStatsRequest) (*service.Response, error) {
 	l := filelogic.NewGetStorageStatsLogic(ctx, s.svcCtx)

@@ -5,9 +5,9 @@
 //             GET /file/share/download?share_code= → {content(base64), file}（匿名，Task 1 新增，经 downloadBlob 解码）。
 // 错误码：30020 分享已过期 / 30021 次数用尽 / 30022 分享不存在 → 居中错误态。
 const { ref, onMounted } = Vue;
-import { accessShare, downloadBlob } from '../api.js';
+import { accessShare, downloadBlob, streamShareDownload } from '../api.js';
 import { store } from '../store.js';
-import { formatSize, fileIcon, toast } from '../common.js';
+import { formatSize, fileIcon, toast, saveBlob } from '../common.js';
 
 // 无构建链：直接注入全局 <style>，类名加 p8- 前缀防冲突
 if (!document.getElementById('p8-share-page-style')) {
@@ -65,8 +65,18 @@ export const SharePage = {
       if (!file.value || downloading.value) return;
       downloading.value = true;
       try {
-        await downloadBlob('/file/share/download', { share_code: store.shareCode }, file.value.name);
-        toast('文件已开始下载', 'success');
+        // 流式下载优先（大文件不整文件驻内存）；流式通道不可用时回落一元接口
+        try {
+          const { blob } = await streamShareDownload(store.shareCode, file.value.name);
+          saveBlob(blob, file.value.name);
+          toast('文件已开始下载', 'success');
+          return;
+        } catch (streamErr) {
+          // 过期/次数用尽等分享语义错误直接抛给外层处理，仅通道故障回落一元
+          if ([30020, 30021, 30022].includes(streamErr.code)) throw streamErr;
+          await downloadBlob('/file/share/download', { share_code: store.shareCode }, file.value.name);
+          toast('文件已开始下载', 'success');
+        }
       } catch (e) {
         toast(e.message, 'error');
         // 下载瞬间命中过期/次数用尽：切换到错误态（分享在页面停留期间失效的兜底）

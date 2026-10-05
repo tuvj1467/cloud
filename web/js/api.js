@@ -98,14 +98,18 @@ export const adminRecentAccessLogs = (params) => request('/admin/share-access-lo
 export const adminPurgeFile = (body) => request('/admin/files/purge', { body });
 export const adminRecentOpLogs = (params) => request('/admin/op-logs', { method: 'GET', params });
 
-// 流式下载：POST /file/download_stream（server-streaming）。
+// 流式下载：POST server-streaming。
 // 线格式为串联 JSON（每个 64KB 块一个 DownloadChunk 对象），
 // 逐块 base64 解码拼接；onProgress(sent, total) 用于进度回调。
-export async function streamDownload(fileId, name, onProgress) {
-  const resp = await fetch(API_BASE + '/file/download_stream', {
+// streamShareDownload 走同一通道的匿名分享端点（无需登录）。
+async function streamFetch(path, body, name, onProgress) {
+  const resp = await fetch(API_BASE + path, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${store.token}` },
-    body: JSON.stringify({ file_id: fileId }),
+    headers: {
+      'Content-Type': 'application/json',
+      ...(store.token ? { Authorization: `Bearer ${store.token}` } : {}),
+    },
+    body: JSON.stringify(body),
   });
   if (!resp.ok) {
     let msg = `下载失败（HTTP ${resp.status}）`;
@@ -144,6 +148,12 @@ export async function streamDownload(fileId, name, onProgress) {
   }
   return { blob: new Blob(parts), name, sent, total };
 }
+
+export const streamDownload = (fileId, name, onProgress) =>
+  streamFetch('/file/download_stream', { file_id: fileId }, name, onProgress);
+
+export const streamShareDownload = (shareCode, name, onProgress) =>
+  streamFetch('/file/share/download_stream', { share_code: shareCode }, name, onProgress);
 export const getStorageStats = (params) => request('/file/stats', { method: 'GET', params });
 
 // 下载：bytes 在 JSON 中为 base64，需解码

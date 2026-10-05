@@ -116,6 +116,9 @@ upstreams:                  # 0空格
       - Method: GET
         Path: /file/share/download
         RpcPath: storage.File/DownloadByShare
+      - Method: POST
+        Path: /file/share/download_stream
+        RpcPath: storage.File/DownloadByShareStream
       - Method: GET
         Path: /file/stats
         RpcPath: storage.File/GetStorageStats

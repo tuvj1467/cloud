@@ -916,6 +916,7 @@ const (
 	File_CreateShare_FullMethodName             = "/storage.File/CreateShare"
 	File_AccessShare_FullMethodName             = "/storage.File/AccessShare"
 	File_DownloadByShare_FullMethodName         = "/storage.File/DownloadByShare"
+	File_DownloadByShareStream_FullMethodName   = "/storage.File/DownloadByShareStream"
 	File_GetStorageStats_FullMethodName         = "/storage.File/GetStorageStats"
 	File_GetPresignedURL_FullMethodName         = "/storage.File/GetPresignedURL"
 	File_GetMyShares_FullMethodName             = "/storage.File/GetMyShares"
@@ -968,6 +969,8 @@ type FileClient interface {
 	AccessShare(ctx context.Context, in *AccessShareRequest, opts ...grpc.CallOption) (*Response, error)
 	// 分享下载（匿名）
 	DownloadByShare(ctx context.Context, in *DownloadByShareRequest, opts ...grpc.CallOption) (*Response, error)
+	// 分享流式下载（匿名，server-streaming 分块传输；大文件避免整文件驻内存）
+	DownloadByShareStream(ctx context.Context, in *DownloadByShareRequest, opts ...grpc.CallOption) (grpc.ServerStreamingClient[DownloadChunk], error)
 	// 用量统计（需登录）
 	GetStorageStats(ctx context.Context, in *GetStorageStatsRequest, opts ...grpc.CallOption) (*Response, error)
 	// 获取预签名下载 URL（需登录；本地驱动不支持返回 40005）
@@ -1150,6 +1153,25 @@ func (c *fileClient) DownloadByShare(ctx context.Context, in *DownloadByShareReq
 	return out, nil
 }
 
+func (c *fileClient) DownloadByShareStream(ctx context.Context, in *DownloadByShareRequest, opts ...grpc.CallOption) (grpc.ServerStreamingClient[DownloadChunk], error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	stream, err := c.cc.NewStream(ctx, &File_ServiceDesc.Streams[0], File_DownloadByShareStream_FullMethodName, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	x := &grpc.GenericClientStream[DownloadByShareRequest, DownloadChunk]{ClientStream: stream}
+	if err := x.ClientStream.SendMsg(in); err != nil {
+		return nil, err
+	}
+	if err := x.ClientStream.CloseSend(); err != nil {
+		return nil, err
+	}
+	return x, nil
+}
+
+// This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
+type File_DownloadByShareStreamClient = grpc.ServerStreamingClient[DownloadChunk]
+
 func (c *fileClient) GetStorageStats(ctx context.Context, in *GetStorageStatsRequest, opts ...grpc.CallOption) (*Response, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(Response)
@@ -1192,7 +1214,7 @@ func (c *fileClient) RevokeShare(ctx context.Context, in *RevokeShareRequest, op
 
 func (c *fileClient) DownloadStream(ctx context.Context, in *DownloadFileRequest, opts ...grpc.CallOption) (grpc.ServerStreamingClient[DownloadChunk], error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	stream, err := c.cc.NewStream(ctx, &File_ServiceDesc.Streams[0], File_DownloadStream_FullMethodName, cOpts...)
+	stream, err := c.cc.NewStream(ctx, &File_ServiceDesc.Streams[1], File_DownloadStream_FullMethodName, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -1308,6 +1330,8 @@ type FileServer interface {
 	AccessShare(context.Context, *AccessShareRequest) (*Response, error)
 	// 分享下载（匿名）
 	DownloadByShare(context.Context, *DownloadByShareRequest) (*Response, error)
+	// 分享流式下载（匿名，server-streaming 分块传输；大文件避免整文件驻内存）
+	DownloadByShareStream(*DownloadByShareRequest, grpc.ServerStreamingServer[DownloadChunk]) error
 	// 用量统计（需登录）
 	GetStorageStats(context.Context, *GetStorageStatsRequest) (*Response, error)
 	// 获取预签名下载 URL（需登录；本地驱动不支持返回 40005）
@@ -1384,6 +1408,9 @@ func (UnimplementedFileServer) AccessShare(context.Context, *AccessShareRequest)
 }
 func (UnimplementedFileServer) DownloadByShare(context.Context, *DownloadByShareRequest) (*Response, error) {
 	return nil, status.Error(codes.Unimplemented, "method DownloadByShare not implemented")
+}
+func (UnimplementedFileServer) DownloadByShareStream(*DownloadByShareRequest, grpc.ServerStreamingServer[DownloadChunk]) error {
+	return status.Error(codes.Unimplemented, "method DownloadByShareStream not implemented")
 }
 func (UnimplementedFileServer) GetStorageStats(context.Context, *GetStorageStatsRequest) (*Response, error) {
 	return nil, status.Error(codes.Unimplemented, "method GetStorageStats not implemented")
@@ -1709,6 +1736,17 @@ func _File_DownloadByShare_Handler(srv interface{}, ctx context.Context, dec fun
 	return interceptor(ctx, in, info, handler)
 }
 
+func _File_DownloadByShareStream_Handler(srv interface{}, stream grpc.ServerStream) error {
+	m := new(DownloadByShareRequest)
+	if err := stream.RecvMsg(m); err != nil {
+		return err
+	}
+	return srv.(FileServer).DownloadByShareStream(m, &grpc.GenericServerStream[DownloadByShareRequest, DownloadChunk]{ServerStream: stream})
+}
+
+// This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
+type File_DownloadByShareStreamServer = grpc.ServerStreamingServer[DownloadChunk]
+
 func _File_GetStorageStats_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(GetStorageStatsRequest)
 	if err := dec(in); err != nil {
@@ -2009,6 +2047,11 @@ var File_ServiceDesc = grpc.ServiceDesc{
 		},
 	},
 	Streams: []grpc.StreamDesc{
+		{
+			StreamName:    "DownloadByShareStream",
+			Handler:       _File_DownloadByShareStream_Handler,
+			ServerStreams: true,
+		},
 		{
 			StreamName:    "DownloadStream",
 			Handler:       _File_DownloadStream_Handler,

@@ -19,12 +19,30 @@ import (
 // ErrUnsupportedImage 非可解码图片
 var ErrUnsupportedImage = errors.New("thumb: 无法解码的图片格式")
 
+// 解码前的双上限：防「解压炸弹」型图片（如 50000×50000 的 PNG 声明很小、
+// 解码后占内存数 GB）拖垮进程；超限文件直接跳过缩略图生成
+const (
+	maxPixels    = 40 << 20 // 总像素上限 40MP
+	maxSourceLen = 64 << 20 // 原图文件大小上限 64MB
+)
+
 // GenerateJPEG 解码 src 图片，将最长边缩放至 ≤maxEdge（不放大），以 JPEG quality 质量写入 dst
 // 支持格式：jpeg/png/gif/webp（webp 解码来自 x/image）
 func GenerateJPEG(srcPath, dstPath string, maxEdge, quality int) error {
 	data, err := os.ReadFile(srcPath)
 	if err != nil {
 		return fmt.Errorf("读取原图失败: %w", err)
+	}
+	if len(data) > maxSourceLen {
+		return fmt.Errorf("原图超过 %dMB，跳过缩略图", maxSourceLen>>20)
+	}
+	// 先解码头部取尺寸，超限图片不做完整解码
+	cfg, _, err := image.DecodeConfig(bytes.NewReader(data))
+	if err != nil {
+		return fmt.Errorf("%w: %v", ErrUnsupportedImage, err)
+	}
+	if cfg.Width <= 0 || cfg.Height <= 0 || int64(cfg.Width)*int64(cfg.Height) > maxPixels {
+		return fmt.Errorf("图片尺寸超限（%dx%d），跳过缩略图", cfg.Width, cfg.Height)
 	}
 	img, _, err := image.Decode(bytes.NewReader(data))
 	if err != nil {

@@ -351,7 +351,8 @@ export const FileList = {
 
     async function doDownload(f) {
       const fileId = f.fileId || f.file_id;
-      const isBig = (f.size || 0) > 20 * 1024 * 1024;
+      // 与后端一元下载上限（unaryDownloadMaxBytes=5MB）对齐
+      const isBig = (f.size || 0) > 5 * 1024 * 1024;
       // 1. 预签名直连（绕过网关，MinIO 驱动可用；本地驱动 40005 回落）
       try {
         const pres = await getPresignedURL({ file_id: fileId });
@@ -376,11 +377,19 @@ export const FileList = {
           return toast(e.message, 'error');
         }
       }
-      // 3. 小文件普通下载（一次性 base64）
+      // 3. 小文件普通下载（一次性 base64）；元数据大小与实际不一致超限时回落流式
       try {
         await downloadBlob('/file/download', { file_id: fileId }, f.name);
         toast('文件已开始下载', 'success');
       } catch (e) {
+        if (e.code === 30012) {
+          try {
+            const { blob } = await streamDownload(fileId, f.name);
+            saveBlob(blob, f.name);
+            toast('文件已开始下载（流式）', 'success');
+            return;
+          } catch (e2) { return toast(e2.message, 'error'); }
+        }
         toast(e.message, 'error');
       }
     }

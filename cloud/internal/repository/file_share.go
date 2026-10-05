@@ -51,31 +51,19 @@ func (r *FileShareRepository) GetByCode(ctx context.Context, code string) (*ent.
 		Only(ctx)
 }
 
-// IncUsedCount 递增已访问次数（乐观锁）
+// IncUsedCount 原子递增已访问次数
+// 单条 UPDATE 自增（used_count = used_count + 1），无需先读后写：
+// 并发下载不会因版本冲突丢失递增（原乐观锁实现在冲突时放弃递增，
+// Redis 过期后以偏小的 DB 值重建计数，max_count 上限可被突破）
 // 返回递增后的新值
-func (r *FileShareRepository) IncUsedCount(ctx context.Context, id string, version int) (int, error) {
-	// 先读取当前 used_count
-	share, err := r.client.FileShare.Get(ctx, id)
-	if err != nil {
-		return 0, err
-	}
-	newCount := share.UsedCount + 1
-
-	affected, err := r.client.FileShare.Update().
-		Where(
-			fileshare.IDEQ(id),
-			fileshare.VersionEQ(version),
-		).
-		SetUsedCount(newCount).
-		SetVersion(version + 1).
+func (r *FileShareRepository) IncUsedCount(ctx context.Context, id string) (int, error) {
+	share, err := r.client.FileShare.UpdateOneID(id).
+		AddUsedCount(1).
 		Save(ctx)
 	if err != nil {
 		return 0, fmt.Errorf("更新访问次数失败: %w", err)
 	}
-	if affected == 0 {
-		return 0, fmt.Errorf("分享记录版本冲突，请重试")
-	}
-	return newCount, nil
+	return share.UsedCount, nil
 }
 
 // DeleteByID 删除分享记录
