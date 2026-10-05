@@ -231,6 +231,8 @@ func (d *MinioDriver) listPartETags(ctx context.Context, tmpKey, serverID string
 // CompletePart 校验分片数量与逐片 MD5 后合并为目标对象
 // S3 语义：Complete 作用于 init 时的临时对象名，完成后服务端拷贝到目标键并清理临时对象
 // ⚠ S3 强制约束：除最后一片外每片必须 ≥5MiB——调用方（业务层/前端）需保证切片大小合规
+// 失败时保留业务 upload_id → 服务端 upload_id 映射（与本地驱动语义一致），客户端可重试；
+// 全部步骤成功后才消费映射
 func (d *MinioDriver) CompletePart(ctx context.Context, uploadID string, targetPath string, expectedParts int, expectedMD5 map[int]string) error {
 	tmpKey, err := tmpObject(uploadID)
 	if err != nil {
@@ -242,7 +244,6 @@ func (d *MinioDriver) CompletePart(ctx context.Context, uploadID string, targetP
 	}
 	d.mu.Lock()
 	serverID, ok := d.uploads[uploadID]
-	delete(d.uploads, uploadID)
 	d.mu.Unlock()
 	if !ok {
 		return fmt.Errorf("分片上传任务不存在或已失效: %s", uploadID)
@@ -289,10 +290,16 @@ func (d *MinioDriver) CompletePart(ctx context.Context, uploadID string, targetP
 	if err := d.client.RemoveObject(ctx, d.bucket, tmpKey, minio.RemoveObjectOptions{}); err != nil {
 		return fmt.Errorf("清理分片临时对象失败: %w", err)
 	}
+	// 全部成功，消费映射
+	d.mu.Lock()
+	delete(d.uploads, uploadID)
+	d.mu.Unlock()
 	return nil
 }
 
 // AbortPart 取消分片上传并中止服务端任务
+// 服务端任务不存在（已被清理/中止过）视为成功并清理映射；
+// 其他失败保留映射供客户端重试中止
 func (d *MinioDriver) AbortPart(ctx context.Context, uploadID string) error {
 	tmpKey, err := tmpObject(uploadID)
 	if err != nil {
@@ -300,17 +307,23 @@ func (d *MinioDriver) AbortPart(ctx context.Context, uploadID string) error {
 	}
 	d.mu.Lock()
 	serverID, ok := d.uploads[uploadID]
-	delete(d.uploads, uploadID)
 	d.mu.Unlock()
 	if !ok {
 		return ErrFileNotFound
 	}
+	consume := func() {
+		d.mu.Lock()
+		delete(d.uploads, uploadID)
+		d.mu.Unlock()
+	}
 	if err := d.client.AbortMultipartUpload(ctx, d.bucket, tmpKey, serverID); err != nil {
 		if isNotFound(err) {
+			consume()
 			return ErrFileNotFound
 		}
 		return fmt.Errorf("中止分片上传失败: %w", err)
 	}
+	consume()
 	return nil
 }
 

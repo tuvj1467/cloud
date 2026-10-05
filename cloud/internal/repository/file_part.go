@@ -110,3 +110,34 @@ func (r *FilePartRepository) GetMetaByUploadID(ctx context.Context, uploadID str
 		Where(filepart.UploadIDEQ(uploadID)).
 		First(ctx)
 }
+
+// TryMarkMerging 原子占有合并权：把该上传的全部 uploaded 分片一次性置为 merged。
+// affected == totalParts 时本次调用者独占合并流程；并发的第二次 Complete 因
+// 状态已不再是 uploaded 而占有失败——以此杜绝同一 upload_id 重复合并物理文件、
+// 重复建 File 记录、重复扣配额。失败路径须调 RestoreUploaded 恢复重试能力。
+func (r *FilePartRepository) TryMarkMerging(ctx context.Context, uploadID string, totalParts int) (bool, error) {
+	n, err := r.client.FilePart.Update().
+		Where(
+			filepart.UploadIDEQ(uploadID),
+			filepart.StatusEQ(filepart.StatusUploaded),
+		).
+		SetStatus(filepart.StatusMerged).
+		Save(ctx)
+	if err != nil {
+		return false, err
+	}
+	return int(n) == totalParts, nil
+}
+
+// RestoreUploaded 合并失败回滚：将本次置为 merged 的分片恢复为 uploaded，
+// 使客户端重试 Complete / 重传分片仍可走通
+func (r *FilePartRepository) RestoreUploaded(ctx context.Context, uploadID string) error {
+	_, err := r.client.FilePart.Update().
+		Where(
+			filepart.UploadIDEQ(uploadID),
+			filepart.StatusEQ(filepart.StatusMerged),
+		).
+		SetStatus(filepart.StatusUploaded).
+		Save(ctx)
+	return err
+}

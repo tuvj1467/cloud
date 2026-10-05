@@ -77,9 +77,11 @@ func (l *AbortMultipartUploadLogic) AbortMultipartUpload(in *service.AbortMultip
 	}
 
 	// 5. 调用驱动清理物理分片
-	if err := l.svcCtx.Storage.AbortPart(l.ctx, meta.StorageID); err != nil {
-		l.Errorf("清理物理分片失败 upload_id=%s: %v", in.GetUploadId(), err)
-		// 不阻塞 DB 清理
+	// 「任务不存在」视为已清理，继续删 DB/Redis；
+	// 其他失败（存储端瞬时故障）直接返回错误——此时删 DB 记录会让服务端
+	// 残留的任务/对象成为无法通过 API 触达的孤儿，保留记录供客户端重试中止
+	if err := l.svcCtx.Storage.AbortPart(l.ctx, meta.StorageID); err != nil && !errors.Is(err, storage.ErrFileNotFound) {
+		return response.Err(errors.New("清理物理分片失败，请稍后重试: " + err.Error()))
 	}
 
 	// 6. 删除 DB 分片记录

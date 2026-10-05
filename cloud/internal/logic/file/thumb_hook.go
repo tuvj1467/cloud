@@ -10,6 +10,9 @@ import (
 	"onecloud/internal/svc"
 )
 
+// ThumbMinSize 低于该阈值的文件不生成缩略图（小文件直接用原图，避免无谓的解码开销）
+const ThumbMinSize = 50 * 1024
+
 // BuildThumb 为图片文件生成缩略图（仅本地驱动；MinIO 驱动 TODO: 生成后上传缩略图对象）。
 // 缩略图统一存为 {RootDir}/.thumbs/{fileID}.jpg（最长边 320、质量 80）。
 // 任何失败只记日志返回 false——缩略图属增强能力，绝不影响上传主流程。

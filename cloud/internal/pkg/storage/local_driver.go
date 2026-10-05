@@ -31,6 +31,7 @@ func (d *LocalDriver) absPath(path string) (string, error) {
 }
 
 // Put 写入本地文件
+// size > 0 时校验实际写入字节数（与 MinIO 驱动契约对齐：调用方声明的大小必须落盘）
 func (d *LocalDriver) Put(ctx context.Context, path string, reader io.Reader, size int64) error {
 	fullPath, err := d.absPath(path)
 	if err != nil {
@@ -44,10 +45,19 @@ func (d *LocalDriver) Put(ctx context.Context, path string, reader io.Reader, si
 	if err != nil {
 		return fmt.Errorf("创建文件失败: %w", err)
 	}
-	defer f.Close()
-	// 拷贝流到文件
-	if _, err := io.Copy(f, reader); err != nil {
+	written, err := io.Copy(f, reader)
+	closeErr := f.Close()
+	if err == nil {
+		err = closeErr
+	}
+	if err != nil {
+		// 失败清理半成品，避免留下截断文件
+		_ = os.Remove(fullPath)
 		return fmt.Errorf("写入文件失败: %w", err)
+	}
+	if size > 0 && written != size {
+		_ = os.Remove(fullPath)
+		return fmt.Errorf("写入字节数不符：实际 %d / 声明 %d", written, size)
 	}
 	return nil
 }
@@ -212,7 +222,7 @@ func (d *LocalDriver) CompletePart(ctx context.Context, uploadID string, targetP
 		}
 	}
 
-	// 创建目标文件
+	// 创建目标文件：先写临时文件再 rename，中途失败不留截断的目标文件
 	fullTarget, err := d.absPath(targetPath)
 	if err != nil {
 		return err
@@ -220,23 +230,40 @@ func (d *LocalDriver) CompletePart(ctx context.Context, uploadID string, targetP
 	if err := os.MkdirAll(filepath.Dir(fullTarget), 0755); err != nil {
 		return fmt.Errorf("创建目标目录失败: %w", err)
 	}
-	target, err := os.Create(fullTarget)
+	tmpTarget := fullTarget + ".merging"
+	target, err := os.Create(tmpTarget)
 	if err != nil {
 		return fmt.Errorf("创建目标文件失败: %w", err)
 	}
-	defer target.Close()
 
 	// 依次拼接分片
-	for _, p := range parts {
-		partFile, err := os.Open(filepath.Join(tmpDir, p.name))
-		if err != nil {
-			return fmt.Errorf("打开分片 %d 失败: %w", p.number, err)
+	concatErr := func() error {
+		for _, p := range parts {
+			partFile, err := os.Open(filepath.Join(tmpDir, p.name))
+			if err != nil {
+				return fmt.Errorf("打开分片 %d 失败: %w", p.number, err)
+			}
+			_, err = io.Copy(target, partFile)
+			partFile.Close()
+			if err != nil {
+				return fmt.Errorf("合并分片 %d 失败: %w", p.number, err)
+			}
 		}
-		_, err = io.Copy(target, partFile)
-		partFile.Close()
-		if err != nil {
-			return fmt.Errorf("合并分片 %d 失败: %w", p.number, err)
-		}
+		return nil
+	}()
+	// Windows 下 rename 前必须关闭文件句柄
+	closeErr := target.Close()
+	if concatErr != nil {
+		_ = os.Remove(tmpTarget)
+		return concatErr
+	}
+	if closeErr != nil {
+		_ = os.Remove(tmpTarget)
+		return fmt.Errorf("关闭目标文件失败: %w", closeErr)
+	}
+	if err := os.Rename(tmpTarget, fullTarget); err != nil {
+		_ = os.Remove(tmpTarget)
+		return fmt.Errorf("目标文件就位失败: %w", err)
 	}
 
 	// 合并成功，清理临时目录（原实现永久残留 .tmp/{uploadID}）

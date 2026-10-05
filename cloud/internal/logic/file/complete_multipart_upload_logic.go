@@ -36,10 +36,15 @@ func NewCompleteMultipartUploadLogic(ctx context.Context, svcCtx *svc.ServiceCon
 }
 
 // CompleteMultipartUpload 完成分片上传
-// 步骤：校验 upload_id → 校验分片完整性 → 生成目标路径 → 调用驱动 CompletePart 合并
+// 步骤：校验 upload_id → 校验分片完整性 → 原子占有合并权（uploaded→merged 一次性状态迁移）
 //
-//	→ 计算合并后 MD5 → 秒传检查 → 创建 File 元数据 → 更新桶容量
-//	→ 写 Redis MD5 索引 → 更新分片状态为 merged → 清理 Redis meta/parts
+//	→ 生成目标路径 → 调用驱动 CompletePart 合并 → 计算合并后 MD5 → 秒传检查
+//	→ 创建 File 元数据 → 更新桶容量 → 写 Redis MD5 索引 → 清理 Redis meta/parts
+//
+// 合并权门闩：并发两次 Complete 同一 upload_id 时，仅一次能迁移成功，
+// 杜绝重复合并物理文件 / 重复建记录 / 重复扣配额；失败路径恢复 uploaded 保留重试能力
+// （进程在门闩与回滚之间崩溃会留下 merged 僵尸记录，该 upload_id 需重新初始化——
+// 以极小概率的数据残留换取配额不被重复扣减）
 func (l *CompleteMultipartUploadLogic) CompleteMultipartUpload(in *service.CompleteMultipartUploadRequest) (*service.Response, error) {
 	// 1. 校验入参
 	if err := in.Validate(); err != nil {
@@ -100,8 +105,38 @@ func (l *CompleteMultipartUploadLogic) CompleteMultipartUpload(in *service.Compl
 		return response.Err(fmt.Errorf("分片不完整：已上传 %d / 共 %d", uploadedCount, meta.TotalParts))
 	}
 
+	// 5.1 原子占有合并权（uploaded → merged 一次性迁移）
+	owned, err := partRepo.TryMarkMerging(l.ctx, in.GetUploadId(), meta.TotalParts)
+	if err != nil {
+		return response.Err(errors.New("占有合并权失败: " + err.Error()))
+	}
+	if !owned {
+		return response.Err(errors.New("该上传任务正在合并或已完成，请勿重复提交"))
+	}
+
+	// rollback 合并失败回滚：清理本次产物并把分片状态恢复为 uploaded（保留重试能力）
+	rollback := func(physicalPath string, recordID string) {
+		if physicalPath != "" {
+			if delErr := l.svcCtx.Storage.Delete(l.ctx, physicalPath); delErr != nil {
+				l.Errorf("回滚物理文件失败: %v", delErr)
+			}
+		}
+		if recordID != "" {
+			if delErr := fileRepo.Delete(l.ctx, recordID); delErr != nil {
+				l.Errorf("回滚文件记录失败: %v", delErr)
+			}
+		}
+		if delErr := multipartCache.Clear(l.ctx, in.GetUploadId()); delErr != nil {
+			l.Errorf("回滚上传缓存失败: %v", delErr)
+		}
+		if delErr := partRepo.RestoreUploaded(l.ctx, in.GetUploadId()); delErr != nil {
+			l.Errorf("恢复分片状态失败（该 upload_id 可能需要重新初始化）: %v", delErr)
+		}
+	}
+
 	// 目标后缀白名单（meta.FileSuffix 来自 init 请求）
 	if !storage.ValidSuffix(meta.FileSuffix) {
+		rollback("", "")
 		return response.ErrWithCode(response.CodeStoragePathInvalid, "文件后缀非法")
 	}
 
@@ -117,6 +152,7 @@ func (l *CompleteMultipartUploadLogic) CompleteMultipartUpload(in *service.Compl
 		expectedMD5 = nil
 	}
 	if err := l.svcCtx.Storage.CompletePart(l.ctx, meta.StorageID, targetPath, meta.TotalParts, expectedMD5); err != nil {
+		rollback("", "")
 		return response.Err(errors.New("合并分片失败: " + err.Error()))
 	}
 
@@ -130,12 +166,12 @@ func (l *CompleteMultipartUploadLogic) CompleteMultipartUpload(in *service.Compl
 	// 大小治理：以驱动 Stat 实测值为记账基准（客户端声明的 FileSize 不可信）
 	statInfo, err := l.svcCtx.Storage.Stat(l.ctx, targetPath)
 	if err != nil {
-		_ = l.svcCtx.Storage.Delete(l.ctx, targetPath)
+		rollback(targetPath, "")
 		return response.Err(errors.New("校验合并文件大小失败: " + err.Error()))
 	}
 	if meta.FileSize > 0 && statInfo.Size != meta.FileSize {
-		_ = l.svcCtx.Storage.Delete(l.ctx, targetPath)
-		return response.Err(errors.New(fmt.Sprintf("合并文件大小不符：实测 %d / 声明 %d", statInfo.Size, meta.FileSize)))
+		rollback(targetPath, "")
+		return response.Err(fmt.Errorf("合并文件大小不符：实测 %d / 声明 %d", statInfo.Size, meta.FileSize))
 	}
 
 	// 9. 秒传检查：若 MD5 命中已有文件，删除刚合并的物理文件，复用旧记录
@@ -145,9 +181,7 @@ func (l *CompleteMultipartUploadLogic) CompleteMultipartUpload(in *service.Compl
 			_ = l.svcCtx.Storage.Delete(l.ctx, targetPath)
 			// 回写 Redis 索引
 			_ = md5Cache.Set(l.ctx, userID, fileMD5, exist.ID)
-			// 更新分片状态
-			_ = partRepo.MarkMerged(l.ctx, in.GetUploadId())
-			// 清理 Redis
+			// 清理 Redis（分片状态已在门闩处置为 merged，即成功语义）
 			_ = multipartCache.Clear(l.ctx, in.GetUploadId())
 			l.Infof("multipart complete instant hit user=%s md5=%s file=%s", userID, fileMD5, exist.ID)
 			return response.Success(&service.CompleteMultipartUploadResponse{
@@ -169,10 +203,7 @@ func (l *CompleteMultipartUploadLogic) CompleteMultipartUpload(in *service.Compl
 		meta.FileSuffix, contentType, fileMD5, statInfo.Size,
 	)
 	if err != nil {
-		// 入库失败，删除已合并的物理文件
-		if delErr := l.svcCtx.Storage.Delete(l.ctx, targetPath); delErr != nil {
-			l.Errorf("回滚物理文件失败: %v", delErr)
-		}
+		rollback(targetPath, "")
 		return response.Err(errors.New("文件入库失败: " + err.Error()))
 	}
 
@@ -183,46 +214,20 @@ func (l *CompleteMultipartUploadLogic) CompleteMultipartUpload(in *service.Compl
 
 	// 13. 扣减桶容量（原子 UPDATE，失败回滚本次合并产物）
 	ok, err := bucketRepo.TryIncUsedSize(l.ctx, meta.BucketID, statInfo.Size)
-	if err != nil {
-		// 扣减失败：同样回滚本次合并产物（物理文件 + DB 记录 + Redis 清理）
-		// 分片状态保留 uploaded（merged 是成功语义，失败时标记会留脏状态并卡死重试）
-		if delErr := l.svcCtx.Storage.Delete(l.ctx, targetPath); delErr != nil {
-			l.Errorf("回滚物理文件失败: %v", delErr)
-		}
-		if delErr := fileRepo.Delete(l.ctx, newFile.ID); delErr != nil {
-			l.Errorf("回滚文件记录失败: %v", delErr)
-		}
-		if delErr := multipartCache.Clear(l.ctx, in.GetUploadId()); delErr != nil {
-			l.Errorf("回滚上传缓存失败: %v", delErr)
-		}
-		return response.Err(errors.New("桶容量更新失败: " + err.Error()))
-	}
-	if !ok {
-		// 并发下配额被占满：回滚本次合并产物（物理文件 + DB 记录 + Redis 清理）
-		// 分片状态保留 uploaded（merged 是成功语义，失败时标记会留脏状态并卡死重试）
-		if delErr := l.svcCtx.Storage.Delete(l.ctx, targetPath); delErr != nil {
-			l.Errorf("回滚物理文件失败: %v", delErr)
-		}
-		if delErr := fileRepo.Delete(l.ctx, newFile.ID); delErr != nil {
-			l.Errorf("回滚文件记录失败: %v", delErr)
-		}
-		if delErr := multipartCache.Clear(l.ctx, in.GetUploadId()); delErr != nil {
-			l.Errorf("回滚上传缓存失败: %v", delErr)
+	if err != nil || !ok {
+		rollback(targetPath, newFile.ID)
+		if err != nil {
+			return response.Err(errors.New("桶容量更新失败: " + err.Error()))
 		}
 		return response.ErrWithCode(response.CodeBucketCapacity, "桶容量不足")
 	}
 
 	// 13.2 生成缩略图（增强能力，失败不影响主流程）
-	if statInfo.Size > 50*1024 {
+	if statInfo.Size > ThumbMinSize {
 		BuildThumb(l.ctx, l.svcCtx, newFile.ID, targetPath, meta.FileSuffix)
 	}
 
-	// 14. 更新分片状态为 merged
-	if err := partRepo.MarkMerged(l.ctx, in.GetUploadId()); err != nil {
-		l.Errorf("更新分片状态为 merged 失败 upload_id=%s: %v", in.GetUploadId(), err)
-	}
-
-	// 15. 清理 Redis meta/parts
+	// 14. 清理 Redis meta/parts（分片状态已在门闩处置为 merged）
 	_ = multipartCache.Clear(l.ctx, in.GetUploadId())
 
 	l.Infof("multipart complete success user=%s upload_id=%s file=%s size=%d md5=%s",

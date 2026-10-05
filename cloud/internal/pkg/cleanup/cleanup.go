@@ -20,8 +20,11 @@ import (
 )
 
 const (
-	// staleTmpAge 物理分片临时目录的过期阈值（分片元数据 Redis TTL 24h 对齐）
-	staleTmpAge = 24 * time.Hour
+	// staleTmpAge 物理分片临时目录的过期阈值。
+	// 取 Redis 分片元数据 TTL（24h，随每次 AddPart 续期）的 2 倍：
+	// 若与 TTL 同为 24h，扫描周期（12h）会先于 Redis 过期清掉物理分片，
+	// 造成「Redis 显示已传、磁盘已清」的重试死锁
+	staleTmpAge = 48 * time.Hour
 	// stalePendingAge pending 分片记录的过期阈值（含上传窗口余量）
 	stalePendingAge = 48 * time.Hour
 	// staleDeletedAge 回收站软删文件的保留期，超期每日自动彻底删除
@@ -63,7 +66,7 @@ func Start(ctx context.Context, entClient *ent.Client, localRootDir string, stor
 func sweep(ctx context.Context, entClient *ent.Client, localRootDir string, storageDriver storage.Driver, rdb *redis.Client) {
 	purgeStaleDeleted(ctx, entClient, storageDriver, rdb)
 	purgeStaleAccessLogs(ctx, entClient)
-	if n, err := cleanTmpDirs(localRootDir, staleTmpAge); err != nil {
+	if n, err := cleanTmpDirs(ctx, rdb, localRootDir, staleTmpAge); err != nil {
 		logx.Errorf("[cleanup] 清理孤儿 .tmp 目录失败: %v", err)
 	} else if n > 0 {
 		logx.Infof("[cleanup] 已清理过期 .tmp 分片目录 %d 个", n)
@@ -135,7 +138,9 @@ func purgeStaleAccessLogs(ctx context.Context, entClient *ent.Client) {
 }
 
 // cleanTmpDirs 删除 .tmp 下修改时间早于 age 的 uploadID 目录，返回删除数量
-func cleanTmpDirs(rootDir string, age time.Duration) (int, error) {
+// 目录删除的同时清理对应的 Redis 上传状态（meta/parts），避免「Redis 显示已传、磁盘已清」
+// 的状态分叉（断点续传命中 Redis 却无物理分片可合并）
+func cleanTmpDirs(ctx context.Context, rdb *redis.Client, rootDir string, age time.Duration) (int, error) {
 	tmpDir := filepath.Join(rootDir, ".tmp")
 	entries, err := os.ReadDir(tmpDir)
 	if err != nil {
@@ -167,6 +172,11 @@ func cleanTmpDirs(rootDir string, age time.Duration) (int, error) {
 			if err := os.RemoveAll(filepath.Join(tmpDir, e.Name())); err != nil {
 				logx.Errorf("[cleanup] 删除分片目录失败 upload_id=%s: %v", e.Name(), err)
 				continue
+			}
+			// 同步清理 Redis 状态，保持与物理目录一致
+			if rdb != nil {
+				mpCache := cache.NewMultipartCache(rdb)
+				_ = mpCache.Clear(ctx, e.Name())
 			}
 			removed++
 		}
