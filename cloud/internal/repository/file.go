@@ -11,6 +11,7 @@ import (
 	"onecloud/ent/file"
 	"onecloud/ent/fileshare"
 	"onecloud/ent/predicate"
+	"onecloud/internal/pkg/storage"
 	"onecloud/proto/.proto/service"
 
 	entsql "entgo.io/ent/dialect/sql"
@@ -351,4 +352,18 @@ func (l *FileRepository) DeleteFull(ctx context.Context, f *ent.File) error {
 		}
 	}
 	return tx.Commit()
+}
+
+// DeletePhysicalIfUnshared 安全物理删除：秒传允许跨桶/跨记录共享物理路径，
+// 仍有其他记录引用该路径时跳过删除（调用方须在删除 DB 记录之后调用，
+// 否则计数含自身恒 >0）。计数失败时保守保留物理文件——宁可留孤儿待 GC，不误删共享文件
+func (r *FileRepository) DeletePhysicalIfUnshared(ctx context.Context, driver storage.Driver, path string) error {
+	n, err := r.client.File.Query().Where(file.PathEQ(path)).Count(ctx)
+	if err != nil {
+		return fmt.Errorf("查询共享引用失败（保守保留物理文件）: %w", err)
+	}
+	if n > 0 {
+		return nil
+	}
+	return driver.Delete(ctx, path)
 }

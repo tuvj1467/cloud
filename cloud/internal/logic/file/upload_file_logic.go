@@ -105,27 +105,30 @@ func (l *UploadFileLogic) UploadFile(in *service.UploadFileRequest) (*service.Re
 	md5 := util.CalculateFileMD5(in.GetContent())
 
 	// 6. 秒传检查：优先查 Redis 索引，未命中回退 DB
+	// 命中要求 size 一致（同 MD5 不同 size 视为碰撞/脏数据，走完整上传，不信任索引）
 	md5Cache := cache.NewMD5Cache(l.svcCtx.Redis)
+	var instantSrc *ent.File
 	if cachedFileID, _ := md5Cache.Get(l.ctx, userID, md5); cachedFileID != "" {
-		// 命中 Redis，校验文件仍存在
-		if exist, _ := fileRepo.GetInfo(l.ctx, cachedFileID); exist != nil && exist.DeletedAt == nil {
-			l.Infof("instant hit (redis) user=%s md5=%s file=%s", userID, md5, cachedFileID)
-			return response.Success(&service.UploadFileResponse{
-				File:    toFileMeta(exist),
-				Instant: true,
-			})
+		if exist, _ := fileRepo.GetInfo(l.ctx, cachedFileID); exist != nil && exist.DeletedAt == nil && exist.Size == size {
+			instantSrc = exist
+		} else {
+			// Redis 索引指向的文件已删除或大小不符（脏数据），清理后继续
+			_ = md5Cache.Del(l.ctx, userID, md5, cachedFileID)
 		}
-		// Redis 索引指向的文件已不存在（脏数据），清理后继续
-		_ = md5Cache.Del(l.ctx, userID, md5, cachedFileID)
 	}
-
-	// 6.1 Redis 未命中，回退 DB 查询
-	if exist, _ := fileRepo.GetByMD5(l.ctx, userID, md5); exist != nil {
-		// DB 命中后回写 Redis，重建索引
-		_ = md5Cache.Set(l.ctx, userID, md5, exist.ID)
-		l.Infof("instant hit (db) user=%s md5=%s file=%s", userID, md5, exist.ID)
+	if instantSrc == nil {
+		// DB 兜底（GetByMD5 已过滤回收站文件），命中后回写 Redis 重建索引
+		if exist, _ := fileRepo.GetByMD5(l.ctx, userID, md5); exist != nil && exist.Size == size {
+			_ = md5Cache.Set(l.ctx, userID, md5, exist.ID)
+			instantSrc = exist
+		}
+	}
+	// 同桶同名直接复用既有记录；跨桶/改名场景在下面共享物理路径新建记录
+	//（原实现直接返回旧记录：目标桶文件列表看不到该文件、目标桶配额未计，语义错误）
+	if instantSrc != nil && instantSrc.BucketID == in.GetBucketId() && instantSrc.Name == in.GetName() {
+		l.Infof("instant hit user=%s md5=%s file=%s", userID, md5, instantSrc.ID)
 		return response.Success(&service.UploadFileResponse{
-			File:    toFileMeta(exist),
+			File:    toFileMeta(instantSrc),
 			Instant: true,
 		})
 	}
@@ -136,72 +139,85 @@ func (l *UploadFileLogic) UploadFile(in *service.UploadFileRequest) (*service.Re
 		return response.ErrWithCode(response.CodeStoragePathInvalid, "文件后缀非法")
 	}
 	fileID := l.svcCtx.Snowflake.MustIdS()
-	date := time.Now().Format("20060102")
-	filePath := fmt.Sprintf("%s/%s/%s.%s", userID, date, fileID, in.GetSuffix())
+	filePath := instantSrc.Path // 秒传跨桶/改名：共享既有物理文件，不再写物理
+	if instantSrc == nil {
+		date := time.Now().Format("20060102")
+		filePath = fmt.Sprintf("%s/%s/%s.%s", userID, date, fileID, in.GetSuffix())
+	}
 	contentType := mime.TypeByExtension("." + in.GetSuffix())
 	if contentType == "" {
 		contentType = "application/octet-stream"
 	}
 
-	// 8. 通过存储驱动写入物理文件
-	if err := l.svcCtx.Storage.Put(l.ctx, filePath, bytes.NewReader(in.GetContent()), size); err != nil {
-		return response.Err(errors.New("文件存储失败: " + err.Error()))
+	// 8. 先原子扣减桶容量（配额优先：后续任一步失败只需补偿性归还，
+	// 不存在「记录已建但配额未扣」的崩溃漂移窗口）
+	ok, err := bucketRepo.TryIncUsedSize(l.ctx, in.GetBucketId(), size)
+	if err != nil {
+		return response.Err(errors.New("桶容量更新失败: " + err.Error()))
+	}
+	if !ok {
+		return response.ErrWithCode(response.CodeBucketCapacity, "桶容量不足")
 	}
 
-	// 9. 写入文件元信息
+	// rollback 失败补偿：归还配额 + 清理本次产物（新建物理文件仅存在于完整上传分支）
+	rollback := func(freshPath string, recordID string) {
+		if recordID != "" {
+			if delErr := fileRepo.Delete(l.ctx, recordID); delErr != nil {
+				l.Errorf("回滚文件记录失败: %v", delErr)
+			}
+			if delErr := md5Cache.Del(l.ctx, userID, md5, recordID); delErr != nil {
+				l.Errorf("回滚 MD5 索引失败: %v", delErr)
+			}
+		}
+		if freshPath != "" {
+			if delErr := l.svcCtx.Storage.Delete(l.ctx, freshPath); delErr != nil {
+				l.Errorf("回滚物理文件失败: %v", delErr)
+			}
+		}
+		if _, decErr := bucketRepo.TryDecUsedSize(l.ctx, in.GetBucketId(), size); decErr != nil {
+			// 配额泄漏是最坏结果：持久化告警等待人工/ GC 对账
+			l.Errorf("回滚归还桶容量失败（配额可能泄漏，需对账）bucket=%s delta=%d: %v", in.GetBucketId(), size, decErr)
+		}
+	}
+
+	// 9. 写入物理文件（秒传跳过——共享既有物理路径）
+	if instantSrc == nil {
+		if err := l.svcCtx.Storage.Put(l.ctx, filePath, bytes.NewReader(in.GetContent()), size); err != nil {
+			rollback("", "")
+			return response.Err(errors.New("文件存储失败: " + err.Error()))
+		}
+	}
+
+	// 10. 写入文件元信息
 	res, err := fileRepo.Create(l.ctx, in, fileID, userID, in.GetBucketId(), filePath, contentType, md5)
 	if err != nil {
-		// 写库失败则回滚物理文件
-		if delErr := l.svcCtx.Storage.Delete(l.ctx, filePath); delErr != nil {
-			l.Errorf("回滚物理文件失败: %v", delErr)
-		}
+		rollback(freshPathOf(instantSrc, filePath), "")
 		return response.Err(errors.New("文件入库失败: " + err.Error()))
 	}
 
-	// 9.1 写入 Redis MD5 索引，便于后续秒传
+	// 10.1 写入 Redis MD5 索引，便于后续秒传
 	if err := md5Cache.Set(l.ctx, userID, md5, res.ID); err != nil {
 		l.Errorf("写入 MD5 索引失败（不影响主流程）: %v", err)
 	}
 
-	// 9.2 生成缩略图（增强能力，失败不影响主流程）
-	if size > 50*1024 {
+	// 10.2 生成缩略图（增强能力，失败不影响主流程）
+	if size > ThumbMinSize {
 		BuildThumb(l.ctx, l.svcCtx, res.ID, filePath, in.GetSuffix())
 	}
 
-	// 10. 扣减桶容量（原子 UPDATE，配额由数据库保证）
-	ok, err := bucketRepo.TryIncUsedSize(l.ctx, in.GetBucketId(), size)
-	if err != nil {
-		// 扣减失败：同样回滚本次上传（DB 记录 + 物理文件 + 索引）
-		if delErr := fileRepo.Delete(l.ctx, res.ID); delErr != nil {
-			l.Errorf("回滚文件记录失败: %v", delErr)
-		}
-		if delErr := l.svcCtx.Storage.Delete(l.ctx, filePath); delErr != nil {
-			l.Errorf("回滚物理文件失败: %v", delErr)
-		}
-		if delErr := md5Cache.Del(l.ctx, userID, md5, res.ID); delErr != nil {
-			l.Errorf("回滚 MD5 索引失败: %v", delErr)
-		}
-		return response.Err(errors.New("桶容量更新失败: " + err.Error()))
-	}
-	if !ok {
-		// 并发下配额被占满：回滚本次上传（DB 记录 + 物理文件 + 索引）
-		if delErr := fileRepo.Delete(l.ctx, res.ID); delErr != nil {
-			l.Errorf("回滚文件记录失败: %v", delErr)
-		}
-		if delErr := l.svcCtx.Storage.Delete(l.ctx, filePath); delErr != nil {
-			l.Errorf("回滚物理文件失败: %v", delErr)
-		}
-		if delErr := md5Cache.Del(l.ctx, userID, md5, res.ID); delErr != nil {
-			l.Errorf("回滚 MD5 索引失败: %v", delErr)
-		}
-		return response.ErrWithCode(response.CodeBucketCapacity, "桶容量不足")
-	}
-
-	l.Infof("upload success user=%s bucket=%s file=%s size=%d md5=%s",
-		userID, in.GetBucketId(), res.ID, size, md5)
+	l.Infof("upload success user=%s bucket=%s file=%s size=%d md5=%s instant_new_record=%v",
+		userID, in.GetBucketId(), res.ID, size, md5, instantSrc != nil)
 
 	return response.Success(&service.UploadFileResponse{
 		File:    toFileMeta(res),
-		Instant: false,
+		Instant: instantSrc != nil,
 	})
+}
+
+// freshPathOf 完整上传的物理文件是新建的（回滚需删除）；秒传共享的是既有文件（不可删）
+func freshPathOf(instantSrc *ent.File, filePath string) string {
+	if instantSrc != nil {
+		return ""
+	}
+	return filePath
 }

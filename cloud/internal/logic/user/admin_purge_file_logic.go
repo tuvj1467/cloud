@@ -70,9 +70,10 @@ func (l *AdminPurgeFileLogic) AdminPurgeFile(in *service.AdminPurgeFileRequest) 
 			l.Errorf("清理 MD5 索引失败: %v", err)
 		}
 	}
-	if err := l.svcCtx.Storage.Delete(l.ctx, f.Path); err != nil {
-		l.Errorf("物理文件删除失败（孤儿，待GC）path=%s: %v", f.Path, err)
-	}
+		// 共享路径守卫：秒传允许跨记录共享物理文件，仍有引用时跳过物理删除
+		if err := fileRepo.DeletePhysicalIfUnshared(l.ctx, l.svcCtx.Storage, f.Path); err != nil {
+			l.Errorf("物理文件删除失败（孤儿，待GC）path=%s: %v", f.Path, err)
+		}
 
 	// 操作审计（失败仅日志，不回滚主操作）
 	auditRepo := repository.NewAdminAuditLogRepository(l.svcCtx.EntClient)

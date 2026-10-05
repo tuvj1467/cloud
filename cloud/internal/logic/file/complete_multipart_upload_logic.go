@@ -10,6 +10,7 @@ import (
 	"mime"
 	"time"
 
+	"onecloud/ent"
 	"onecloud/internal/pkg/cache"
 	"onecloud/internal/pkg/jwt"
 	"onecloud/internal/pkg/response"
@@ -174,21 +175,29 @@ func (l *CompleteMultipartUploadLogic) CompleteMultipartUpload(in *service.Compl
 		return response.Err(fmt.Errorf("合并文件大小不符：实测 %d / 声明 %d", statInfo.Size, meta.FileSize))
 	}
 
-	// 9. 秒传检查：若 MD5 命中已有文件，删除刚合并的物理文件，复用旧记录
+	// 9. 秒传检查：MD5 且 size 一致才命中（同 MD5 不同 size 视为碰撞，不复用）
+	var instantSrc *ent.File
 	if fileMD5 != "" {
-		if exist, _ := fileRepo.GetByMD5(l.ctx, userID, fileMD5); exist != nil {
-			// 删除刚合并的物理文件
-			_ = l.svcCtx.Storage.Delete(l.ctx, targetPath)
-			// 回写 Redis 索引
-			_ = md5Cache.Set(l.ctx, userID, fileMD5, exist.ID)
-			// 清理 Redis（分片状态已在门闩处置为 merged，即成功语义）
-			_ = multipartCache.Clear(l.ctx, in.GetUploadId())
-			l.Infof("multipart complete instant hit user=%s md5=%s file=%s", userID, fileMD5, exist.ID)
-			return response.Success(&service.CompleteMultipartUploadResponse{
-				File:    toFileMeta(exist),
-				Instant: true,
-			})
+		if exist, _ := fileRepo.GetByMD5(l.ctx, userID, fileMD5); exist != nil && exist.Size == statInfo.Size {
+			instantSrc = exist
 		}
+	}
+	// 同桶同名：删除刚合并的物理文件，直接复用旧记录（原语义）
+	if instantSrc != nil && instantSrc.BucketID == meta.BucketID && instantSrc.Name == meta.FileName {
+		_ = l.svcCtx.Storage.Delete(l.ctx, targetPath)
+		_ = md5Cache.Set(l.ctx, userID, fileMD5, instantSrc.ID)
+		_ = multipartCache.Clear(l.ctx, in.GetUploadId())
+		l.Infof("multipart complete instant hit user=%s md5=%s file=%s", userID, fileMD5, instantSrc.ID)
+		return response.Success(&service.CompleteMultipartUploadResponse{
+			File:    toFileMeta(instantSrc),
+			Instant: true,
+		})
+	}
+	// 跨桶/改名秒传：共享既有物理路径新建记录（刚合并的重复物理文件删除），仍计入目标桶配额
+	recordPath := targetPath
+	if instantSrc != nil {
+		_ = l.svcCtx.Storage.Delete(l.ctx, targetPath)
+		recordPath = instantSrc.Path
 	}
 
 	// 10. 计算 content_type
@@ -197,45 +206,45 @@ func (l *CompleteMultipartUploadLogic) CompleteMultipartUpload(in *service.Compl
 		contentType = "application/octet-stream"
 	}
 
-	// 11. 创建文件元数据
-	newFile, err := fileRepo.CreateMultipart(
-		l.ctx, fileID, userID, meta.BucketID, meta.FileName, targetPath,
-		meta.FileSuffix, contentType, fileMD5, statInfo.Size,
-	)
-	if err != nil {
-		rollback(targetPath, "")
-		return response.Err(errors.New("文件入库失败: " + err.Error()))
-	}
-
-	// 12. 写 Redis MD5 索引
-	if fileMD5 != "" {
-		_ = md5Cache.Set(l.ctx, userID, fileMD5, newFile.ID)
-	}
-
-	// 13. 扣减桶容量（原子 UPDATE，失败回滚本次合并产物）
+	// 11. 先原子扣减桶容量（配额优先：后续失败只需补偿归还，杜绝「记录已建配额未扣」的漂移窗口）
 	ok, err := bucketRepo.TryIncUsedSize(l.ctx, meta.BucketID, statInfo.Size)
 	if err != nil || !ok {
-		rollback(targetPath, newFile.ID)
+		rollback(freshPathOf(instantSrc, targetPath), "")
 		if err != nil {
 			return response.Err(errors.New("桶容量更新失败: " + err.Error()))
 		}
 		return response.ErrWithCode(response.CodeBucketCapacity, "桶容量不足")
 	}
 
+	// 12. 创建文件元数据
+	newFile, err := fileRepo.CreateMultipart(
+		l.ctx, fileID, userID, meta.BucketID, meta.FileName, recordPath,
+		meta.FileSuffix, contentType, fileMD5, statInfo.Size,
+	)
+	if err != nil {
+		rollback(freshPathOf(instantSrc, targetPath), "")
+		return response.Err(errors.New("文件入库失败: " + err.Error()))
+	}
+
+	// 13. 写 Redis MD5 索引
+	if fileMD5 != "" {
+		_ = md5Cache.Set(l.ctx, userID, fileMD5, newFile.ID)
+	}
+
 	// 13.2 生成缩略图（增强能力，失败不影响主流程）
 	if statInfo.Size > ThumbMinSize {
-		BuildThumb(l.ctx, l.svcCtx, newFile.ID, targetPath, meta.FileSuffix)
+		BuildThumb(l.ctx, l.svcCtx, newFile.ID, recordPath, meta.FileSuffix)
 	}
 
 	// 14. 清理 Redis meta/parts（分片状态已在门闩处置为 merged）
 	_ = multipartCache.Clear(l.ctx, in.GetUploadId())
 
-	l.Infof("multipart complete success user=%s upload_id=%s file=%s size=%d md5=%s",
-		userID, in.GetUploadId(), newFile.ID, statInfo.Size, fileMD5)
+	l.Infof("multipart complete success user=%s upload_id=%s file=%s size=%d md5=%s instant_new_record=%v",
+		userID, in.GetUploadId(), newFile.ID, statInfo.Size, fileMD5, instantSrc != nil)
 
 	return response.Success(&service.CompleteMultipartUploadResponse{
 		File:    toFileMeta(newFile),
-		Instant: false,
+		Instant: instantSrc != nil,
 	})
 }
 

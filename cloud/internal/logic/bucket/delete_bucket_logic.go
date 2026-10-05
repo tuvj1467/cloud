@@ -56,6 +56,7 @@ func (l *DeleteBucketLogic) DeleteBucket(in *service.DeleteBucketRequest) (*serv
 	}
 
 	shareRepo := repository.NewFileShareRepository(l.svcCtx.EntClient)
+	fileRepo := repository.NewFileRepository(l.svcCtx.EntClient)
 
 	if in.GetForce() {
 		// force：先查出文件关联分享（供事务后清理 Redis），再事务级联删除
@@ -91,7 +92,8 @@ func (l *DeleteBucketLogic) DeleteBucket(in *service.DeleteBucketRequest) (*serv
 			if f.Md5 != "" {
 				_ = md5Cache.Del(l.ctx, f.UserID, f.Md5, f.ID)
 			}
-			if err := l.svcCtx.Storage.Delete(l.ctx, f.Path); err != nil {
+			// 共享路径守卫：秒传允许跨记录共享物理文件，仍有引用时跳过物理删除
+			if err := fileRepo.DeletePhysicalIfUnshared(l.ctx, l.svcCtx.Storage, f.Path); err != nil {
 				l.Errorf("物理文件删除失败（孤儿，待GC）file=%s path=%s: %v", f.ID, f.Path, err)
 				continue
 			}

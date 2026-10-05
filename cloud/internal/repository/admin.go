@@ -39,9 +39,12 @@ func AdminListUsers(client *ent.Client, ctx context.Context, page, pageSize int,
 }
 
 // AdminSetUserRole 设置用户角色（仅 user/admin）
+// 角色变更同时 bump token_version：被降权的 admin 若保留旧 token，
+// 可在用户状态缓存 TTL（60s）窗口内继续行使管理权限
 func AdminSetUserRole(client *ent.Client, ctx context.Context, userID, role string) error {
 	return client.User.UpdateOneID(userID).
 		SetRole(user.Role(role)).
+		AddTokenVersion(1).
 		Exec(ctx)
 }
 

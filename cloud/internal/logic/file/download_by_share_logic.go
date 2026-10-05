@@ -56,12 +56,8 @@ func (l *DownloadByShareLogic) DownloadByShare(in *service.DownloadByShareReques
 		return response.Err(errors.New("查询分享失败"))
 	}
 
-	// 5-6. 校验并递增下载次数（Lua 原子「校验+递增」，消除先查后增的并发突破）
-	maxCount := 0
-	if data.MaxCount != nil {
-		maxCount = int(*data.MaxCount)
-	}
-	allowed, newCount, err := shareCache.AllowDownload(l.ctx, in.GetShareCode(), maxCount)
+	// 5-6. 校验并递增下载次数（Lua 原子「校验+递增+TTL 续期」）
+	allowed, newCount, err := shareCache.AllowDownload(l.ctx, data)
 	if err != nil {
 		l.Errorf("下载计数失败（放行，Redis 兜底对账）: %v", err)
 	}

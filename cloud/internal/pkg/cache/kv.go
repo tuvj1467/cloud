@@ -56,19 +56,25 @@ func (a *RedisKV) Del(ctx context.Context, key string) error {
 	return a.client.Del(ctx, key).Err()
 }
 
-// Incr 自增计数；首次自增（结果为 1）时设置过期时间
+// incrWithTTL 自增并在需要时设置过期（Lua 原子）：
+// 首次自增（n==1）或键无 TTL（历史非原子写入遗留的永久键）时补 TTL，
+// 消除「INCR 成功但 EXPIRE 失败/进程崩溃」留下永久 key 导致的计数永久锁定
+var incrWithTTL = redis.NewScript(`
+local n = redis.call('INCR', KEYS[1])
+if n == 1 or redis.call('TTL', KEYS[1]) < 0 then
+  redis.call('EXPIRE', KEYS[1], ARGV[1])
+end
+return n
+`)
+
+// Incr 自增计数；首次自增或键缺失 TTL 时（原子）设置过期时间
 func (a *RedisKV) Incr(ctx context.Context, key string, ttl time.Duration) (int64, error) {
 	if a.client == nil {
 		return 0, verification.ErrUnavailable
 	}
-	n, err := a.client.Incr(ctx, key).Result()
+	res, err := incrWithTTL.Run(ctx, a.client, []string{key}, int(ttl.Seconds())).Int64()
 	if err != nil {
 		return 0, err
 	}
-	if n == 1 {
-		if err := a.client.Expire(ctx, key, ttl).Err(); err != nil {
-			return n, err
-		}
-	}
-	return n, nil
+	return res, nil
 }

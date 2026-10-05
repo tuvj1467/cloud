@@ -113,7 +113,8 @@ func purgeStaleDeleted(ctx context.Context, entClient *ent.Client, storageDriver
 		if f.Md5 != "" {
 			_ = md5Cache.Del(ctx, f.UserID, f.Md5, f.ID)
 		}
-		if err := storageDriver.Delete(ctx, f.Path); err != nil {
+		// 共享路径守卫：秒传允许跨记录共享物理文件，仍有引用时跳过物理删除
+		if err := fileRepo.DeletePhysicalIfUnshared(ctx, storageDriver, f.Path); err != nil {
 			logx.Errorf("[cleanup] 物理文件删除失败 file=%s path=%s: %v", f.ID, f.Path, err)
 			continue
 		}
