@@ -40,13 +40,22 @@ RedisConf:
 
 # 存储驱动配置
 Storage:
-  # 驱动类型：local（本地磁盘） | minio（P2 暂未实现）
+  # 驱动类型：local（本地磁盘） | minio（MinIO/S3 兼容端点，配置见下方 Minio 段）
   Driver: local
-  # 单文件/单分片上传上限（字节），默认 104857600 = 100MB
+  # 单分片上传上限（字节），默认 104857600 = 100MB
   # MaxUploadSize: 104857600
+  # 一元直传上限（字节），默认 5MB（bytes 整文件进内存，与分片分档；≤0 回落 MaxUploadSize）
+  # DirectUploadSize: 5242880
   Local:
     # 本地存储根目录
     RootDir: ./cloud_storage
+  # MinIO/S3 兼容端点配置（Driver: minio 时必填；bucket 需预先创建）
+  # Minio:
+  #   Endpoint: 127.0.0.1:9000
+  #   AccessKey: minioadmin
+  #   SecretKey: minioadmin
+  #   Bucket: onecloud
+  #   UseSSL: false
 
 # 用户级 API 限流（缺省关闭；匿名按 IP、登录按用户；触发返回 HTTP 429）
 RateLimit:

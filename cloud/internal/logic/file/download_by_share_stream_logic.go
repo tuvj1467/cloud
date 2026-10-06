@@ -58,14 +58,21 @@ func (l *DownloadByShareStreamLogic) DownloadByShareStream(in *service.DownloadB
 	// 校验并递增下载次数（Lua 原子「校验+递增+TTL 续期」）
 	allowed, newCount, err := shareCache.AllowDownload(l.ctx, data)
 	if err != nil {
-		l.Errorf("下载计数失败（放行，Redis 兜底对账）: %v", err)
+		// Redis 故障：DB 兜底计数（原 fail-open 会导致故障期 max_count 完全失效且不落账）
+		l.Errorf("下载计数 Redis 失败，降级 DB 兜底: %v", err)
+		newCount = 0
+		if allowed, err = countDownloadDBFallback(l.ctx, l.svcCtx, data); err != nil {
+			// DB 亦不可用：可用性优先放行，本请求失计
+			l.Errorf("DB 兜底计数也失败（放行，本请求失计）: %v", err)
+			allowed = true
+		}
 	}
 	if !allowed {
 		r, _ := response.ErrWithCode(response.CodeFileShareExhausted, "分享下载次数已用尽")
 		return errors.New(r.Message)
 	}
 
-	// 同步到 DB（原子自增，复用缓存中的 share.ID）
+	// 同步到 DB（原子自增；Redis 故障时计数已由兜底路径落库，newCount==0 跳过）
 	if newCount > 0 {
 		if _, err := shareRepo.IncUsedCount(l.ctx, data.ID); err != nil {
 			l.Errorf("同步下载次数到 DB 失败 share_id=%s: %v", data.ID, err)

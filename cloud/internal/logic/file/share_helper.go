@@ -66,3 +66,21 @@ func loadShareForAccess(ctx context.Context, svcCtx *svc.ServiceContext, shareCo
 	}
 	return data, nil
 }
+
+// countDownloadDBFallback Redis 故障时的下载计数 DB 兜底：
+// 原子自增前校验 max_count（竞态下容忍小幅超发，好于完全失计）。
+// 返回是否放行；计数已在本函数落库，调用方无需再做 Redis→DB 同步
+func countDownloadDBFallback(ctx context.Context, svcCtx *svc.ServiceContext, data *cache.ShareData) (bool, error) {
+	shareRepo := repository.NewFileShareRepository(svcCtx.EntClient)
+	share, err := shareRepo.GetByCode(ctx, data.ShareCode)
+	if err != nil {
+		return false, err
+	}
+	if data.MaxCount != nil && *data.MaxCount > 0 && share.UsedCount >= *data.MaxCount {
+		return false, nil
+	}
+	if _, err := shareRepo.IncUsedCount(ctx, share.ID); err != nil {
+		return false, err
+	}
+	return true, nil
+}
