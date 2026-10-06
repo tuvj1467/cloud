@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/redis/go-redis/v9"
+	"github.com/zeromicro/go-zero/core/logx"
 )
 
 const (
@@ -38,14 +39,18 @@ func Setup(client *redis.Client) {
 func failKey(account string) string { return "login_fail:" + account }
 func lockKey(account string) string { return "login_lock:" + account }
 
-// Locked 判断账号是否处于锁定期，返回是否锁定与剩余时长
+// Locked 判断账号是否处于锁定期，返回是否锁定与剩余时长。
+// Redis 查询失败降级为进程内状态（Redis 故障期间锁定语义由本实例尽力维持）
 func Locked(ctx context.Context, account string) (bool, time.Duration) {
 	if rdb != nil {
 		ttl, err := rdb.TTL(ctx, lockKey(account)).Result()
-		if err == nil && ttl > 0 {
-			return true, ttl
+		if err == nil {
+			if ttl > 0 {
+				return true, ttl
+			}
+			return false, 0
 		}
-		return false, 0
+		degrade(account, "锁定状态查询失败", err)
 	}
 	mu.Lock()
 	deadline, ok := memLock[account]
@@ -56,7 +61,9 @@ func Locked(ctx context.Context, account string) (bool, time.Duration) {
 	return true, time.Until(deadline)
 }
 
-// RecordFail 记录一次登录失败；达到阈值返回 locked=true
+// RecordFail 记录一次登录失败；达到阈值返回 locked=true。
+// Redis 故障时降级为进程内计数（单实例仍有效，多实例下各实例独立计数——
+// 阈值放宽为 FailThreshold×实例数，属降级语义而非失效），并告警
 func RecordFail(ctx context.Context, account string) (locked bool) {
 	mu.Lock()
 	client := rdb
@@ -65,17 +72,18 @@ func RecordFail(ctx context.Context, account string) (locked bool) {
 	if client != nil {
 		n, err := client.Incr(ctx, failKey(account)).Result()
 		if err != nil {
-			return false // Redis 故障时放行（可用性优先）
+			degrade(account, "失败计数写入失败", err)
+		} else {
+			if n == 1 {
+				client.Expire(ctx, failKey(account), FailWindow)
+			}
+			if n >= FailThreshold {
+				client.SetNX(ctx, lockKey(account), 1, LockDuration)
+				client.Del(ctx, failKey(account))
+				return true
+			}
+			return false
 		}
-		if n == 1 {
-			client.Expire(ctx, failKey(account), FailWindow)
-		}
-		if n >= FailThreshold {
-			client.SetNX(ctx, lockKey(account), 1, LockDuration)
-			client.Del(ctx, failKey(account))
-			return true
-		}
-		return false
 	}
 
 	mu.Lock()
@@ -94,16 +102,36 @@ func RecordFail(ctx context.Context, account string) (locked bool) {
 	return false
 }
 
-// Clear 登录成功后清除失败计数
+// Clear 登录成功后清除失败计数（Redis 与进程内双清）
 func Clear(ctx context.Context, account string) {
 	mu.Lock()
 	client := rdb
 	mu.Unlock()
 	if client != nil {
-		client.Del(ctx, failKey(account))
-		return
+		if err := client.Del(ctx, failKey(account)).Err(); err != nil {
+			degrade(account, "失败计数清除失败", err)
+		}
 	}
 	mu.Lock()
 	delete(memFail, account)
 	mu.Unlock()
+}
+
+// degrade Redis 故障降级告警（限频打印，防故障风暴刷日志）
+var (
+	degradeMu       sync.Mutex
+	lastDegradeWarn = map[string]time.Time{}
+)
+
+func degrade(account, op string, err error) {
+	degradeMu.Lock()
+	last, ok := lastDegradeWarn[op]
+	now := time.Now()
+	if ok && now.Sub(last) < time.Minute {
+		degradeMu.Unlock()
+		return
+	}
+	lastDegradeWarn[op] = now
+	degradeMu.Unlock()
+	logx.Errorf("[loginlock] Redis %s（降级进程内计数，多实例语义放宽）account=%s: %v", op, account, err)
 }

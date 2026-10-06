@@ -11,9 +11,13 @@ import (
 // Config 存储驱动配置（由 config.Config 引用）
 type Config struct {
 	Driver        string `json:",default=local"`     // local | minio | s3
-	MaxUploadSize int64  `json:",default=104857600"` // 单文件/单分片上传上限（字节），默认 100MB
-	Local         LocalConfig
-	Minio         MinioConfig
+	MaxUploadSize int64  `json:",default=104857600"` // 单分片上传上限（字节），默认 100MB
+	// DirectUploadSize 一元直传（UploadFile bytes 整文件进内存）上限，默认 5MB。
+	// 直传请求全程驻内存（网关读入 + unmarshal + MD5），超过该大小应走分片通道；
+	// 前端 DIRECT_MAX=5MB 与此对齐。≤0 或未配置时回落 MaxUploadSize（兼容旧配置）
+	DirectUploadSize int64 `json:",optional"`
+	Local            LocalConfig
+	Minio            MinioConfig
 }
 
 // LocalConfig 本地磁盘存储配置

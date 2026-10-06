@@ -2,16 +2,17 @@
 // 依赖 Task 3 契约：api.js（uploadFile/initMultipartUpload/uploadPart/completeMultipartUpload/abortMultipartUpload/getBucketList）、
 // store.js（store.uploads / store.buckets / store.token）、common.js（formatSize/fileIcon/toast）
 //
-// 【curl 实测结论（2026-09-05，gateway go-zero + protoset）】
+// 【curl 实测结论（2026-09-05，gateway go-zero + protoset）；2026-10-05 按现行参数刷新】
 // 1. /file/upload 不接受 multipart FormData：curl -F 实测返回 {"code":50000,"message":"文件内容为空"}
 //    （go-zero 网关按 JSON 反序列化，multipart 被当作空 body）。故直传走 JSON base64（proto bytes 字段标准编码）。
-// 2. 网关 HTTP body 上限：P9 起在 gateway.yaml 显式配置 MaxBytes=110MB（go-zero 默认 1MB 已放开，实测 2.8MB JSON 200），
-//    但 go-zero zrpc 无 gRPC 消息上限配置（默认 4MB，>4MB 报 ResourceExhausted），放开需改 cloud 代码，本批不动。
-//    ⇒ 直传阈值维持 DIRECT_MAX=700KB；PART_SIZE_GUESS=700KB（init 返回 partSize=ceil(size/totalParts) 恒 ≤ GUESS，
-//       JSON body ≤ ~932KB，实测 932150B < 1MB 通过；6MB 文件 partSize=699051B 实测 200）。
+// 2. 网关 MaxBytes=110MB、cloud gRPC MaxRecvMsgSize=110MB、直传服务端上限 DirectUploadSize=5MB（默认，
+//    与 DIRECT_MAX 对齐；超限返回 30012「文件超过直传上限」）。
+//    ⇒ 直传阈值 DIRECT_MAX=5MB（>5MB 前端自动走分片，与后端限幅一致）；
+//      PART_SIZE_GUESS=5MB（init 返回 partSize=ceil(size/totalParts) 恒 ≤ GUESS）。
 //    ⇒ SAFETY：若 init 返回 partSize 超过安全上限（MAX_CONTENT_BYTES），前端重新 init（调大 totalParts）钳制（正常不触发）。
 // 3. 分片三步/秒传/取消实测：init→{uploadId,partSize}；uploadPart(content=base64) 200；complete→{file,instant}
 //    （重复上传 instant:true）；abort 200（之后 part 被拒）；配额不足 code 20004「桶容量不足」。
+//    MinIO 驱动下 init 阶段强制「除最后一片外 ≥5MiB」（S3 约束提前到 init 校验）。
 const { ref, computed, onMounted, onUnmounted } = Vue;
 import {
   initMultipartUpload, uploadPart, completeMultipartUpload,

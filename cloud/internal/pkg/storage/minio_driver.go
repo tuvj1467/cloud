@@ -2,6 +2,8 @@ package storage
 
 import (
 	"context"
+	"crypto/md5"
+	"encoding/hex"
 	"errors"
 	"fmt"
 	"io"
@@ -20,15 +22,30 @@ import (
 type MinioDriver struct {
 	client *minio.Core
 	bucket string
-	// mu 保护 in flight 分片映射：业务 upload_id → S3 服务端 upload_id
+	// mu 保护 in flight 分片映射：业务 upload_id → 服务端 upload_id。
 	// S3 multipart 的 upload_id 由服务端生成，而本驱动接口传入业务生成的 upload_id，
-	// 需要映射；进程重启后未完成的映射丢失（未完成分片由 MinIO 生命周期策略或手工清理）
+	// 需要映射；进程重启后未完成的映射丢失——由 reconcileOrphans 周期对账
+	// （中止服务端超期任务），不依赖本进程记忆
 	mu      sync.Mutex
-	uploads map[string]string
+	uploads map[string]*uploadEntry
+}
+
+// uploadEntry 服务端分片任务映射与其创建时间（对账与惰性过期用）
+type uploadEntry struct {
+	serverID string
+	created  time.Time
 }
 
 // 编译期接口断言：签名漂移即编译失败
 var _ Driver = (*MinioDriver)(nil)
+
+const (
+	// orphanReconcileInterval 服务端孤儿分片任务对账周期
+	orphanReconcileInterval = 12 * time.Hour
+	// orphanMaxAge 服务端 multipart 任务超期阈值（与 .tmp 物理清理对齐，2× Redis TTL）：
+	// 超过该时长仍未完成的任务视为被放弃，对账时中止并清理
+	orphanMaxAge = 48 * time.Hour
+)
 
 // NewMinioDriver 创建 MinIO / S3 兼容驱动实例（仅本地校验配置，不做网络请求）
 func NewMinioDriver(cfg MinioConfig) (*MinioDriver, error) {
@@ -48,11 +65,76 @@ func NewMinioDriver(cfg MinioConfig) (*MinioDriver, error) {
 	if err != nil {
 		return nil, fmt.Errorf("初始化 minio 客户端失败: %w", err)
 	}
-	return &MinioDriver{
+	d := &MinioDriver{
 		client:  client,
 		bucket:  cfg.Bucket,
-		uploads: map[string]string{},
-	}, nil
+		uploads: map[string]*uploadEntry{},
+	}
+	// 服务端孤儿 multipart 对账：客户端放弃且未调 Abort、或进程重启丢映射时，
+	// 服务端任务会永久残留占存储；周期对账中止超期任务（进程生命周期内存活）
+	go d.reconcileLoop()
+	return d, nil
+}
+
+// reconcileLoop 周期对账服务端 multipart 任务
+func (d *MinioDriver) reconcileLoop() {
+	// 首扫延迟 30 分钟，避开启动高峰
+	<-time.After(30 * time.Minute)
+	_ = d.reconcileOrphans(time.Now())
+	ticker := time.NewTicker(orphanReconcileInterval)
+	defer ticker.Stop()
+	for now := range ticker.C {
+		_ = d.reconcileOrphans(now)
+	}
+}
+
+// reconcileOrphans 中止服务端超期 multipart 任务并同步清理本地映射。
+// 失败仅记日志（下轮重试）；不区分任务是否本进程发起——超期即视为放弃
+func (d *MinioDriver) reconcileOrphans(now time.Time) error {
+	deadline := now.Add(-orphanMaxAge)
+	var aborted []string
+	prefix := ".tmp/"
+	keyMarker, idMarker := "", ""
+	for {
+		res, err := d.client.ListMultipartUploads(context.Background(), d.bucket,
+			prefix, keyMarker, idMarker, "", 1000)
+		if err != nil {
+			return fmt.Errorf("列举服务端分片任务失败: %w", err)
+		}
+		for _, u := range res.Uploads {
+			if u.Initiated.After(deadline) {
+				continue
+			}
+			if err := d.client.AbortMultipartUpload(context.Background(), d.bucket, u.Key, u.UploadID); err != nil {
+				if !isNotFound(err) {
+					continue // 单个失败不阻塞其余
+				}
+			}
+			aborted = append(aborted, uploadIDFromTmpKey(u.Key))
+		}
+		if !res.IsTruncated {
+			break
+		}
+		keyMarker, idMarker = res.NextKeyMarker, res.NextUploadIDMarker
+	}
+	// 同步清理本地映射中被中止的任务
+	if len(aborted) > 0 {
+		d.mu.Lock()
+		for _, id := range aborted {
+			delete(d.uploads, id)
+		}
+		d.mu.Unlock()
+	}
+	return nil
+}
+
+// uploadIDFromTmpKey 从临时对象键 .tmp/{uploadID}/blob 反解业务 upload_id（解析失败返回空）
+func uploadIDFromTmpKey(key string) string {
+	segs := strings.Split(key, "/")
+	if len(segs) != 3 || segs[0] != ".tmp" || segs[2] != "blob" || segs[1] == "" {
+		return ""
+	}
+	return segs[1]
 }
 
 // objectKey 校验并规范化对象键：拒绝 .. 段（与本地驱动的路径安全姿态一致）
@@ -181,28 +263,49 @@ func (d *MinioDriver) InitPart(ctx context.Context, uploadID string, totalParts 
 		return fmt.Errorf("初始化分片上传失败: %w", err)
 	}
 	d.mu.Lock()
-	d.uploads[uploadID] = serverID
+	d.uploads[uploadID] = &uploadEntry{serverID: serverID, created: time.Now()}
 	d.mu.Unlock()
 	return nil
 }
 
-// UploadPart 上传单个分片，返回分片 MD5（S3 对非 multipart 分片的 ETag 即内容 MD5）
+// UploadPart 上传单个分片，返回分片内容 MD5
+// 双轨校验：驱动内 TeeReader 自算 MD5（与本地驱动语义一致，SSE-KMS 等
+// ETag≠MD5 的场景也返回真实内容摘要），CompletePart 侧仅对「形似 MD5」的
+// 服务端 ETag 做逐片比对（见 isMD5Like）
 func (d *MinioDriver) UploadPart(ctx context.Context, uploadID string, partNumber int, reader io.Reader, size int64) (string, error) {
 	tmpKey, err := tmpObject(uploadID)
 	if err != nil {
 		return "", err
 	}
 	d.mu.Lock()
-	serverID, ok := d.uploads[uploadID]
+	entry, ok := d.uploads[uploadID]
 	d.mu.Unlock()
 	if !ok {
 		return "", fmt.Errorf("分片上传任务不存在或已失效: %s", uploadID)
 	}
-	part, err := d.client.PutObjectPart(ctx, d.bucket, tmpKey, serverID, partNumber, reader, size, minio.PutObjectPartOptions{})
+	hash := md5.New()
+	part, err := d.client.PutObjectPart(ctx, d.bucket, tmpKey, entry.serverID, partNumber,
+		io.TeeReader(reader, hash), size, minio.PutObjectPartOptions{})
 	if err != nil {
 		return "", fmt.Errorf("分片写入失败: %w", err)
 	}
-	return strings.Trim(part.ETag, "\""), nil
+	_ = part.ETag
+	return hex.EncodeToString(hash.Sum(nil)), nil
+}
+
+// isMD5Like 判断 ETag 是否形似 MD5（32 位十六进制）：SSE-KMS 等场景 ETag 不是
+// 内容 MD5，此时跳过逐片比对而非误报校验失败
+func isMD5Like(s string) bool {
+	if len(s) != 32 {
+		return false
+	}
+	for i := 0; i < len(s); i++ {
+		c := s[i]
+		if !(c >= '0' && c <= '9' || c >= 'a' && c <= 'f' || c >= 'A' && c <= 'F') {
+			return false
+		}
+	}
+	return true
 }
 
 // listPartETags 拉取已上传分片的 序号→MD5（ETag 去引号）
@@ -243,13 +346,13 @@ func (d *MinioDriver) CompletePart(ctx context.Context, uploadID string, targetP
 		return err
 	}
 	d.mu.Lock()
-	serverID, ok := d.uploads[uploadID]
+	entry, ok := d.uploads[uploadID]
 	d.mu.Unlock()
 	if !ok {
 		return fmt.Errorf("分片上传任务不存在或已失效: %s", uploadID)
 	}
 
-	etags, err := d.listPartETags(ctx, tmpKey, serverID)
+	etags, err := d.listPartETags(ctx, tmpKey, entry.serverID)
 	if err != nil {
 		return err
 	}
@@ -258,7 +361,9 @@ func (d *MinioDriver) CompletePart(ctx context.Context, uploadID string, targetP
 	}
 	for num, want := range expectedMD5 {
 		got, ok := etags[num]
-		if !ok {
+		if !ok || !isMD5Like(got) {
+			// 分片缺失或 ETag 非 MD5 形态（SSE）：跳过逐片比对，完整性由数量校验
+			// 与业务层大小对账兜底
 			continue
 		}
 		if !strings.EqualFold(got, want) {
@@ -278,7 +383,7 @@ func (d *MinioDriver) CompletePart(ctx context.Context, uploadID string, targetP
 	for _, num := range nums {
 		parts = append(parts, minio.CompletePart{PartNumber: num, ETag: etags[num]})
 	}
-	if _, err := d.client.CompleteMultipartUpload(ctx, d.bucket, tmpKey, serverID, parts, minio.PutObjectOptions{}); err != nil {
+	if _, err := d.client.CompleteMultipartUpload(ctx, d.bucket, tmpKey, entry.serverID, parts, minio.PutObjectOptions{}); err != nil {
 		return fmt.Errorf("合并分片失败: %w", err)
 	}
 	// 合并产物落在临时键上，服务端拷贝到目标键后删除临时对象
@@ -306,7 +411,7 @@ func (d *MinioDriver) AbortPart(ctx context.Context, uploadID string) error {
 		return err
 	}
 	d.mu.Lock()
-	serverID, ok := d.uploads[uploadID]
+	entry, ok := d.uploads[uploadID]
 	d.mu.Unlock()
 	if !ok {
 		return ErrFileNotFound
@@ -316,7 +421,7 @@ func (d *MinioDriver) AbortPart(ctx context.Context, uploadID string) error {
 		delete(d.uploads, uploadID)
 		d.mu.Unlock()
 	}
-	if err := d.client.AbortMultipartUpload(ctx, d.bucket, tmpKey, serverID); err != nil {
+	if err := d.client.AbortMultipartUpload(ctx, d.bucket, tmpKey, entry.serverID); err != nil {
 		if isNotFound(err) {
 			consume()
 			return ErrFileNotFound

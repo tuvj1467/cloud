@@ -198,6 +198,7 @@ server-streaming（串联 JSON 线格式，与 `POST /file/download_stream` 一�
 - `permission=read` 的分享两个下载端点均返回 30002「仅允许查看」（原实现可下载）
 - 文件进入回收站后：不可分享、不可被分享下载、一元/流式下载与复制/缩略图均按不存在处理
 - 一元 `GET /file/download` 增加 5MB 上限，超限返回 30012 并提示走流式端点
+- 一元直传 `POST /file/upload` 服务端限幅 `Storage.DirectUploadSize`（默认 5MB），超限返回 30012 引导分片通道
 - 预签名 `GET /file/presign` 有效期钳制 [1min, 7d]，下载 URL 强制 attachment 头
 
 ### 4.5 新增文件分享接口

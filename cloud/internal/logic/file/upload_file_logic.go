@@ -74,6 +74,16 @@ func (l *UploadFileLogic) UploadFile(in *service.UploadFileRequest) (*service.Re
 	if limit := l.svcCtx.Config.Storage.MaxUploadSize; limit > 0 && size > limit {
 		return response.ErrWithCode(response.CodeFileTooLarge, "文件超过大小上限")
 	}
+	// 直传单独限幅：bytes 整文件驻内存（网关读入+反序列化+MD5），与分片通道不同档
+	// 默认 5MB（前端 DIRECT_MAX 对齐，大文件前端本就走分片）；≤0 回落 MaxUploadSize
+	directLimit := l.svcCtx.Config.Storage.DirectUploadSize
+	if directLimit <= 0 {
+		directLimit = l.svcCtx.Config.Storage.MaxUploadSize
+	}
+	if directLimit > 0 && size > directLimit {
+		return response.ErrWithCode(response.CodeFileTooLarge,
+			"文件超过直传上限，请使用分片上传")
+	}
 
 	// 2. 获取当前用户
 	userID, err := jwt.GetUserIdFromCtx(l.ctx)
