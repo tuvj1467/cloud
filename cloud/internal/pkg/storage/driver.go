@@ -14,8 +14,8 @@ type Config struct {
 	MaxUploadSize int64  `json:",default=104857600"` // 单分片上传上限（字节），默认 100MB
 	// DirectUploadSize 一元直传（UploadFile bytes 整文件进内存）上限，默认 5MB。
 	// 直传请求全程驻内存（网关读入 + unmarshal + MD5），超过该大小应走分片通道；
-	// 前端 DIRECT_MAX=5MB 与此对齐。≤0 或未配置时回落 MaxUploadSize（兼容旧配置）
-	DirectUploadSize int64 `json:",optional"`
+	// 前端 DIRECT_MAX=5MB 与此对齐。显式配置 ≤0 时回落 MaxUploadSize（兼容旧配置）
+	DirectUploadSize int64 `json:",default=5242880"`
 	Local            LocalConfig
 	Minio            MinioConfig
 }

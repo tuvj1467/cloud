@@ -16,7 +16,7 @@ upstreams:                  # 0空格
       - protoset.pb  # 依赖的 validate.proto
     Mappings:                # 2空格（与grpc同级）
       # ===== 文件服务 =====
-      - Method: POST        # 4空格
+      - Method: GET        # 4空格
         Path: /file/info    # 6空格
         RpcPath: storage.File/GetFileInfo
       - Method: POST

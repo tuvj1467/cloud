@@ -149,8 +149,10 @@ func (l *UploadFileLogic) UploadFile(in *service.UploadFileRequest) (*service.Re
 		return response.ErrWithCode(response.CodeStoragePathInvalid, "文件后缀非法")
 	}
 	fileID := l.svcCtx.Snowflake.MustIdS()
-	filePath := instantSrc.Path // 秒传跨桶/改名：共享既有物理文件，不再写物理
-	if instantSrc == nil {
+	var filePath string
+	if instantSrc != nil {
+		filePath = instantSrc.Path // 秒传跨桶/改名：共享既有物理文件，不再写物理
+	} else {
 		date := time.Now().Format("20060102")
 		filePath = fmt.Sprintf("%s/%s/%s.%s", userID, date, fileID, in.GetSuffix())
 	}

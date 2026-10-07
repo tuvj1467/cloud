@@ -17,7 +17,7 @@ upstreams:
       - protoset.pb  # 依赖的 validate.proto
     Mappings:
       # ===== 文件服务 =====
-      - Method: POST
+      - Method: GET
         Path: /file/info
         RpcPath: storage.File/GetFileInfo
       - Method: POST
