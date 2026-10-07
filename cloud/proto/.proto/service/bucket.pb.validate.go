@@ -191,15 +191,19 @@ func (m *CreateBucketRequest) validate(all bool) error {
 
 	// no validation rules for SizeLimit
 
-	if _, ok := _CreateBucketRequest_Visibility_InLookup[m.GetVisibility()]; !ok {
-		err := CreateBucketRequestValidationError{
-			field:  "Visibility",
-			reason: "value must be in list [private internal public]",
+	if m.GetVisibility() != "" {
+
+		if _, ok := _CreateBucketRequest_Visibility_InLookup[m.GetVisibility()]; !ok {
+			err := CreateBucketRequestValidationError{
+				field:  "Visibility",
+				reason: "value must be in list [private internal public]",
+			}
+			if !all {
+				return err
+			}
+			errors = append(errors, err)
 		}
-		if !all {
-			return err
-		}
-		errors = append(errors, err)
+
 	}
 
 	if m.Description != nil {

@@ -29,7 +29,7 @@ message CreateBucketRequest {
   string name = 1 [(validate.rules).string = {min_len:1, max_len:63}]; // 桶名称
   optional string description = 2;                                      // 桶描述
   int64 size_limit = 3;                                                 // 容量限制（0=默认1GB）
-  string visibility = 4 [(validate.rules).string = {in: ["private", "internal", "public"]}]; // 访问权限
+  string visibility = 4 [(validate.rules).string = {in: ["private", "internal", "public"], ignore_empty: true}]; // 访问权限（空=默认 private）
 }
 
 message CreateBucketResponse {

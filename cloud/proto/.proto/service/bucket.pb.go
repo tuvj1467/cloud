@@ -147,7 +147,7 @@ type CreateBucketRequest struct {
 	Name          string                 `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`                             // 桶名称
 	Description   *string                `protobuf:"bytes,2,opt,name=description,proto3,oneof" json:"description,omitempty"`         // 桶描述
 	SizeLimit     int64                  `protobuf:"varint,3,opt,name=size_limit,json=sizeLimit,proto3" json:"size_limit,omitempty"` // 容量限制（0=默认1GB）
-	Visibility    string                 `protobuf:"bytes,4,opt,name=visibility,proto3" json:"visibility,omitempty"`                 // 访问权限
+	Visibility    string                 `protobuf:"bytes,4,opt,name=visibility,proto3" json:"visibility,omitempty"`                 // 访问权限（空=默认 private）
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -690,14 +690,14 @@ const file_bucket_proto_rawDesc = "" +
 	"\n" +
 	"file_count\x18\n" +
 	" \x01(\x03H\x00R\tfileCount\x88\x01\x01B\r\n" +
-	"\v_file_count\"\xcc\x01\n" +
+	"\v_file_count\"\xcf\x01\n" +
 	"\x13CreateBucketRequest\x12\x1d\n" +
 	"\x04name\x18\x01 \x01(\tB\t\xfaB\x06r\x04\x10\x01\x18?R\x04name\x12%\n" +
 	"\vdescription\x18\x02 \x01(\tH\x00R\vdescription\x88\x01\x01\x12\x1d\n" +
 	"\n" +
-	"size_limit\x18\x03 \x01(\x03R\tsizeLimit\x12@\n" +
+	"size_limit\x18\x03 \x01(\x03R\tsizeLimit\x12C\n" +
 	"\n" +
-	"visibility\x18\x04 \x01(\tB \xfaB\x1dr\x1bR\aprivateR\binternalR\x06publicR\n" +
+	"visibility\x18\x04 \x01(\tB#\xfaB r\x1eR\aprivateR\binternalR\x06public\xd0\x01\x01R\n" +
 	"visibilityB\x0e\n" +
 	"\f_description\"C\n" +
 	"\x14CreateBucketResponse\x12+\n" +

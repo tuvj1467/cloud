@@ -725,26 +725,34 @@ func (m *FileListRequest) validate(all bool) error {
 		errors = append(errors, err)
 	}
 
-	if _, ok := _FileListRequest_SortBy_InLookup[m.GetSortBy()]; !ok {
-		err := FileListRequestValidationError{
-			field:  "SortBy",
-			reason: "value must be in list [name size create_time update_time]",
+	if m.GetSortBy() != "" {
+
+		if _, ok := _FileListRequest_SortBy_InLookup[m.GetSortBy()]; !ok {
+			err := FileListRequestValidationError{
+				field:  "SortBy",
+				reason: "value must be in list [name size create_time update_time]",
+			}
+			if !all {
+				return err
+			}
+			errors = append(errors, err)
 		}
-		if !all {
-			return err
-		}
-		errors = append(errors, err)
+
 	}
 
-	if _, ok := _FileListRequest_SortOrder_InLookup[m.GetSortOrder()]; !ok {
-		err := FileListRequestValidationError{
-			field:  "SortOrder",
-			reason: "value must be in list [asc desc]",
+	if m.GetSortOrder() != "" {
+
+		if _, ok := _FileListRequest_SortOrder_InLookup[m.GetSortOrder()]; !ok {
+			err := FileListRequestValidationError{
+				field:  "SortOrder",
+				reason: "value must be in list [asc desc]",
+			}
+			if !all {
+				return err
+			}
+			errors = append(errors, err)
 		}
-		if !all {
-			return err
-		}
-		errors = append(errors, err)
+
 	}
 
 	if m.NameKeyword != nil {
@@ -907,26 +915,34 @@ func (m *BucketFileListRequest) validate(all bool) error {
 		errors = append(errors, err)
 	}
 
-	if _, ok := _BucketFileListRequest_SortBy_InLookup[m.GetSortBy()]; !ok {
-		err := BucketFileListRequestValidationError{
-			field:  "SortBy",
-			reason: "value must be in list [name size create_time update_time]",
+	if m.GetSortBy() != "" {
+
+		if _, ok := _BucketFileListRequest_SortBy_InLookup[m.GetSortBy()]; !ok {
+			err := BucketFileListRequestValidationError{
+				field:  "SortBy",
+				reason: "value must be in list [name size create_time update_time]",
+			}
+			if !all {
+				return err
+			}
+			errors = append(errors, err)
 		}
-		if !all {
-			return err
-		}
-		errors = append(errors, err)
+
 	}
 
-	if _, ok := _BucketFileListRequest_SortOrder_InLookup[m.GetSortOrder()]; !ok {
-		err := BucketFileListRequestValidationError{
-			field:  "SortOrder",
-			reason: "value must be in list [asc desc]",
+	if m.GetSortOrder() != "" {
+
+		if _, ok := _BucketFileListRequest_SortOrder_InLookup[m.GetSortOrder()]; !ok {
+			err := BucketFileListRequestValidationError{
+				field:  "SortOrder",
+				reason: "value must be in list [asc desc]",
+			}
+			if !all {
+				return err
+			}
+			errors = append(errors, err)
 		}
-		if !all {
-			return err
-		}
-		errors = append(errors, err)
+
 	}
 
 	if m.NameKeyword != nil {
