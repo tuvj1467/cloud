@@ -59,6 +59,8 @@ func (l *GetPresignedURLLogic) GetPresignedURL(in *service.GetPresignedURLReques
 	}
 
 	// 有效期缺省 1 小时，钳制 [1min, 7d]：无上限时用户可请求十年有效的直链
+	// （MinIO 驱动在 URL 上强制 attachment 下载头，防 html/svg 内联渲染 XSS；
+	//  本地驱动不支持预签名返回 40005，前端自动回落普通下载——这是唯一回落点）
 	expire := int64(3600)
 	if in.ExpireSeconds != nil && *in.ExpireSeconds > 0 {
 		expire = *in.ExpireSeconds

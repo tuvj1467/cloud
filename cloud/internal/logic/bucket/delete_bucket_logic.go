@@ -58,6 +58,11 @@ func (l *DeleteBucketLogic) DeleteBucket(in *service.DeleteBucketRequest) (*serv
 	shareRepo := repository.NewFileShareRepository(l.svcCtx.EntClient)
 	fileRepo := repository.NewFileRepository(l.svcCtx.EntClient)
 
+	// 两种模式语义（选型依据见 doc/05 删除接口）：
+	// force=true —— 级联彻底删除：桶 + 桶内全部文件（含回收站）+ 关联分享 + 物理文件，
+	//               事务内一次完成（DeleteWithFiles），事务后清缓存与物理；不可恢复，写操作审计。
+	// force=false —— 仅当桶为空（无未删文件）才删桶；配额校验防止误删在用桶。
+	//               注意「空」判定排除回收站文件口径见 repository.CountFiles/DeleteIfEmpty 注释。
 	if in.GetForce() {
 		// force：先查出文件关联分享（供事务后清理 Redis），再事务级联删除
 		files, err := l.svcCtx.EntClient.File.Query().Where(file.BucketIDEQ(in.GetBucketId())).All(l.ctx)

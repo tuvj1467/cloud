@@ -1,3 +1,7 @@
+// Package verification 验证码服务：生成/校验/一次性消费/失败作废。
+// 依赖 Redis KV（未配置时 ErrUnavailable 明确报错，无降级——该能力离不开存储）。
+// 防护：60s 发送频控 + 单联系方式/类型每日 10 条 + 验证失败 5 次作废；
+// Sender 当前为日志通道（非 dev 模式脱码），接真实短信/邮件时新增实现。
 package verification
 
 import (

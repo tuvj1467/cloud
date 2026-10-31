@@ -1,3 +1,5 @@
+// Package snowId 雪花 ID 生成器（全局单例，Initialize 注入 workerId）。
+// 多实例部署必须互配不同 WorkerId（0-1023），否则主键冲突。
 package snowId
 
 import (

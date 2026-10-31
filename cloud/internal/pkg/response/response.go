@@ -1,3 +1,7 @@
+// Package response 统一响应包装与错误码。
+// 三条出口约定：Success（200）/ErrWithCode（业务错误码，客户端按 code 识别）/
+// ErrInternal（内部错误，细节只进日志，客户端收通用文案——防内部信息泄漏）。
+// 错误码段位见 codes.go；前端 errText 表（web/js/api.js）与本包一一对应。
 package response
 
 import (

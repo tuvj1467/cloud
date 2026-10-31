@@ -31,6 +31,10 @@ func NewGetFileThumbLogic(ctx context.Context, svcCtx *svc.ServiceContext) *GetF
 	}
 }
 
+// GetFileThumb 缩略图（仅本地驱动生成，返回 JPEG dataURL）
+// 自愈语义：上传时异步生成可能失败/被超载放弃（thumb_hook.go），此处命中
+// 「文件存在但缩略图缺失」时按需补生成并落盘——派生数据允许延迟就位。
+// 回收站文件按不存在处理（与文件列表口径一致）。
 // GetFileThumb 返回图片缩略图（JPEG）。
 // 命中规则：仅本地驱动生成缩略图；缩略图缺失时按需自愈生成一次（原图需为本地驱动的图片）。
 func (l *GetFileThumbLogic) GetFileThumb(in *service.FileThumbRequest) (*service.Response, error) {

@@ -42,6 +42,8 @@ func NewAdminListUsersLogic(ctx context.Context, svcCtx *svc.ServiceContext) *Ad
 	return &AdminListUsersLogic{ctx: ctx, svcCtx: svcCtx, Logger: logx.WithContext(ctx)}
 }
 
+// AdminListUsers 用户列表（关键词匹配 username/nickname/phone + 文件用量聚合）
+// 属只读审计面：返回值含 phone/email，仅 admin 角色可达（AdminGuard 在 server 层先决）
 func (l *AdminListUsersLogic) AdminListUsers(in *service.AdminListUsersRequest) (*service.Response, error) {
 	if r, ok := AdminGuard(l.ctx); !ok {
 		return r, nil
@@ -102,6 +104,9 @@ func NewAdminSetUserRoleLogic(ctx context.Context, svcCtx *svc.ServiceContext) *
 	return &AdminSetUserRoleLogic{ctx: ctx, svcCtx: svcCtx, Logger: logx.WithContext(ctx)}
 }
 
+// AdminSetUserRole 设置角色（user/admin）
+// 禁改自己（防最后一个 admin 自降权后无人管理）；角色变更同时 bump token_version，
+// 被降权者的旧 token 立即失效（repository.AdminSetUserRole 内实现，此处只做守卫与审计）
 func (l *AdminSetUserRoleLogic) AdminSetUserRole(in *service.AdminSetUserRoleRequest) (*service.Response, error) {
 	if r, ok := AdminGuard(l.ctx); !ok {
 		return r, nil
@@ -141,6 +146,9 @@ func NewAdminSetUserDisabledLogic(ctx context.Context, svcCtx *svc.ServiceContex
 	return &AdminSetUserDisabledLogic{ctx: ctx, svcCtx: svcCtx, Logger: logx.WithContext(ctx)}
 }
 
+// AdminSetUserDisabled 禁用/启用
+// 禁用即 bump token_version：既有 token 在拦截器侧立即被拒（P24 语义），
+// 同时 JWT 拦截器的 60s 状态缓存会命中 disabled 拒绝
 func (l *AdminSetUserDisabledLogic) AdminSetUserDisabled(in *service.AdminSetUserDisabledRequest) (*service.Response, error) {
 	if r, ok := AdminGuard(l.ctx); !ok {
 		return r, nil

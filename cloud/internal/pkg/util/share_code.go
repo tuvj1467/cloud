@@ -1,5 +1,6 @@
 // Package util 通用工具
 // share_code.go：分享码生成
+// Package util 通用工具（MD5 计算、分享码生成）。
 package util
 
 import (

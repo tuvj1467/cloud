@@ -35,6 +35,7 @@ func (l *GetShareAccessLogsLogic) GetShareAccessLogs(in *service.GetShareAccessL
 		return response.Err(err)
 	}
 
+	// 仅分享属主可查审计（匿名端点不暴露日志；admin 走 AdminRecentAccessLogs 全局面）
 	shareRepo := repository.NewFileShareRepository(l.svcCtx.EntClient)
 	s, err := shareRepo.GetByCode(l.ctx, in.GetShareCode())
 	if err != nil {

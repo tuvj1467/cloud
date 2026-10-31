@@ -1,4 +1,6 @@
-// P8 渐进迁移：根组件 —— Task 7 已接入 BucketPanel / ShareDialog / SharePage，P8 前端闭环
+// app.js —— 根组件：路由分发（#/app 登录态 / #/share/:code 匿名分享页）与全局壳。
+// 登录态探测基于 store.token + 401 事件（api.js 触发 logout），角色显隐由 AdminPanel 自判。
+// P8 Task 7 已接入 BucketPanel / ShareDialog / SharePage，P8 前端闭环
 const { createApp, computed, watch } = Vue;
 import { store } from './store.js';
 import { AuthPanel } from './components/AuthPanel.js';

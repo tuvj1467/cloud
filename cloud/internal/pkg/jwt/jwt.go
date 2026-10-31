@@ -1,3 +1,6 @@
+// Package jwt JWT 签发与校验（HS256，会话版本内嵌 claims）。
+// Secret 不设默认值：未初始化/空 Secret 直接 panic 或报错，杜绝静默回退公开密钥。
+// Claims.Ver 与 users.token_version 比对实现「踢出既有会话」（P24）。
 package jwt
 
 import (

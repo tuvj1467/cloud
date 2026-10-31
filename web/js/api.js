@@ -1,3 +1,8 @@
+// api.js —— 全部后端 REST 调用的唯一出口（组件不得自行 fetch 业务接口）。
+// 约定：request() 统一处理 401 登出 / 错误码中文映射（errText，与 cloud
+// internal/pkg/response/codes.go 一一对应）；流式下载走串联 JSON 解析
+// （streamDownload / streamShareDownload）。字段名兼容垫片（fileId||file_id）
+// 是网关 JSON 命名的历史遗留，新代码统一用 camelCase。
 import { store } from './store.js';
 
 const API_BASE = '/api';

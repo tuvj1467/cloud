@@ -23,7 +23,7 @@ ONE_CLOUD/
 │   ├── main.go                # 服务入口（含存量数据迁移）
 │   ├── etc/storage.yaml       # 服务配置
 │   ├── proto/                 # protobuf 定义（file/user/bucket/service）
-│   ├── ent/                   # ent 模型与生成代码（user/bucket/file/file_part/file_share）
+│   ├── ent/                   # ent 模型与生成代码（9 张表，含审计/快照）
 │   └── internal/
 │       ├── config/            # 配置定义（MySQL/Redis/Storage/JWT）
 │       ├── logic/             # 业务逻辑（file / user / bucket）
@@ -45,8 +45,8 @@ ONE_CLOUD/
 ├── web/                       # Web 演示前端（静态页面 + API 反向代理 :8080）
 ├── doc/                       # 项目文档（本目录）
 ├── deploy/                    # 容器化部署专用配置
-├── docker-compose.yml         # Docker Compose 一键部署
-└── template/                  # 代码生成模板
+├── scripts/smoke_e2e.py       # E2E 冒烟脚本（35 项断言）
+└── docker-compose.yml         # Docker Compose 一键部署
 ```
 
 ## 文档导航
@@ -65,6 +65,9 @@ ONE_CLOUD/
 | [10_配置说明.md](10_配置说明.md) | 全量配置键位说明（服务/网关/Web） |
 | [11_P7_安全与健壮性修复设计.md](11_P7_安全与健壮性修复设计.md) | 验证码链路 / 路径安全 / 配额与事务修复设计 |
 | [12_P8_前端完善设计.md](12_P8_前端完善设计.md) | Web 前端 Vue 3 本地化改造与功能补齐设计 |
+| [13_夜间自主开发路线图.md](13_夜间自主开发路线图.md) | M1-M12 增量能力路线图（流式下载/缩略图/趋势/回收站/审计/限流等） |
+| [14_管理后台设计.md](14_管理后台设计.md) | 管理后台（角色模型/用户管理/全局统计/操作审计）设计 |
+| [15_项目交接文档.md](15_项目交接文档.md) | ⭐ **交接入口**：新人路线/代码导读/设计不变式/陷阱清单/技术债 |
 
 ## 完善目标与完成状态
 

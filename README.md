@@ -110,64 +110,69 @@ ONE CLOUD 是一个生产级的对象存储服务，采用 **gRPC 微服务 + HT
 ```
 ONE_CLOUD/
 ├── cloud/                        # 核心 RPC 服务
-│   ├── main.go                   # 服务入口
+│   ├── main.go                   # 服务入口（拦截器链/清理任务启动）
 │   ├── etc/
-│   │   └── storage.yaml          # 服务配置（MySQL/Redis/Storage/JWT）
-│   ├── proto/                    # Protobuf 定义
-│   │   ├── service.proto         # gRPC 服务定义
-│   │   ├── file.proto            # 文件消息
-│   │   ├── bucket.proto          # 桶消息
-│   │   └── user.proto            # 用户消息
+│   │   └── storage.yaml          # 服务配置（MySQL/Redis/Storage/JWT/限流）
+│   ├── proto/                    # Protobuf 定义与生成脚本
+│   │   ├── service.proto         # gRPC 服务定义（37 个端点）
+│   │   ├── file/user/bucket/base.proto
+│   │   ├── .proto/service/       # 生成产物（.pb.go，提交入库）
+│   │   └── generate_all.cmd      # 三步再生成脚本（消息/gRPC/protoset）
 │   ├── ent/
-│   │   ├── schema/               # ent 实体定义（手写）
-│   │   │   ├── user.go
-│   │   │   ├── bucket.go
-│   │   │   ├── file.go
-│   │   │   ├── file_part.go      # 分片上传记录
-│   │   │   ├── file_share.go     # 文件分享记录
-│   │   │   └── mixin.go          # 公共字段混合（时间/版本）
+│   │   ├── schema/               # ent 实体定义（手写，9 张表）
+│   │   │   ├── user/bucket/file/file_part/file_share.go
+│   │   │   ├── share_access_log.go   # 分享访问审计
+│   │   │   ├── admin_audit_log.go    # 管理操作审计
+│   │   │   ├── storage_snapshot.go   # 用量每日快照
+│   │   │   └── mixin.go              # 公共字段混合（时间/版本）
 │   │   └── ent/                  # ent 生成代码（自动生成，勿手动改）
 │   ├── internal/
 │   │   ├── config/               # 配置结构
 │   │   ├── logic/                # 业务逻辑
-│   │   │   ├── user/             #   用户模块
+│   │   │   ├── user/             #   用户/认证/管理后台
 │   │   │   ├── bucket/           #   桶模块
-│   │   │   └── file/             #   文件模块（含分片、分享）
-│   │   ├── middleware/           # 中间件（JWT 拦截器）
+│   │   │   └── file/             #   文件（分片/分享/回收站/统计）
+│   │   ├── middleware/           # 中间件（JWT + 限流拦截器）
 │   │   ├── pkg/                  # 基础包
-│   │   │   ├── cache/            #   Redis 缓存（md5/multipart/share）
+│   │   │   ├── cache/            #   Redis 缓存（唯一访问层，nil 安全）
+│   │   │   ├── cleanup/          #   定时清扫（回收站/审计/.tmp）
+│   │   │   ├── consts/           #   跨层业务常量
 │   │   │   ├── database/         #   MySQL 连接
-│   │   │   ├── jwt/              #   JWT 工具
+│   │   │   ├── jwt/              #   JWT（会话版本化）
+│   │   │   ├── loginlock/        #   登录失败锁定（含降级）
 │   │   │   ├── migrate/          #   存量数据迁移
 │   │   │   ├── passwd/           #   bcrypt 密码工具
 │   │   │   ├── response/         #   统一响应 + 错误码
+│   │   │   ├── snapshot/         #   用量每日快照任务
 │   │   │   ├── snowId/           #   雪花 ID
-│   │   │   ├── storage/          #   存储驱动（接口+本地实现）
-│   │   │   └── util/             #   通用工具
+│   │   │   ├── storage/          #   存储驱动（local/minio + 路径安全）
+│   │   │   ├── thumb/            #   缩略图生成
+│   │   │   ├── util/             #   通用工具
+│   │   │   └── verification/     #   验证码（频控/日配额）
 │   │   ├── repository/           # 数据访问层（Repository 模式）
-│   │   ├── server/               # gRPC server 实现
+│   │   ├── server/               # gRPC server 实现（纯委托，手工维护）
 │   │   └── svc/                  # 服务上下文（依赖注入）
 │
 ├── gateway/                      # HTTP 网关
-│   ├── gateway.go                # 网关入口
-│   ├── gateway.yaml              # 路由映射配置
-│   ├── protoset.pb               # proto 描述符集
+│   ├── gateway.go                # 网关入口（Authorization 桥接/大消息上限）
+│   ├── gateway.yaml              # 路由映射（与 deploy/ 下副本保持同步）
+│   ├── protoset.pb               # proto 描述符集（改 proto 后须再生成）
 │   └── type/                     # 自定义 Marshaler / 统一响应包装
 │
 ├── web/                          # Web 演示前端
 │   ├── server.go                 # 静态服务器 + API 反向代理（:8080）
 │   ├── index.html                # 前端页面
 │   ├── css/                      # 样式
-│   └── js/                       # 脚本
+│   └── js/                       # 脚本（Vue 3 无构建链，vendor 内置）
 │
-├── doc/                          # 项目文档
-│   ├── README.md                 # 文档索引
-│   ├── 01_现状分析.md ~ 14_管理后台设计.md
-│   │                             # 详见下方「文档导航」
+├── doc/                          # 项目文档（15 篇，索引见 doc/README.md）
+│   └── 15_项目交接文档.md        # ⭐ 接手者第一入口
 │
+├── scripts/
+│   └── smoke_e2e.py             # E2E 冒烟（35 项断言，纯标准库）
+├── .github/workflows/ci.yml     # CI（三模块测试 + 三镜像构建）
 ├── docker-compose.yml            # Docker Compose 一键部署（含 MySQL/Redis）
-├── deploy/                       # 容器化部署专用配置
-└── template/                     # 代码生成模板
+└── deploy/                       # 容器化部署专用配置
 ```
 
 ## 快速开始
@@ -417,6 +422,7 @@ protoc --descriptor_set_out=../gateway/protoset.pb \
 | [12_P8_前端完善设计.md](doc/12_P8_前端完善设计.md) | Web 前端 Vue 3 本地化改造与功能补齐设计 |
 | [13_夜间自主开发路线图.md](doc/13_夜间自主开发路线图.md) | M1-M12 增量能力路线图（流式下载/缩略图/趋势/回收站/分享审计/限流等） |
 | [14_管理后台设计.md](doc/14_管理后台设计.md) | 管理后台（角色模型/用户管理/全局统计/操作审计）设计 |
+| [15_项目交接文档.md](doc/15_项目交接文档.md) | ⭐ **交接入口**：新人路线/代码导读/设计不变式/陷阱清单/技术债 |
 
 ## License
 

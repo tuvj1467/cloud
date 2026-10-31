@@ -100,6 +100,11 @@ func NewPurgeFilesLogic(ctx context.Context, svcCtx *svc.ServiceContext) *PurgeF
 	return &PurgeFilesLogic{ctx: ctx, svcCtx: svcCtx, Logger: logx.WithContext(ctx)}
 }
 
+// 回收站生命周期（deleted_at 状态机）：软删（DeleteFile 置 deleted_at，全查询路径过滤）
+// → 还原（清 deleted_at，立即可见）→ 彻底删除（PurgeFiles/30 天自动清扫：事务级联删分享
+//   + 归还配额，事务后清 Redis 索引与物理文件——物理删除必须走共享路径守卫，见 §5.3）。
+// 软删文件不释放桶配额（仍占用 used_size），彻底删除才归还——防「删了还能恢复」期间超卖。
+
 // PurgeFiles 彻底删除本人回收站中的一组文件：
 // 逐个复用 DeleteFull 事务（级联分享 + 归还配额），事务后清理 Redis 与物理文件；
 // 不属于本人或已不在回收站的 ID 自动跳过

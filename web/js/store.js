@@ -1,3 +1,5 @@
+// store.js —— 全局响应式状态（token/用户信息/桶列表/上传队列/路由）。
+// P8 Task 7 起桶列表等共享数据收敛于此，避免多组件重复拉取；登出时整体重置。
 const { reactive } = Vue;
 // P8 Task 7：桶列表加载收敛到 store（FileList / UploadPanel / BucketPanel 共用同一数据源）
 import { getBucketList } from './api.js';
