@@ -1,6 +1,6 @@
 # 05 API接口设计
 
-> **状态注记（2026-09-12 刷新）**：本文已刷新为**现行接口全集**（原设计期措辞保留于历史章节供追溯）。当前共 **37 个 REST 端点**（用户 7 + 桶 5 + 文件 8 + 分片 4 + 分享 4 + 回收站 3 + 统计 3 + 审计 1 + 预签名 1 + 限流说明），路由唯一真源为 `gateway/gateway.yaml`（与 `deploy/gateway/gateway.yaml` 保持同步），汇总表见根 [README.md](../README.md) 的「API 总览」。**鉴权**：除白名单（注册/登录系列/发送验证码/重置密码/找回账号/分享查看/分享下载含流式）外全部需 JWT。**错误码**：200 成功；10003 用户名重复 / 10004-10007 验证码系列 / 20004 桶容量不足 / 20005 桶非空 / 30001-30022 文件与分享系列 / 30012 文件超限 / 40005 驱动不支持 / 40006 路径非法 / 42900 限流（HTTP 层为 429）。**通用约定**：请求/响应 JSON，字段 camelCase；int64 序列化为字符串；分页统一 page/page_size（≤50）。
+> **状态注记（2026-09-12 刷新）**：本文已刷新为**现行接口全集**（原设计期措辞保留于历史章节供追溯）。当前共 **46 个 REST 端点**（用户 7 + 桶 5 + 文件 10 + 分片 4 + 分享 6 + 回收站 3 + 统计/趋势 2 + 审计 1 + 缩略图 1 + 预签名 1 + 管理后台 7；与 service.proto 的 46 个 rpc、网关 46 条映射一致），路由唯一真源为 `gateway/gateway.yaml`（与 `deploy/gateway/gateway.yaml` 保持同步），汇总表见根 [README.md](../README.md) 的「API 总览」。**鉴权**：除白名单（注册/登录系列/发送验证码/重置密码/找回账号/分享查看/分享下载含流式）外全部需 JWT。**错误码**：200 成功；10003 用户名重复 / 10004-10007 验证码系列 / 20004 桶容量不足 / 20005 桶非空 / 30001-30022 文件与分享系列 / 30012 文件超限 / 40005 驱动不支持 / 40006 路径非法 / 42900 限流（HTTP 层为 429）。**通用约定**：请求/响应 JSON，字段 camelCase；int64 序列化为字符串；分页统一 page/page_size（≤50）。
 
 ## 一、服务总览
 
@@ -49,7 +49,7 @@ message CreateBucketRequest {
   string name = 1 [(validate.rules).string = {min_len:1, max_len:63}];
   optional string description = 2;
   int64 size_limit = 3;        // 0 表示使用默认值 1GB
-  string visibility = 4 [(validate.rules).string = {in: ["private", "internal", "public"]}];
+  string visibility = 4 [(validate.rules).string = {in: ["private", "internal", "public"], ignore_empty: true}]; // 可空,空=默认 private
 }
 message CreateBucketResponse {
   BucketMeta bucket = 1;
@@ -181,6 +181,18 @@ message AbortMultipartUploadResponse {
   bool success = 1;
 }
 ```
+
+### 4.4.1 列表排序参数（2026-10-31 语义刷新）
+
+`FileListRequest` / `BucketFileListRequest` 的排序字段均为**可选**（`ignore_empty: true`）：
+
+| 字段 | 取值 | 缺省行为 |
+| ---- | ---- | -------- |
+| `sort_by` | `name` / `size` / `create_time` / `update_time` | 空 = 按 `update_time` 倒序（服务端 `applyFileSort` 默认分支） |
+| `sort_order` | `asc` / `desc` | 空 = 倒序 |
+
+> 历史注记：早期版本空值会触发 validate `in` 校验失败（「参数校验失败」），经 E2E 冒烟
+> 发现后补 `ignore_empty` 修复——新增同类枚举参数务必带 `ignore_empty: true`。
 
 ### 4.5.1 分享流式下载（2026-10-05 新增）
 
@@ -360,9 +372,13 @@ var publicMethods = []string{
     "/storage.User/FindAccount",
     // 文件分享访问（匿名可访问）
     "/storage.File/AccessShare",
+    // 分享下载（匿名可访问）
+    "/storage.File/DownloadByShare",
+    // 分享流式下载（匿名可访问）
+    "/storage.File/DownloadByShareStream",
 }
 ```
 
-其余所有 `File` / `Bucket` 接口均需鉴权。
+其余所有 `File` / `Bucket` 接口均需鉴权；流式方法另由 `JwtStreamInterceptor` 鉴权（同样引用此白名单）。
 
 实现位置：[middleware/jwt_middleware.go](../cloud/internal/middleware/jwt_middleware.go)

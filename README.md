@@ -114,7 +114,7 @@ ONE_CLOUD/
 │   ├── etc/
 │   │   └── storage.yaml          # 服务配置（MySQL/Redis/Storage/JWT/限流）
 │   ├── proto/                    # Protobuf 定义与生成脚本
-│   │   ├── service.proto         # gRPC 服务定义（37 个端点）
+│   │   ├── service.proto         # gRPC 服务定义（46 个端点）
 │   │   ├── file/user/bucket/base.proto
 │   │   ├── .proto/service/       # 生成产物（.pb.go，提交入库）
 │   │   └── generate_all.cmd      # 三步再生成脚本（消息/gRPC/protoset）
@@ -331,7 +331,24 @@ curl -X POST http://127.0.0.1:8888/bucket/create \
 | 接口 | 方法 | 鉴权 | 说明 |
 |------|------|------|------|
 | GetStorageStats | GET | ✅ | 用量统计（文件数/总容量/分桶明细） |
-| GetPresignedURL | GET | ✅ | 预签名下载 URL（本地驱动返回 40005，前端自动回落） |
+| GetStorageTrend | GET | ✅ | 用量趋势（每日快照，默认 30 天） |
+| GetFileThumb | GET | ✅ | 图片缩略图（JPEG dataURL；缺失时按需自愈生成） |
+| DownloadStream | POST | ✅ | 流式下载（64KB 分块 server-streaming，大文件不驻内存） |
+| GetPresignedURL | GET | ✅ | 预签名下载 URL（本地驱动返回 40005，前端自动回落；有效期钳制 7 天） |
+
+#### 回收站
+
+| 接口 | 方法 | 鉴权 | 说明 |
+|------|------|------|------|
+| ListDeletedFiles | GET | ✅ | 回收站列表（已删文件） |
+| RestoreFiles | POST | ✅ | 批量还原 |
+| PurgeFiles | POST | ✅ | 批量彻底删除（级联分享/归还配额） |
+
+#### 分享审计
+
+| 接口 | 方法 | 鉴权 | 说明 |
+|------|------|------|------|
+| GetShareAccessLogs | GET | ✅ | 我的分享访问/下载审计（倒序分页） |
 
 ### 管理后台（`/storage.User`，需 admin 角色）
 
@@ -367,6 +384,7 @@ curl -X POST http://127.0.0.1:8888/bucket/create \
 | `share:{code}:meta` | string(JSON) | 分享元信息 | 与过期时间对齐 |
 | `share:{code}:counter` | string(int) | 分享已用次数（Lua 原子校验+递增） | 与过期时间对齐 |
 | `sms_code_daily:{contact}:{type}` | string(int) | 验证码每日发送配额（10 条/天） | 24 小时 |
+| `login_fail:{user_id}` / `login_lock:{user_id}` | string | 登录失败计数/锁定标记（5 次锁 15 分钟） | 15 分钟 |
 
 ## 开发与贡献
 

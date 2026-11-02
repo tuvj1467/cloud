@@ -22,12 +22,12 @@ ONE_CLOUD/
 ├── cloud/                     # 存储 RPC 服务（核心）
 │   ├── main.go                # 服务入口（含存量数据迁移）
 │   ├── etc/storage.yaml       # 服务配置
-│   ├── proto/                 # protobuf 定义（file/user/bucket/service）
+│   ├── proto/                 # protobuf 定义与生成脚本（base/file/user/bucket/service）
 │   ├── ent/                   # ent 模型与生成代码（9 张表，含审计/快照）
 │   └── internal/
 │       ├── config/            # 配置定义（MySQL/Redis/Storage/JWT）
 │       ├── logic/             # 业务逻辑（file / user / bucket）
-│       ├── middleware/        # 中间件（JWT 拦截器）
+│       ├── middleware/        # 中间件（JWT + 限流拦截器，含用户状态缓存）
 │       ├── pkg/
 │       │   ├── cache/         # Redis 缓存（md5/multipart/share）
 │       │   ├── database/      # MySQL 连接
