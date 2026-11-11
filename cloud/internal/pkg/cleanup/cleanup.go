@@ -1,5 +1,6 @@
 // Package cleanup 提供过期数据清理任务
-// cleanup.go：分片上传遗留清理（孤儿 .tmp 物理目录 + 过期 pending 分片记录）
+// cleanup.go：分片上传遗留清理（孤儿 .tmp 物理目录 + 过期 pending/merged 分片记录）
+// reconcile.go：硬崩溃残留兜底——merged 僵尸分片清除 + 桶配额账实对账（只告警不改数）
 package cleanup
 
 import (
@@ -75,6 +76,21 @@ func sweep(ctx context.Context, entClient *ent.Client, localRootDir string, stor
 		logx.Errorf("[cleanup] 清理过期 pending 分片记录失败: %v", err)
 	} else if n > 0 {
 		logx.Infof("[cleanup] 已清理过期 pending 分片记录 %d 条", n)
+	}
+	// 硬崩溃残留兜底一：门闩占有后崩溃卡 merged 的僵尸分片，超龄整组清除（reconcile.go，doc/17 §3.9）
+	if n, err := CleanStaleMergedParts(ctx, entClient, staleMergedAge); err != nil {
+		logx.Errorf("[cleanup] 清理超龄 merged 僵尸分片失败: %v", err)
+	} else if n > 0 {
+		logx.Infof("[cleanup] 已清理超龄 merged 僵尸分片 %d 条", n)
+	}
+	// 硬崩溃残留兜底二：桶配额账实对账——只告警不自动改数（改账危险，生产人工介入，见 ReconcileBucketQuota 注释）
+	drifts, err := ReconcileBucketQuota(ctx, entClient)
+	if err != nil {
+		logx.Errorf("[cleanup] 桶配额对账失败: %v", err)
+	}
+	for _, d := range drifts {
+		logx.Errorf("[cleanup] 桶配额账实漂移,需人工对账(不自动改数): user=%s bucket=%s files=%d sum=%d used_size=%d has_bucket=%v",
+			d.UserID, d.BucketID, d.FileCount, d.FileSize, d.UsedSize, d.HasBucket)
 	}
 }
 
